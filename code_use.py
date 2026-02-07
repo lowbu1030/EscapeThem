@@ -1,43 +1,4 @@
-"""
-目標:
- 將怪物做成json檔
- 幫一些皮膚加上特殊效果：  ❗ ❗ 注意 ❗ ❗ 這段記得留著，之後做幫助頁面時會用到
-  紅色：完成：無功能
-  橘色：完成：玩家縮小 10%
-  深橘色：未完成
-  黃色：完成：所有錢 X 1.5倍
-  綠色：完成：血量 + 20%
-  藍色：完成：所有怪物免疫 30% 傷害
-  紫色：完成：對紫色怪物免疫 80% 傷害
-  粉紅色：未完成
-  白色：完成：速度 + 30%
-  灰色：未完成
-  黑色：完成：黑色怪物 10 % 傷害
-  金色：完成：金錢 x4
-  咖啡色：完成：緩衝時間 X 1.7 倍 
-  深綠色：未完成
- 功能寫在幫助頁面
- 新的升級：
-  None
- 製作成就
- 修正皮膚問題  OK
- 升級列表先顯示第幾級、要多少錢  OK
- 做好"買crazy模式"  OK
-
- !!!版面更新!!!
- 1.第一頁背景改成木頭 CAN'T :(
- 2.隱藏滑鼠並另外弄一個圖案出來
- 3.製作存檔版本，太舊的話出現提示訊息更新存檔：  OK
-  跟掛機畫面一樣出現"類似彈出式視窗"，並有一個更新存檔的按鈕  OK
-  遊戲進入時觸發  OK
-
-過關世界：
- 1.所有技能滿級時，就可以進入
- 2.偵測"所有技能滿級"狀態並存在"save_game.json"裡
- 3.製作新頁面"前往通關世界"
-"""
-
-import pygame, random, sys, json
+import pygame, random, sys, json, math
 import tool # 載入你的工具包
 from pathlib import Path
 from old_to_new import migrate_save_format
@@ -131,6 +92,8 @@ try:
 except:
     lock_img_loaded = False
 # --- 標題圖片載入 ---
+# 先建立一個虛擬的 Rect 避免 blit 噴錯
+title_rect = pygame.Rect(WIDTH // 2 - 200, 120, 400, 180)
 try:
     title_img_surface = pygame.image.load(str(IMG_PATH) + "/images/Escape Them.png").convert_alpha()
     title_img_surface = pygame.transform.scale(title_img_surface, (400, 180))
@@ -423,14 +386,14 @@ def load_data():
             current_levels[f"upgrade_p{i}"] = 0
 
 def apply_skin_effects():
-    global player_speed_buff, points_multiplier, coin_multiplier, player_max_hp_buff, enemy_damage, buffer_duration_buff, invincible_time_buff, player_size_buff
+    global player_speed_buff, points_multiplier, coin_multiplier, player_max_hp_buff, skin_enemy_damage_buff, buffer_duration_buff, invincible_time_buff, player_size_buff
     
     # 先重置為基礎數值 (避免效果無限疊加)
     player_speed_buff = 1.0
     points_multiplier = 1.0
     coin_multiplier = 1.0
     player_max_hp_buff = 1.0
-    enemy_damage = 10.0
+    skin_enemy_damage_buff = 1.0
     buffer_duration_buff = 1.0
     invincible_time_buff = 1.0
     player_size_buff = 1.0
@@ -465,7 +428,7 @@ def apply_skin_effects():
         elif effect == "max_hp":
             player_max_hp_buff *= power
         elif effect == "enemy_damage":
-            enemy_damage *= power
+            skin_enemy_damage_buff *= power
         elif effect == "enemy_spawn_speed":
             buffer_duration_buff *= power
         elif effect == "invincible_time":
@@ -706,6 +669,8 @@ game_state = "menu"
 
 load_data()
 load_resets()
+
+floating_texts = []  # 放在遊戲開始前，用來裝所有的漂浮文字
 
 while running:    
     screen_text = f"Escape Them! v1.0.0 - {game_state.replace("_", " ")}"
@@ -1484,18 +1449,14 @@ while running:
                     # 核心邏輯：如果現在時間 - 上次受傷時間 > 1秒，才准許受傷
                     if current_time_sec - last_hit_time > invincible_duration:
                         
-                        enemy_damage = 10 * enemy_damage_buff
-                        
-                        if tuple(now_player_skin) == tuple(tool.Colors.BLUE):
-                            player_hp -= int(enemy_damage * 0.7)  # 藍色皮膚受傷X0.7
-                        elif tuple(now_player_skin) == tuple(tool.Colors.PURPLE) and enemy["color"] == tool.Colors.PURPLE:
-                            player_hp -= enemy_damage // 10  # 紫色皮膚免疫紫色敵人 90% 傷害
-                        elif tuple(now_player_skin) == tuple(tool.Colors.BLACK) and enemy["color"] == tool.Colors.BLACK:
-                            player_hp -= enemy_damage // 10  # 黑色皮膚免疫黑色敵人 90% 傷害
-                        else:
-                            player_hp -= enemy_damage
+                        raw_damage = 10 * enemy_damage_buff * skin_enemy_damage_buff
+                        enemy_damage = int(raw_damage) 
+                        if enemy_damage < 1: enemy_damage = 1 # 確保最少扣 1 滴
+                        player_hp -= enemy_damage
                         last_hit_time = current_time_sec  # 這一行很重要：受傷瞬間更新時間，開啟無敵
                         # print(f"受傷！剩餘血量: {player_hp}")  除錯用
+                        new_text = tool.FloatingText(f"-{int(enemy_damage)}hp", player_rect.x, player_rect.y, tool.Colors.RED, speed=0.8)
+                        floating_texts.append(new_text)
                         
                         if player_hp == player_max_hp:
                             last_cure_time = current_time_sec
@@ -1535,6 +1496,11 @@ while running:
                 
                 treasure_points += base_val * coin_multiplier
                 
+                display_val = "%g" % round(base_val * coin_multiplier * gm_points_buff * now_p3_skill, 1)
+                
+                coin_text = tool.FloatingText(f"+${display_val}", player_rect.x, player_rect.y, tool.Colors.GOLD)
+                floating_texts.append(coin_text)
+                
                 # 3. 消失並設定「下一次」出現的時間
                 now_treasure["show"] = False
                 cooldown = random.randint(*next_spawn_range) # type: ignore
@@ -1550,11 +1516,14 @@ while running:
         # 1. 確保只有在血量未滿且玩家還活著時才計算
         if player_hp < player_max_hp and player_hp > 0:
             # 2. 改用 >= 判斷，確保每隔指定秒數觸發一次
-            if current_time_sec - last_cure_time >= now_p7_skill["time"]:
-                player_hp += now_p7_skill["hp"]
+            if current_time_sec - last_cure_time >= now_p7_skill['time']:
+                player_hp += now_p7_skill['hp']
                 
                 # 3. 修正：為了讓計時更準確，last_cure_time 應該加上冷卻時間，而不是直接等於當前時間
-                last_cure_time += now_p7_skill["time"] 
+                last_cure_time += now_p7_skill['time']
+                
+                new_text = tool.FloatingText(f"+{now_p7_skill['hp']}hp" if player_max_hp >= player_hp else f"+{int(now_p7_skill['hp'] - (player_hp - player_max_hp))}hp", player_rect.x, player_rect.y, tool.Colors.GREEN, speed=0.8)
+                floating_texts.append(new_text)
                 
                 # 4. 確保不溢出
                 if player_hp > player_max_hp:
@@ -1583,8 +1552,10 @@ while running:
         #更新畫面、繪製物件
         tool.text_button("", tool.Colors.WHITE, tool.Colors.DARK_RED, WIDTH - 110, 70, 100, 23, t_y=82, size=15)
         #血條
-        hp_rect = tool.text_button("", tool.Colors.WHITE, tool.Colors.RED, WIDTH - 110, 70, int((player_hp / player_max_hp) * 100), 23, size=24)
-        tool.show_text(f"hp:{int(player_hp)}/{int(player_max_hp)}", tool.Colors.WHITE, WIDTH - 60, 80, size=20, center=True)
+        display_hp = math.ceil(player_hp) 
+        if display_hp < 0: display_hp = 0 # 防止負數
+        hp_rect = tool.text_button("", tool.Colors.WHITE, tool.Colors.RED, WIDTH - 110, 70, int((display_hp / player_max_hp) * 100), 23, size=24)
+        tool.show_text(f"hp:{int(display_hp)}/{int(player_max_hp)}", tool.Colors.WHITE, WIDTH - 60, 80, size=20, center=True)
         
         for enemy in enemy_list:
             if enemy["show"]:
@@ -1603,6 +1574,12 @@ while running:
         tool.show_text(f"Time: {tool.show_time_min(current_time_sec)}", tool.Colors.WHITE, 10, 10, size=24)
         display_points = "%g" % round(points, 1)
         tool.show_text(f"Coins: ${display_points}", tool.Colors.WHITE ,10, 40, size=24)
+        # 更新並繪製所有飄浮文字
+        for ft in floating_texts[:]: # 使用 [:] 確保刪除時不會出錯
+            ft.update()
+            ft.draw(screen)
+            if ft.timer <= 0: # 如果文字壽命到了
+                floating_texts.remove(ft)
         if player_hp <= 0:
             # 1. 立即計算當局得分並加入總額
             total_points += points # 假設這是你這局賺的錢
@@ -1829,4 +1806,4 @@ print("")
 save_data()
 print("已成功儲存檔案到:超級冒險遊戲v0.2.5.14\\save_game.json")
 print()
-sys.exit("掰掰!下次再玩!") 
+sys.exit("掰掰!下次再玩!")

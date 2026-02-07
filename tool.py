@@ -1,5 +1,5 @@
 """
-版本：v0.0.4.5
+版本：v0.1.0
 """
 import pygame as p
 import subprocess as sub
@@ -10,6 +10,7 @@ from math import sin, cos, radians
 # 初始化 Pygame (必須先初始化才能使用字體)
 p.init()
 
+# clock = p.time.Clock()
 # 設定全域變數
 W, H = 700, 600
 T, F = True, False
@@ -125,6 +126,9 @@ def os_open_file(pt):
     else: 
         sub.call(["xdg-open", pt])
         
+def num_range(start, end, num):
+    return max(start, min(num, end))
+        
 collision_time = None
 start_time = None
 elapsed_time = 0
@@ -177,3 +181,37 @@ def show_time_min(seconds:str|float):
     mins = seconds // 60 #type:ignore
     sec = seconds % 60
     return f"{mins}:" + ("0" if sec < 10 else "") + f"{sec}" #type:ignore
+
+class FloatingText:
+    """顯示往上漂浮的文字"""
+    def __init__(self, text, start_x, start_y, color, size=20, time=60, speed=1.0):
+        self.text = text
+        # 確保文字至少離邊界 20 像素，且不超出右下角
+        self.x = num_range(20, W - 60, start_x)
+        self.y = num_range(20, H - 20, start_y)
+        self.color = color
+        self.timer = time  # 文字顯示多久
+        self.max_time = time
+        self.speed = speed
+        
+        root = pathlib.Path(__file__).parent.resolve()
+        self.font = p.font.Font(str(root / "Ubuntu.ttf"), size)
+        
+    def update(self):
+        self.y -= self.speed  # 文字慢慢往上飄
+        self.timer -= 1
+        
+    def draw(self, surface):
+        if self.timer > 0:
+            # 渲染文字
+            text_surf = self.font.render(self.text, True, self.color)
+            
+            # ✨ 加入透明度：這會讓文字看起來像是在空氣中消散，感覺會變慢、變輕
+            alpha = int((self.timer / self.max_time) * 255)
+            
+            # 建立一個支援透明度的 Surface
+            temp_surf = p.Surface(text_surf.get_size(), p.SRCALPHA)
+            temp_surf.blit(text_surf, (0, 0))
+            temp_surf.set_alpha(alpha) 
+            
+            surface.blit(temp_surf, (int(self.x), int(self.y)))
