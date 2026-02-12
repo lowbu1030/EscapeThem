@@ -1,0 +1,18 @@
+{
+    // 使用 Black 做格式化
+    "python.formatting.provider": "black",
+    "editor.formatOnSave": true,
+    // 開啟 Ruff 做 Lint
+    "python.linting.enabled": true,
+    "python.linting.ruffEnabled": true,
+    "python.linting.ruffPath": "ruff",
+    // 停用其他 linter（避免與 Ruff 衝突）
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": false,
+    "python.linting.mypyEnabled": false,
+    // 不讓 Ruff 處理格式化相關（很重要）
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "never"
+    },
+    "python.analysis.autoImportCompletions": true
+}

@@ -1,0 +1,23 @@
+[tool.black]
+line-length = 200
+target-version = ["py312"]
+skip-string-normalization = false # 是否禁止自動將 "" 或 '' 統一成雙引號（false 表示允許 Black 處理）
+
+[tool.ruff]
+line-length = 200
+
+[tool.ruff.lint]
+select = [
+"E", # pycodestyle errors（如縮排、空白）
+"W", # pycodestyle warnings（如冗餘空行、尾端逗號等）
+"F", # pyflakes（如未使用變數、未定義變數）
+"I", # isort（import 排序）
+"B", # flake8-bugbear（潛在錯誤與壞習慣，例如迴圈內變數覆蓋）
+"C4", # flake8-comprehensions（針對 list/set/dict comprehension 的建議）
+"UP", # pyupgrade（舊語法升級建議，如 f-string、Python 版本轉換）
+]
+ignore = [
+"E501", # 行長交給 Black 處理，所以 Ruff 忽略
+"C901", # 函式太複雜（cyclomatic complexity 過高），通常影響重構警告
+"W191", # 使用 tab 而非空白縮排（允許使用 tab，所以忽略）
+]

@@ -207,4 +207,4 @@ marimo/_lsp/
 __marimo__/
 
 # Save Files
-save_game.json
+save_game*
