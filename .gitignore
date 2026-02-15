@@ -208,3 +208,5 @@ __marimo__/
 
 # Save Files
 save_game*
+# others
+.txt

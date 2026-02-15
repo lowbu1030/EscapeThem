@@ -117,22 +117,6 @@ def text_button(
     return button_rect
 
 
-# def invisible_button(color=Colors.BLUE2, x=0, y=0, width=100, height=50, t_x=None, t_y=None, t_center=False, b_center=False, size=32, show=False, text="", text_color=Colors.WHITE, ):
-#     if not b_center:
-#         button_rect = p.Rect(x, y, width, height)
-#     else:
-#         button_rect = p.Rect(W // 2 - width // 2, y, width, height)
-
-#     if show:
-#         p.draw.rect(s, color, button_rect)
-#         # 自動計算文字中心點（優化算法）
-#         text_x = t_x if t_x is not None else button_rect.centerx
-#         text_y = t_y if t_y is not None else button_rect.centery
-#         show_text(text, text_color, text_x, text_y, center=T if t_x is None else t_center, size=size)
-
-#     return button_rect
-
-
 def screen_vague(vague):
     """要放在此函式上的物件才會被模糊"""
     snapshot = s.copy()
@@ -241,7 +225,7 @@ def num_to_KMBT(num):
 class FloatingText:
     """顯示往上漂浮的文字"""
 
-    def __init__(self, text, start_x, start_y, color, size=20, time=60, speed=1.0):
+    def __init__(self, text, start_x, start_y, color, size=20, time=60, speed=1.0, center=F):
         self.text = text
         # 確保文字至少離邊界 20 像素，且不超出右下角
         self.x = num_range(20, W - 60, start_x)
@@ -250,6 +234,7 @@ class FloatingText:
         self.timer = time  # 文字顯示多久
         self.max_time = time
         self.speed = speed
+        self.center = center
 
         root = pathlib.Path(__file__).parent.resolve()
         self.font = p.font.Font(str(root / "Ubuntu.ttf"), size)
@@ -266,12 +251,17 @@ class FloatingText:
             # 渲染文字
             text_surf = self.font.render(self.text, True, self.color)
 
-            # ✨ 加入透明度：這會讓文字看起來像是在空氣中消散，感覺會變慢、變輕
-            alpha = int((self.timer / self.max_time) * 255)
+            # --- 計算置中座標 ---
+            draw_x = self.x
+            if self.center:
+                # 如果要置中，就把畫布位置向左偏移文字寬度的一半
+                draw_x = self.x - (text_surf.get_width() // 2)
 
-            # 建立一個支援透明度的 Surface
+            # ✨ 加入透明度
+            alpha = int((self.timer / self.max_time) * 255)
             temp_surf = p.Surface(text_surf.get_size(), p.SRCALPHA)
             temp_surf.blit(text_surf, (0, 0))
             temp_surf.set_alpha(alpha)
 
-            surface.blit(temp_surf, (int(self.x), int(self.y)))
+            # 使用計算後的 draw_x 繪製
+            surface.blit(temp_surf, (int(draw_x), int(self.y)))

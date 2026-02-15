@@ -119,7 +119,6 @@ except FileNotFoundError as e:
 
 points = 0
 total_points = 0
-has_plus_points = False
 # 定義所有升級的詳細數據 (包含價格、技能數值、標題、說明)
 UPGRADE_CONFIG = {
     "upgrade_p1": {
@@ -231,6 +230,30 @@ UPGRADE_CONFIG = {
         ],
         "skill_desc": "Time: {}ms",
     },
+    "upgrade_p9": {
+        "title": "Magnet",
+        "costs": [800, 1500, 2400, 4500, 6800, 8600, 11000, 17000, 23500],
+        "skills": [0, 30, 52, 74, 96, 118, 140, 162, 184, 200],  # 第一個為基礎值
+        "skill_desc": "Range: {}px",
+    },
+    "upgrade_p10": {
+        "title": "Magnet Strength",
+        "costs": [700, 1500, 2400, 4700, 7000, 8800, 11500, 17800, 24000],
+        "skills": [1, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8],
+        "skill_desc": "Magnet Strength x{}",
+    },
+    "upgrade_p11": {
+        "title": "Luck",
+        "costs": [500, 1000, 1600, 2300, 3100, 4000, 5000, 6200, 7500, 9000],
+        "skills": [1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 3.0, 3.2],
+        "skill_desc": "Luck x{}",
+    },
+    # "upgrade_p12": {
+    #     "title": "Dash CD",
+    #     "costs": [1200, 3000, 7000, 15000],
+    #     "skills": [10, 8, 6, 4, 2.5],
+    #     "skill_desc": "CD: {}s",
+    # },
 }
 
 current_levels = {f"upgrade_p{i}": 0 for i in range(1, len(UPGRADE_CONFIG) + 1)}
@@ -242,7 +265,7 @@ def get_skill_val(p_key):
 
 
 def update_skill():
-    global now_p1_skill, now_p2_skill, now_p3_skill, now_p4_skill, now_p5_skill, now_p6_skill, now_p7_skill, now_p8_skill
+    global now_p1_skill, now_p2_skill, now_p3_skill, now_p4_skill, now_p5_skill, now_p6_skill, now_p7_skill, now_p8_skill, now_p9_skill, now_p10_skill, now_p11_skill  # , now_p12_skill
     now_p1_skill = get_skill_val("upgrade_p1")
     now_p2_skill = get_skill_val("upgrade_p2")
     now_p3_skill = get_skill_val("upgrade_p3")
@@ -251,10 +274,15 @@ def update_skill():
     now_p6_skill = get_skill_val("upgrade_p6")
     now_p7_skill = get_skill_val("upgrade_p7")
     now_p8_skill = get_skill_val("upgrade_p8")
+    now_p9_skill = get_skill_val("upgrade_p9")
+    now_p10_skill = get_skill_val("upgrade_p10")
+    now_p11_skill = get_skill_val("upgrade_p11")
+    # now_p12_skill = get_skill_val("upgrade_p12")
 
 
 update_skill()
 
+trying_to_touch_player = False
 player_max_hp = 10
 player_hp = player_max_hp
 last_hit_time = -10  # 上次受傷時間，預設負值確保開局能受傷
@@ -419,14 +447,18 @@ def update_upgrade_hub_layout():
     # 1. 這裡定義你原本 p1 ~ p8 的專屬顏色 (順序不能亂)
     # 對應: [速度, 金幣, 分數, 大小, 怪速, 血量, 回血, 無敵]
     p_colors = [
-        tool.Colors.RED,  # p1
-        tool.Colors.ORANGE,  # p2
-        tool.Colors.YELLOW,  # p3
-        tool.Colors.GREEN,  # p4
-        tool.Colors.CYAN,  # p5
-        tool.Colors.BLUE,  # p6
-        tool.Colors.PURPLE,  # p7
-        tool.Colors.PINK,  # p8
+        tool.Colors.RED,  # p1 (速度)
+        tool.Colors.ORANGE,  # p2 (金幣)
+        tool.Colors.YELLOW,  # p3 (分數)
+        tool.Colors.GREEN,  # p4 (大小)
+        tool.Colors.CYAN,  # p5 (怪速)
+        tool.Colors.BLUE,  # p6 (血量)
+        tool.Colors.PURPLE,  # p7 (回血)
+        tool.Colors.PINK,  # p8 (無敵)
+        tool.Colors.RED,  # p9 (磁鐵)
+        tool.Colors.ORANGE,  # p10 (磁鐵強度)
+        tool.Colors.YELLOW,  # p11 (幸運)
+        # tool.Colors.GREEN,  # p12 (衝刺)
     ]
 
     # 2. 自動生成 8 個按鈕的資料
@@ -523,7 +555,7 @@ def load_data():
             # 2. 讀取升級數據 (核心修改)
             # 直接讀取 "upgrade_p1" 對應的值，並存入 current_levels
             saved_ups = data.get("upgrades", {})
-            for i in range(1, 9):
+            for i in range(1, len(UPGRADE_CONFIG) + 1):
                 key = f"upgrade_p{i}"
                 # 如果存檔裡有這個等級就讀取，沒有就預設 0
                 current_levels[key] = saved_ups.get(key, 0)
@@ -792,14 +824,14 @@ def reset_game():
 
     # 1. 定義寶藏的配置表格 (稀有度, 顏色, 機率, 分數範圍)
     treasure_config = [
-        ("Common", tool.Colors.WHITE, 140, (2, 5)),
-        ("Uncommon", tool.Colors.GREEN, 140, (5, 9)),
-        ("Rare", tool.Colors.BLUE, 80, (8, 12)),
-        ("Epic", tool.Colors.PURPLE, 60, (11, 15)),
-        ("Legendary", tool.Colors.ORANGE, 40, (15, 18)),
-        ("Mythic", tool.Colors.RED, 24, (17, 20)),
-        ("Exotic", tool.Colors.CYAN, 8, (20, 23)),
-        ("Divine", tool.Colors.GOLD, 1, (23, 27)),
+        ("Common", tool.Colors.WHITE, int(150 // (now_p11_skill * 3)), (2, 5)),
+        ("Uncommon", tool.Colors.GREEN, int(140 // (now_p11_skill * 2)), (5, 9)),
+        ("Rare", tool.Colors.BLUE, int(80 // now_p11_skill), (8, 12)),
+        ("Epic", tool.Colors.PURPLE, int(60 * now_p11_skill), (11, 15)),
+        ("Legendary", tool.Colors.ORANGE, int(40 * now_p11_skill), (15, 18)),
+        ("Mythic", tool.Colors.RED, int(24 * now_p11_skill * 2), (17, 20)),
+        ("Exotic", tool.Colors.CYAN, int(8 * now_p11_skill * 2), (20, 23)),
+        ("Divine", tool.Colors.GOLD, int(1 * now_p11_skill * 3), (23, 27)),
     ]
 
     # 2. 自動生成 treasures 列表
@@ -809,7 +841,7 @@ def reset_game():
             {
                 "rarity": name,
                 "color": color,
-                "chance": chance,
+                "chance": max(1, chance),
                 "add_points": pts,
                 # 下面這些是所有寶藏都一樣的設定，寫一次就好
                 "x": random.randint(300, WIDTH - 30),
@@ -826,6 +858,14 @@ def reset_game():
     for t in treasures:
         for _ in range(t["chance"]):
             coin_chance.append(t["rarity"])
+
+    print("💰 金幣機率表:")
+    total = len(coin_chance)
+    for t in treasures:
+        name = t["rarity"]
+        count = coin_chance.count(name)
+        percentage = (count / total) * 100 if total > 0 else 0
+        print(f"{name:10} : {count:2} ({percentage:4.1f}%)")
 
 
 reset_game()
@@ -877,12 +917,19 @@ def player_move():
     # -------------------------------------------
 
 
+running = True
+game_state = "menu"
+
+
+floating_texts = []  # 放在遊戲開始前，用來裝所有的漂浮文字
+
 target_points = 0
 
 
 def coin_rect():
     global total_points, target_points, WIDTH
     diff = total_points - target_points
+
     if abs(diff) < 0.1:
         target_points = total_points
     else:
@@ -902,13 +949,8 @@ def coin_rect():
     )
 
 
-running = True
-game_state = "menu"
-
 load_data()
 load_resets()
-
-floating_texts = []  # 放在遊戲開始前，用來裝所有的漂浮文字
 
 COIN_IMAGES = {}
 
@@ -1825,6 +1867,15 @@ while running:
                         if save_mode == "upgrade_save":
                             save_data()  # 儲存
                         # print(f"Upgraded {game_state} to Lv.{current_levels[game_state] + 1}")
+                        new_text = tool.FloatingText(
+                            "-" + tool.num_to_KMBT(cost),
+                            WIDTH - 90,
+                            20,
+                            tool.Colors.RED,
+                            speed=0.7,
+                            size=24,
+                        )
+                        floating_texts.append(new_text)
 
                 # 左切換
                 if left_rect.collidepoint(mouse_pos) and current_p_num > 1 and is_pressing[2]:
@@ -1852,6 +1903,11 @@ while running:
         if keys[pygame.K_a] and current_p_num > 1:
             game_state = f"upgrade_p{current_p_num - 1}"
             pygame.time.delay(150)
+        for ft in floating_texts[:]:  # 使用 [:] 確保刪除時不會出錯
+            ft.update()
+            ft.draw(screen)
+            if ft.timer <= 0:  # 如果文字壽命到了
+                floating_texts.remove(ft)
     # ----------------------------------------------------------------------------
     # 倒數前五秒
     elif game_state == "3!2!1!":
@@ -2002,6 +2058,9 @@ while running:
 
         # --- 1. 寶藏出現邏輯 (改為只處理一個) ---
         # 只有在「現在沒顯示」且「冷卻時間到了」才執行
+        # 獲取目前的磁鐵範圍
+        magnet_range = now_p9_skill  # 直接使用升級後的磁鐵範圍數值
+
         if not now_treasure["show"] and current_time_sec >= now_treasure["next_spawn_at"]:
             # [步驟 A] 抽籤：決定這次出現的稀有度
             rolled_rarity = random.choice(coin_chance)
@@ -2018,16 +2077,33 @@ while running:
             now_treasure["y"] = random.randint(50, HEIGHT - 50)
             now_treasure["show"] = True
 
-        # --- 2. 寶藏碰撞與繪製 (改為只處理一個) ---
+        # --- 2. 寶藏碰撞與繪製 ---
         if now_treasure["show"]:
-            # t_rect = pygame.Rect(now_treasure["x"], now_treasure["y"], 20, 20)
-            # pygame.draw.rect(screen, now_treasure["color"], t_rect)
+            # 1. 【磁鐵邏輯】放在這裡！錢幣顯示時才吸引
+            magnet_range = UPGRADE_CONFIG["upgrade_p9"]["skills"][current_levels["upgrade_p9"]]
 
+            player_vec = pygame.math.Vector2(player_rect.center)
+            coin_vec = pygame.math.Vector2(now_treasure["x"] + 15, now_treasure["y"] + 15)
+            distance = player_vec.distance_to(coin_vec)
+
+            if distance < magnet_range:
+                trying_to_touch_player = True
+            if trying_to_touch_player:
+                move_vec = player_vec - coin_vec
+                if move_vec.length() > 0:
+                    # 速度可以設為 5，或是根據玩家速度調整
+                    now_treasure["x"] += move_vec.x * (0.05 * now_p10_skill)
+                    now_treasure["y"] += move_vec.y * (0.05 * now_p10_skill)
+
+            # 2. 繪製圖片 (使用更新後的 x, y)
             now_treasure_rarity = now_treasure["rarity"].lower()
             screen.blit(COIN_IMAGES[now_treasure_rarity], (now_treasure["x"], now_treasure["y"]))
+
+            # 3. 更新碰撞盒並偵測碰撞
             t_rect = COIN_IMAGES[now_treasure_rarity].get_rect(topleft=(now_treasure["x"], now_treasure["y"]))
 
             if player_rect.colliderect(t_rect):
+                trying_to_touch_player = False  # 碰到玩家後重置，下一次出現才會再吸引
                 # 1. 計算分數
                 min_p, max_p = now_treasure["add_points"]
                 base_val = random.randint(min_p, max_p)
@@ -2159,14 +2235,13 @@ while running:
                 floating_texts.remove(ft)
         if player_hp <= 0:
             # 1. 立即計算當局得分並加入總額
-            total_points += points  # 假設這是你這局賺的錢
-
+            total_points += points
             # 2. 立即存檔
             save_data()
 
             # 3. 處理其他死亡標記
             tool.collision_time = pygame.time.get_ticks()
-            has_plus_points = True  # 標記為已加過錢，避免 game_over 重複加
+
             game_state = "game_over"
         # 在畫面上印出座標
         # tool.py_text(f"Pos: {player_rect.x}, {player_rect.y}", tool.Colors.WHITE, 50, 550, size=20)
@@ -2290,8 +2365,6 @@ while running:
     elif game_state == "game_over":
         screen.fill(tool.Colors.BLACK2)
         coin_rect()
-        for ft in floating_texts[:]:
-            ft.reset()
         maybe_cheat = False
         from_pause = False
         for enemy in enemy_list:
@@ -2349,32 +2422,41 @@ while running:
             size=24,
             b_center=True,
         )
-        if not has_plus_points:
-            total_points += points
-            points = 0
-            has_plus_points = True
-            save_mode = s_m[sm_i]
-            if save_mode == "die_save":
-                save_data()
+        save_mode = s_m[sm_i]
+        if save_mode == "die_save":
+            save_data()
         if not has_save_survived_time:
+            new_text = tool.FloatingText("+" + tool.num_to_KMBT(points), WIDTH - 90, 20, tool.Colors.GREEN, size=24, time=150, speed=0.5)
+            floating_texts.append(new_text)
             longest_survived_time[game_mode] = max(longest_survived_time[game_mode], current_time_sec)
             has_save_survived_time = True
+        for ft in floating_texts[:]:  # 使用 [:] 確保刪除時不會出錯
+            ft.update()
+            ft.draw(screen)
+            if ft.timer <= 0:  # 如果文字壽命到了
+                floating_texts.remove(ft)
         if passed_time >= 10000:  # 過了 10000 毫秒 (10秒)
             tool.collision_time = None  # 重置，否則下次進遊戲會直接結束
             tool.reset_timer()
             player_hp = player_max_hp
             game_state = "menu"
+            for ft in floating_texts[:]:
+                ft.reset()
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     game_state = "menu"
                     tool.collision_time = None
                     tool.reset_timer()
+                    for ft in floating_texts[:]:
+                        ft.reset()
             if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 if back_button.collidepoint(mouse_pos):
                     game_state = "menu"
                     tool.collision_time = None
                     tool.reset_timer()
+                    for ft in floating_texts[:]:
+                        ft.reset()
     # bug頁面
     # 1.AFK_error
     elif game_state == "afk_kick":
