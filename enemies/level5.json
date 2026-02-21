@@ -1,0 +1,99 @@
+{
+    "level_name": "Level 5",
+    "enemies": [
+        {
+            "show_time": -10,
+            "speed": 2,
+            "slow_speed": 100,
+            "color": "PINK",
+            "type": "chaser"
+        },
+        {
+            "show_time": 12,
+            "speed": 4,
+            "slow_speed": 2,
+            "color": "RED_2",
+            "type": "random",
+            "size": 5
+        },
+        {
+            "show_time": 32,
+            "speed": 5,
+            "slow_speed": 3,
+            "color": "BLACK",
+            "angle_range": [
+                0,
+                360
+            ],
+            "type": "chaser",
+            "size": 3
+        },
+        {
+            "show_time": 45,
+            "speed": 20,
+            "slow_speed": 14,
+            "color": "ORANGE",
+            "angle_range": [
+                0,
+                360
+            ],
+            "type": "normal"
+        },
+        {
+            "show_time": 57,
+            "speed": 1,
+            "slow_speed": 0.5,
+            "color": "DARK_GREEN",
+            "type": "normal",
+            "angle_range": [
+                0,
+                360
+            ],
+            "size": 40
+        },
+        {
+            "show_time": 57,
+            "speed": 5,
+            "slow_speed": 3,
+            "color": "PURPLE",
+            "angle_range": [
+                30,
+                50
+            ],
+            "type": "normal"
+        },
+        {
+            "show_time": 77,
+            "speed": 25,
+            "slow_speed": 18,
+            "color": "BLUE",
+            "type": "random"
+        },
+        {
+            "show_time": 100,
+            "speed": 9,
+            "slow_speed": 5,
+            "color": "BLUE_2",
+            "type": "normal",
+            "size": 3
+        },
+        {
+            "show_time": 100,
+            "speed": 1,
+            "slow_speed": 0.5,
+            "color": "PURPLE",
+            "angle_range": [
+                0,
+                360
+            ],
+            "type": "normal"
+        },
+        {
+            "show_time": 120,
+            "speed": 12,
+            "slow_speed": 7,
+            "color": "GREEN",
+            "type": "random"
+        }
+    ]
+}

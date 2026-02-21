@@ -1,0 +1,118 @@
+{
+    "level_name": "Level 3",
+    "enemies": [
+        {
+            "show_time": -10,
+            "speed": 10,
+            "slow_speed": 1,
+            "color": "RED_2",
+            "type": "random"
+        },
+        {
+            "show_time": 12,
+            "speed": 2,
+            "slow_speed": 1,
+            "color": "ORANGE",
+            "angle_range": [
+                100,
+                150
+            ],
+            "type": "random",
+            "size": 17
+        },
+        {
+            "show_time": 32,
+            "speed": 10,
+            "slow_speed": 7,
+            "color": "YELLOW",
+            "angle_range": [
+                10,
+                20
+            ],
+            "type": "random"
+        },
+        {
+            "show_time": 45,
+            "speed": 12,
+            "slow_speed": 8,
+            "color": "GREEN",
+            "angle_range": [
+                20,
+                40
+            ],
+            "type": "random"
+        },
+        {
+            "show_time": 57,
+            "speed": 2,
+            "slow_speed": 0.5,
+            "color": "DARK_GREEN",
+            "type": "random"
+        },
+        {
+            "show_time": 57,
+            "speed": 15,
+            "slow_speed": 10,
+            "color": "CYAN",
+            "angle_range": [
+                30,
+                50
+            ],
+            "type": "random"
+        },
+        {
+            "show_time": 77,
+            "speed": 25,
+            "slow_speed": 18,
+            "color": "BLUE",
+            "angle_range": [
+                30,
+                50
+            ],
+            "type": "random"
+        },
+        {
+            "show_time": 100,
+            "speed": 7,
+            "slow_speed": 4,
+            "color": "BLUE_2",
+            "type": "random"
+        },
+        {
+            "show_time": 100,
+            "speed": 1,
+            "slow_speed": 0.2,
+            "color": "PURPLE",
+            "type": "random"
+        },
+        {
+            "show_time": 120,
+            "speed": 2,
+            "slow_speed": 0.5,
+            "color": "PINK",
+            "type": "random"
+        },
+        {
+            "show_time": 120,
+            "speed": 3,
+            "slow_speed": 1,
+            "color": "WHITE",
+            "type": "random"
+        },
+        {
+            "show_time": 120,
+            "speed": 7,
+            "slow_speed": 4,
+            "color": "GRAY",
+            "type": "random",
+            "size": 25
+        },
+        {
+            "show_time": 120,
+            "speed": 5,
+            "slow_speed": 3,
+            "color": "BLACK",
+            "type": "random"
+        }
+    ]
+}

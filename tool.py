@@ -22,6 +22,10 @@ T, F = True, False
 s = p.display.set_mode((W, H))
 
 
+class RangeError(Exception):
+    __module__ = "builtins"
+
+
 def set_screen(screen: p.Surface):
     global W, H, s
     W, H = screen.get_size()
@@ -45,8 +49,8 @@ class CR:  # ColoredRect
 class Colors:
     """提供各種顏色"""
 
-    WHITE, PINK, BLUE, BLUE2, BROWN = (255, 255, 255), (255, 0, 255), (0, 0, 255), (0, 0, 200), (200, 100, 50)
-    GREEN, DARK_GREEN, GRAY, ORANGE2 = (0, 255, 0), (0, 100, 0), (150, 150, 150), (200, 50, 0)
+    WHITE, PINK, BLUE, BLUE_2, BROWN = (255, 255, 255), (255, 0, 255), (0, 0, 255), (0, 0, 200), (200, 100, 50)
+    GREEN, DARK_GREEN, GRAY, ORANGE_2 = (0, 255, 0), (0, 100, 0), (150, 150, 150), (200, 50, 0)
     RED, RED_2, ORANGE, BLACK, YELLOW = (255, 0, 0), (215, 0, 0), (255, 100, 0), (0, 0, 0), (255, 255, 0)
     GOLD, PURPLE, DARK_GRAY, CYAN = (255, 215, 0), (128, 0, 128), (90, 90, 90), (135, 206, 235)
     BLACK2, DARK_RED = (30, 30, 30), (180, 0, 0)
@@ -141,7 +145,15 @@ def os_open_file(pt):
 
 
 def num_range(start, end, num):
+    # if start > end:
+    #     raise RangeError("'start' can't less then 'end'")
     return max(start, min(num, end))
+
+
+def in_range(start, end, num):
+    # if start > end:
+    #     raise RangeError("'start' can't less then 'end'")
+    return start <= num <= end
 
 
 collision_time = None

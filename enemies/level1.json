@@ -1,0 +1,97 @@
+{
+    "level_name": "Level 1",
+    "enemies": [
+        {
+            "show_time": -10,
+            "speed": 3,
+            "slow_speed": 1,
+            "color": "PURPLE"
+        },
+        {
+            "show_time": 12,
+            "speed": 5,
+            "slow_speed": 3,
+            "color": "RED_2",
+            "angle_range": [
+                100,
+                150
+            ]
+        },
+        {
+            "show_time": 32,
+            "speed": 7,
+            "slow_speed": 4,
+            "color": "GREEN",
+            "angle_range": [
+                10,
+                20
+            ]
+        },
+        {
+            "show_time": 45,
+            "speed": 9,
+            "slow_speed": 5,
+            "color": "CYAN",
+            "angle_range": [
+                20,
+                40
+            ]
+        },
+        {
+            "show_time": 57,
+            "speed": 2,
+            "slow_speed": 0.5,
+            "color": "BLACK"
+        },
+        {
+            "show_time": 57,
+            "speed": 15,
+            "slow_speed": 10,
+            "color": "ORANGE_2",
+            "angle_range": [
+                30,
+                50
+            ]
+        },
+        {
+            "show_time": 77,
+            "speed": 25,
+            "slow_speed": 18,
+            "color": "GRAY",
+            "angle_range": [
+                30,
+                50
+            ]
+        },
+        {
+            "show_time": 100,
+            "speed": 3,
+            "slow_speed": 1,
+            "color": "DARK_GREEN"
+        },
+        {
+            "show_time": 100,
+            "speed": 1,
+            "slow_speed": 0.2,
+            "color": "PINK"
+        },
+        {
+            "show_time": 120,
+            "speed": 2,
+            "slow_speed": 0.5,
+            "color": "YELLOW"
+        },
+        {
+            "show_time": 120,
+            "speed": 3,
+            "slow_speed": 1,
+            "color": "BLUE"
+        },
+        {
+            "show_time": 120,
+            "speed": 7,
+            "slow_speed": 4,
+            "color": "WHITE"
+        }
+    ]
+}

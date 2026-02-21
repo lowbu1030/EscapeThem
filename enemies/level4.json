@@ -1,0 +1,130 @@
+{
+    "level_name": "Level 4",
+    "enemies": [
+        {
+            "show_time": -10,
+            "speed": 25,
+            "slow_speed": 17,
+            "color": "RED_2",
+            "type": "normal",
+            "angle_range": [
+                0,
+                360
+            ]
+        },
+        {
+            "show_time": 12,
+            "speed": 2,
+            "slow_speed": 1,
+            "color": "ORANGE",
+            "angle_range": [
+                0,
+                360
+            ],
+            "type": "normal",
+            "size": 17
+        },
+        {
+            "show_time": 32,
+            "speed": 10,
+            "slow_speed": 7,
+            "color": "YELLOW",
+            "angle_range": [
+                0,
+                360
+            ],
+            "type": "normal"
+        },
+        {
+            "show_time": 45,
+            "speed": 32,
+            "slow_speed": 28,
+            "color": "GREEN",
+            "angle_range": [
+                20,
+                40
+            ],
+            "type": "random"
+        },
+        {
+            "show_time": 57,
+            "speed": 2,
+            "slow_speed": 0.5,
+            "color": "DARK_GREEN",
+            "type": "random"
+        },
+        {
+            "show_time": 57,
+            "speed": 1,
+            "slow_speed": 0.5,
+            "color": "CYAN",
+            "angle_range": [
+                30,
+                50
+            ],
+            "type": "zigzag",
+            "size": 20
+        },
+        {
+            "show_time": 77,
+            "speed": 25,
+            "slow_speed": 18,
+            "color": "BLUE",
+            "angle_range": [
+                30,
+                50
+            ],
+            "type": "random"
+        },
+        {
+            "show_time": 100,
+            "speed": 9,
+            "slow_speed": 5,
+            "color": "BLUE_2",
+            "angle_range": [
+                0,
+                360
+            ],
+            "type": "normal"
+        },
+        {
+            "show_time": 100,
+            "speed": 1,
+            "slow_speed": 0.5,
+            "color": "PURPLE",
+            "angle_range": [
+                0,
+                360
+            ],
+            "type": "normal"
+        },
+        {
+            "show_time": 120,
+            "speed": 2,
+            "slow_speed": 0.5,
+            "color": "PINK",
+            "type": "random"
+        },
+        {
+            "show_time": 120,
+            "speed": 20,
+            "slow_speed": 12,
+            "color": "WHITE",
+            "type": "random"
+        },
+        {
+            "show_time": 120,
+            "speed": 20,
+            "slow_speed": 12,
+            "color": "GRAY",
+            "type": "random"
+        },
+        {
+            "show_time": 120,
+            "speed": 15,
+            "slow_speed": 7,
+            "color": "BLACK",
+            "type": "random"
+        }
+    ]
+}
