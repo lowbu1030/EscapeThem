@@ -125,6 +125,105 @@
             "slow_speed": 7,
             "color": "BLACK",
             "type": "random"
+        },
+        {
+            "show_time": 164,
+            "speed": 2,
+            "slow_speed": 1,
+            "color": "RED",
+            "type": "eat_coin"
+        },
+        {
+            "show_time": 173,
+            "speed": 10,
+            "slow_speed": 6,
+            "color": "ORANGE",
+            "type": "random"
+        },
+        {
+            "show_time": 180,
+            "speed": 5,
+            "slow_speed": 3,
+            "color": "ORANGE_2",
+            "type": "chaser"
+        },
+        {
+            "show_time": 186,
+            "speed": 20,
+            "slow_speed": 14,
+            "color": "YELLOW",
+            "type": "zigzag"
+        },
+        {
+            "show_time": 192,
+            "speed": 15,
+            "slow_speed": 10,
+            "color": "GREEN",
+            "type": "normal"
+        },
+        {
+            "show_time": 198,
+            "speed": 50,
+            "slow_speed": 30,
+            "color": "DARK_GREEN",
+            "type": "normal"
+        },
+        {
+            "show_time": 203,
+            "speed": 12,
+            "slow_speed": 8,
+            "color": "CYAN",
+            "type": "random"
+        },
+        {
+            "show_time": 207,
+            "speed": 8,
+            "slow_speed": 6,
+            "color": "BLUE",
+            "type": "normal"
+        },
+        {
+            "show_time": 211,
+            "speed": 4,
+            "slow_speed": 2,
+            "color": "BLUE_2",
+            "type": "eat_coin"
+        },
+        {
+            "show_time": 216,
+            "speed": 7,
+            "slow_speed": 4,
+            "color": "PURPLE",
+            "type": "chaser"
+        },
+        {
+            "show_time": 220,
+            "speed": 20,
+            "slow_speed": 12,
+            "color": "PINK",
+            "type": "normal"
+        },
+        {
+            "show_time": 223,
+            "speed": 30,
+            "slow_speed": 18,
+            "color": "WHITE",
+            "type": "random"
+        },
+        {
+            "show_time": 226,
+            "speed": 10,
+            "slow_speed": 6,
+            "color": "GRAY",
+            "type": "chaser"
+        },
+        {
+            "show_time": 230,
+            "speed": 6,
+            "slow_speed": 4,
+            "color": "BLACK",
+            "type": "eat_coin"
         }
-    ]
+    ],
+    "cannons": []
 }

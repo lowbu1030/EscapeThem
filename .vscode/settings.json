@@ -14,5 +14,8 @@
     "editor.codeActionsOnSave": {
         "source.fixAll": "never"
     },
-    "python.analysis.autoImportCompletions": true
+    "python.analysis.autoImportCompletions": true,
+    "workbench.colorTheme": "Monokai",
+    "files.autoSave": "afterDelay",
+    "python.analysis.typeCheckingMode": "basic"
 }

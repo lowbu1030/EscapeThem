@@ -6,19 +6,20 @@ BASE_DIR = Path(__file__).parent
 SAVE_FILE = BASE_DIR / "save_game.json"
 
 
-def migrate_save_format():
+def migrate_save_format(file_name):
     """
     存檔遷移工具 (Universal Save Migrator) \n
     功能：將舊版變數名稱 (sp_i, speed...) 轉換為新版統一格式 (upgrade_p1...)
     """
-    if not SAVE_FILE.exists():
-        print("❌ 找不到 save_game.json，無法進行更新。")
+    file_path = BASE_DIR / file_name
+    if not file_path.exists():
+        print(f"❌ 找不到 {file_name}，無法進行更新。")
         return
 
     try:
         # 1. 讀取目前的存檔
-        print(f"📂 正在讀取 {SAVE_FILE.name}...")
-        with SAVE_FILE.open("r", encoding="utf-8") as f:
+        print(f"📂 正在讀取 {file_name}...")
+        with file_path.open("r", encoding="utf-8") as f:
             old_data = json.load(f)
 
         # 2. 定義新舊鍵值對照表
@@ -65,6 +66,8 @@ def migrate_save_format():
             new_upgrades[new_key] = found_value
             print(f"   🔄 轉換: {new_key} <- 值: {found_value}")
 
+        new_upgrades.update({"upgrade_p9": 0, "upgrade_p10": 0, "upgrade_p11": 0})  # 新增三個升級欄位，預設為 0
+
         # 5. 重新打包完整資料
         old_records = old_data.get("records", {})
         if "level1" in old_records:
@@ -84,6 +87,7 @@ def migrate_save_format():
                 "level3": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
                 "level4": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
                 "level5": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+                "level6": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
             }
         new_data = {
             # 餘額：相容 points_sum 或 balance

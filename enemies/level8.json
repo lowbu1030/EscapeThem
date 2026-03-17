@@ -1,0 +1,79 @@
+{
+    "enemies": [
+        {
+            "show_time": -10,
+            "speed": 1,
+            "slow_speed": 0.5,
+            "color": "YELLOW",
+            "type": "random_angle"
+        },
+        {
+            "show_time": 10,
+            "speed": 3,
+            "slow_speed": 2,
+            "color": "GREEN",
+            "type": "eat_coin"
+        },
+        {
+            "show_time": 10,
+            "speed": 2,
+            "slow_speed": 1,
+            "color": "BLACK",
+            "type": "random"
+        },
+        {
+            "show_time": 30,
+            "speed": 11,
+            "slow_speed": 5,
+            "color": "ORANGE",
+            "type": "normal",
+            "damage": 8
+        },
+        {
+            "show_time": 35,
+            "speed": 7,
+            "slow_speed": 4,
+            "color": "BLACK",
+            "type": "random_angle"
+        },
+        {
+            "show_time": 35,
+            "speed": 11,
+            "slow_speed": 5,
+            "color": "CYAN",
+            "type": "random"
+        }
+    ],
+    "cannons": [
+        {
+            "show_time": -10,
+            "x": 0,
+            "y": 0,
+            "angle": 180,
+            "fire_rate": 1500,
+            "bullet_speed": 5,
+            "color": "GRAY",
+            "type": "track"
+        },
+        {
+            "show_time": 20,
+            "x": 0,
+            "y": 700,
+            "angle": 180,
+            "fire_rate": 2000,
+            "bullet_speed": 5,
+            "color": "RED",
+            "type": "track"
+        },
+        {
+            "show_time": 50,
+            "x": 350,
+            "y": 0,
+            "angle": 180,
+            "fire_rate": 1200,
+            "bullet_speed": 5,
+            "color": "BLACK",
+            "type": "track"
+        }
+    ]
+}

@@ -18,7 +18,8 @@
                 150
             ],
             "type": "normal",
-            "size": 17
+            "size": 17,
+            "damage": 20
         },
         {
             "show_time": 32,
@@ -69,7 +70,8 @@
                 30,
                 50
             ],
-            "type": "normal"
+            "type": "normal",
+            "damage": 7
         },
         {
             "show_time": 100,
@@ -106,6 +108,83 @@
             "color": "WHITE",
             "type": "normal",
             "size": 25
+        },
+        {
+            "show_time": 170,
+            "speed": 7,
+            "slow_speed": 4,
+            "color": "BLACK",
+            "type": "chaser"
+        },
+        {
+            "show_time": 180,
+            "speed": 20,
+            "slow_speed": 16,
+            "color": "GRAY",
+            "type": "normal",
+            "size": 5
+        },
+        {
+            "show_time": 189,
+            "speed": 7,
+            "slow_speed": 4,
+            "color": "RED",
+            "type": "normal",
+            "size": 2
+        },
+        {
+            "show_time": 197,
+            "speed": 2,
+            "slow_speed": 1,
+            "color": "GREEN",
+            "type": "random"
+        },
+        {
+            "show_time": 205,
+            "speed": 20,
+            "slow_speed": 16,
+            "color": "WHITE",
+            "type": "random",
+            "damage": 15
+        },
+        {
+            "show_time": 212,
+            "speed": 2,
+            "slow_speed": 1,
+            "color": "YELLOW",
+            "type": "chaser",
+            "size": 17,
+            "damage": 20
+        },
+        {
+            "show_time": 218,
+            "speed": 40,
+            "slow_speed": 27,
+            "color": "PURPLE",
+            "type": "zigzag"
+        },
+        {
+            "show_time": 221,
+            "speed": 1,
+            "slow_speed": 0.5,
+            "color": "DARK_GREEN",
+            "type": "eat_coin"
+        },
+        {
+            "show_time": 224,
+            "speed": 7,
+            "slow_speed": 4,
+            "color": "ORANGE",
+            "type": "chaser"
+        },
+        {
+            "show_time": 225,
+            "speed": 20,
+            "slow_speed": 18,
+            "color": "RED_2",
+            "type": "zigzag",
+            "size": 25
         }
-    ]
+    ],
+    "cannons": []
 }

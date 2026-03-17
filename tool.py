@@ -14,6 +14,7 @@ import pygame as p
 
 # 初始化 Pygame (必須先初始化才能使用字體)
 p.init()
+p.mixer.init()
 
 # clock = p.time.Clock()
 # 設定全域變數
@@ -22,8 +23,8 @@ T, F = True, False
 s = p.display.set_mode((W, H))
 
 
-class RangeError(Exception):
-    __module__ = "builtins"
+# class RangeError(Exception):
+#     __module__ = "builtins"
 
 
 def set_screen(screen: p.Surface):
@@ -47,13 +48,40 @@ class CR:  # ColoredRect
 
 
 class Colors:
-    """提供各種顏色"""
+    """提供各種顏色 (依色相與色調排序)"""
 
-    WHITE, PINK, BLUE, BLUE_2, BROWN = (255, 255, 255), (255, 0, 255), (0, 0, 255), (0, 0, 200), (200, 100, 50)
-    GREEN, DARK_GREEN, GRAY, ORANGE_2 = (0, 255, 0), (0, 100, 0), (150, 150, 150), (200, 50, 0)
-    RED, RED_2, ORANGE, BLACK, YELLOW = (255, 0, 0), (215, 0, 0), (255, 100, 0), (0, 0, 0), (255, 255, 0)
-    GOLD, PURPLE, DARK_GRAY, CYAN = (255, 215, 0), (128, 0, 128), (90, 90, 90), (135, 206, 235)
-    BLACK2, DARK_RED = (30, 30, 30), (180, 0, 0)
+    # --- 暖色系 (紅、橙、黃、金) ---
+    RED = (255, 0, 0)
+    RED_2 = (200, 0, 0)
+    DARK_RED = (180, 0, 0)
+    ORANGE = (255, 100, 0)
+    ORANGE_2 = (200, 50, 0)
+    YELLOW = (255, 255, 0)
+    GOLD = (255, 215, 0)
+    BROWN = (200, 100, 50)
+
+    # --- 綠色系 ---
+    GREEN = (0, 255, 0)
+    DARK_GREEN = (0, 100, 0)
+
+    # --- 冷色系 (藍、青、紫、粉) ---
+    CYAN = (135, 206, 235)  # 天藍/青色
+    BLUE = (0, 0, 255)
+    BLUE_2 = (0, 0, 190)
+    PURPLE = (128, 0, 128)
+    PINK = (255, 0, 255)
+
+    # --- 無彩色系 (白、灰、黑) ---
+    WHITE = (255, 255, 255)
+    GRAY = (150, 150, 150)
+    DARK_GRAY = (90, 90, 90)
+    BLACK2 = (30, 30, 30)
+    BLACK = (0, 0, 0)
+
+    @staticmethod
+    def get_color(color_name: str, default=WHITE):
+        # 將輸入轉為大寫，並嘗試從類別屬性中抓取
+        return getattr(Colors, color_name.upper(), default)
 
 
 def draw_rect(color, x, y, width=100, height=50, center=False, show=True):
@@ -67,7 +95,7 @@ def draw_rect(color, x, y, width=100, height=50, center=False, show=True):
         return button_rect
 
 
-def show_text(text, text_color, x, y, size=24, center=F, screen_center=F, show=True, font_type=""):
+def show_text(text: str, text_color: tuple, x: int|float, y: int|float, size=24, center=F, screen_center=F, show=True, font_type="", alpha=255):
     """單純文字"""
     root = pathlib.Path(__file__).parent.resolve()
     if font_type == "":
@@ -76,7 +104,10 @@ def show_text(text, text_color, x, y, size=24, center=F, screen_center=F, show=T
         font = p.font.SysFont(None, size)
     else:
         font = p.font.SysFont(font_type, size)
-    t_surf = font.render(text, T, text_color)
+    draw_color = (*text_color, alpha) if len(text_color) == 3 else text_color
+    t_surf = font.render(text, T, draw_color)
+    temp_surf = p.Surface(t_surf.get_size(), p.SRCALPHA)
+    temp_surf.set_alpha(alpha)
     t_rect = t_surf.get_rect()
     if center:
         t_rect.center = (x, y)
@@ -85,38 +116,30 @@ def show_text(text, text_color, x, y, size=24, center=F, screen_center=F, show=T
     else:
         t_rect.topleft = (x, y)
     if show:
-        s.blit(t_surf, t_rect)
+        temp_surf.blit(t_surf, (0, 0))
+        s.blit(temp_surf, (t_rect.x, t_rect.y))
     return t_rect  # 建議回傳 rect，方便做點擊偵測
 
 
-def text_button(
-    text,
-    text_color,
-    color,
-    x,
-    y,
-    width=100,
-    height=50,
-    t_x=None,
-    t_y=None,
-    t_center=False,
-    b_center=False,
-    size=28,
-    show=True,
-    font_type="",
-):
+def text_button(text: str, text_color: tuple, color: tuple, x: int|float, y: int|float, width=100, height=50, t_x=None, t_y=None, t_center=F, b_center=F, size=28, show=T, font_type="", alpha=255):
     """包含文字以及方塊的物件，會回傳一個方塊，可以偵測碰撞"""
+    button_surf = p.Surface((width, height), p.SRCALPHA)
+    # 2. 決定按鈕在主畫面上的位置 (Rect)
     if not b_center:
         button_rect = p.Rect(x, y, width, height)
     else:
         button_rect = p.Rect(W // 2 - width // 2, y, width, height)
 
     if show:
-        p.draw.rect(s, color, button_rect)
-        # 自動計算文字中心點（優化算法）
+        draw_color = (*color, alpha) if len(color) == 3 else color
+        p.draw.rect(button_surf, draw_color, (0, 0, width, height))
+
+        s.blit(button_surf, (button_rect.x, button_rect.y))
+
         text_x = t_x if t_x is not None else button_rect.centerx
         text_y = t_y if t_y is not None else button_rect.centery
-        show_text(text, text_color, text_x, text_y - size // 5, center=T if t_x is None else t_center, size=size, font_type=font_type)
+
+        show_text(text, text_color, text_x, text_y - size // 5, center=T if t_x is None else t_center, size=size, font_type=font_type, alpha=alpha)
 
     return button_rect
 
@@ -187,7 +210,7 @@ def reset_timer():
     paused_time = 0
 
 
-def angle(angle):
+def get_direction(angle):
     """
     angle 是角度 \n
     輸入angle會回傳一組dx, dy \n
@@ -217,7 +240,7 @@ def show_time_min(seconds: str | float):
     """
     mins = seconds // 60  # type:ignore
     sec = seconds % 60
-    return f"{mins}:" + ("0" if sec < 10 else "") + f"{sec}"  # type:ignore
+    return f"{int(mins)}:" + ("0" if sec < 10 else "") + f"{int(sec)}"  # type:ignore
 
 
 def num_to_KMBT(num):

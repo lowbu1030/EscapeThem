@@ -69,7 +69,8 @@
                 30,
                 50
             ],
-            "type": "random"
+            "type": "random",
+            "damage": 8
         },
         {
             "show_time": 100,
@@ -105,7 +106,8 @@
             "slow_speed": 4,
             "color": "GRAY",
             "type": "random",
-            "size": 25
+            "size": 25,
+            "damage": 15
         },
         {
             "show_time": 120,
@@ -113,6 +115,101 @@
             "slow_speed": 3,
             "color": "BLACK",
             "type": "random"
+        },
+        {
+            "show_time": 178,
+            "speed": 15,
+            "slow_speed": 8,
+            "color": "RED",
+            "type": "random"
+        },
+        {
+            "show_time": 187,
+            "speed": 18,
+            "slow_speed": 12,
+            "color": "ORANGE",
+            "type": "random"
+        },
+        {
+            "show_time": 195,
+            "speed": 1,
+            "slow_speed": 0.5,
+            "color": "YELLOW",
+            "type": "random"
+        },
+        {
+            "show_time": 203,
+            "speed": 4,
+            "slow_speed": 2,
+            "color": "GREEN",
+            "type": "random"
+        },
+        {
+            "show_time": 210,
+            "speed": 7,
+            "slow_speed": 4,
+            "color": "DARK_GREEN",
+            "type": "random"
+        },
+        {
+            "show_time": 216,
+            "speed": 12,
+            "slow_speed": 7,
+            "color": "CYAN",
+            "type": "random"
+        },
+        {
+            "show_time": 221,
+            "speed": 40,
+            "slow_speed": 26,
+            "color": "BLUE",
+            "type": "random"
+        },
+        {
+            "show_time": 216,
+            "speed": 25,
+            "slow_speed": 15,
+            "color": "BLUE_2",
+            "type": "random"
+        },
+        {
+            "show_time": 220,
+            "speed": 12,
+            "slow_speed": 8,
+            "color": "PURPLE",
+            "type": "random",
+            "size": 5
+        },
+        {
+            "show_time": 224,
+            "speed": 16,
+            "slow_speed": 10,
+            "color": "PINK",
+            "type": "random"
+        },
+        {
+            "show_time": 227,
+            "speed": 5,
+            "slow_speed": 3,
+            "color": "WHITE",
+            "type": "random"
+        },
+        {
+            "show_time": 229,
+            "speed": 3,
+            "slow_speed": 1,
+            "color": "GRAY",
+            "type": "random",
+            "size": 15,
+            "damage": 18
+        },
+        {
+            "show_time": 230,
+            "speed": 6,
+            "slow_speed": 3,
+            "color": "BLACK",
+            "type": "random"
         }
-    ]
+    ],
+    "cannons": []
 }
