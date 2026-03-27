@@ -1,7 +1,7 @@
 import tool
 
 # 定義所有升級的詳細數據 (包含價格、技能數值、標題、說明)
-UPGRADE_CONFIG = {
+UPGRADE_SURVIVAL = {
     "upgrade_p1": {
         "title": "Player Speed",
         "costs": [450, 820, 1050, 1840, 2510, 4560, 7000, 9680, 12570, 15000, 18000, 20540, 27000, 29400, 31200, 38700, 43500, 48800, 56000, 63500],
@@ -42,7 +42,7 @@ UPGRADE_CONFIG = {
             62300,
         ],
         "skills": [0.6, 1.2, 1.8, 2.4, 3.0, 3.6, 4.2, 4.8, 5.4, 6.0, 6.6, 7.2, 7.8, 8.4, 9.0, 9.6, 10.2, 10.8, 11.4, 12.0, 12.6, 13.2, 13.8, 14.4, 15.0, 15.6, 16.2, 16.8, 17.4, 18.0],
-        "skill_desc": "Rate +{}",
+        "skill_desc": "Spawn time -{} sec",
     },
     "upgrade_p3": {
         "title": "Points Multiplier",
@@ -69,14 +69,15 @@ UPGRADE_CONFIG = {
             500,
             780,
             1500,
-            2450,
-            4500,
-            7500,
-            9800,
-            11000,
-            13580,
-            16050,
-            20040,
+            2300,
+            4200,
+            7300,
+            9500,
+            10100,
+            12500,
+            15700,
+            18700,
+            23400,
             25100,
             30000,
             37500,
@@ -100,7 +101,6 @@ UPGRADE_CONFIG = {
             398000,
             456000,
             517000,
-            598000,
         ],
         "skills": [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 41, 43, 44, 45, 47, 49, 50, 51, 53, 54, 56, 57, 59, 60, 61, 63, 64, 66, 67, 69, 70],
         "skill_desc": "HP: {}",
@@ -198,130 +198,214 @@ UPGRADE_CONFIG = {
         "skills": [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80],  # %(檢傷趴數)
         "skill_desc": "Damage - {}%",
     },
-    # "upgrade_p15": {
-    #     "title": "Dash CD",
-    #     "costs": [1200, 3000, 7000, 15000],
-    #     "skills": [10, 8, 6, 4, 2.5],
-    #     "skill_desc": "CD: {}s",
-    # },
 }
 
+UPGRADE_COMBAT = {
+    "upgrade_p15": {
+        "title": "Can Shoot",
+        "costs": [5000],
+        "skills": [0, 1],
+        "skill_desc": "Can Shoot {}",
+    },
+    "upgrade_p16": {
+        "title": "Shoot CD",
+        "costs": [800, 1200, 1800, 2450, 3100],
+        "skills": [0, 5, 4, 3, 2, 1],
+        "skill_desc": "CD: {}s",
+    },
+    "upgrade_p17": {
+        "title": "Bullet Speed",
+        "costs": [900, 1400, 2000, 3100, 4500, 5700],
+        "skills": [3, 6, 9, 12, 15, 18, 20],
+        "skill_desc": "Speed: {}",
+    },
+    "upgrade_p18": {
+        "title": "Bullet Size",
+        "costs": [500, 700, 1000, 1500, 2000, 3100, 5000],
+        "skills": [5, 6, 7, 8, 9, 10, 11, 12],
+        "skill_desc": "Size: {}",
+    },
+}
 
 player_skins = {
+    # --- Common (一般) ---
     "red": {
+        "rarity": "Common",
+        "level": 1,
+        "exp": 0,
+        "has_owned": True,
         "color": tool.Colors.RED,
-        "value": 0,
-        "has_bought": True,
         "effect": "none",
-        "power": 1,
-    },
-    "orange": {
-        "color": tool.Colors.ORANGE,
-        "value": 500,
-        "has_bought": False,
-        "effect": "player_size",
-        "power": 0.9,
-    },
-    "dark orange": {
-        "color": tool.Colors.ORANGE_2,
-        "value": 1400,
-        "has_bought": False,
-        "effect": ["points_multiplier", "max_hp", "speed"],
-        "power": [2.3, 0.7, 0.6],
-    },
-    "yellow": {
-        "color": tool.Colors.YELLOW,
-        "value": 900,
-        "has_bought": False,
-        "effect": ["points_multiplier", "speed"],
-        "power": [1.7, 0.8],
-    },
-    "green": {
-        "color": tool.Colors.GREEN,
-        "value": 800,
-        "has_bought": False,
-        "effect": ["max_hp", "speed"],
-        "power": [1.2, 0.7],
-    },
-    "light blue": {
-        "color": tool.Colors.CYAN,
-        "value": 1400,
-        "has_bought": False,
-        "effect": ["coin_multiplier", "player_size"],
-        "power": [1.9, 0.8],
-    },
-    "blue": {
-        "color": tool.Colors.BLUE,
-        "value": 900,
-        "has_bought": False,
-        "effect": "enemy_damage",
-        "power": 0.7,
-    },
-    "purple": {
-        "color": tool.Colors.PURPLE,
-        "value": 950,
-        "has_bought": False,
-        "effect": "speed",
-        "power": 1.2,
-    },
-    "pink": {
-        "color": tool.Colors.PINK,
-        "value": 1200,
-        "has_bought": False,
-        "effect": ["speed", "points_coin_multiplier"],
-        "power": [1.8, 0.9],
+        "base_power": 1,
+        "growth": 0,
+        "draw_weight": 70,
     },
     "white": {
+        "rarity": "Common",
+        "level": 1,
+        "exp": 0,
+        "has_owned": False,
         "color": tool.Colors.WHITE,
-        "value": 720,
-        "has_bought": False,
         "effect": ["speed", "points_multiplier"],
-        "power": [1.3, 1.2],
-    },
-    "gray": {
-        "color": tool.Colors.GRAY,
-        "value": 750,
-        "has_bought": False,
-        "effect": ["invincible_time", "speed"],
-        "power": [1.5, 1.1],
+        "base_power": [1.3, 1.2],
+        "growth": [0.05, 0.05],
+        "draw_weight": 70,
     },
     "black": {
+        "rarity": "Common",
+        "level": 1,
+        "exp": 0,
+        "has_owned": False,
         "color": tool.Colors.BLACK,
-        "value": 700,
-        "has_bought": False,
         "effect": ["points_coin_multiplier", "max_hp"],
-        "power": [1.2, 1.1],
+        "base_power": [1.2, 1.1],
+        "growth": [0.05, 0.1],
+        "draw_weight": 70,
     },
+    "gray": {
+        "rarity": "Common",
+        "level": 1,
+        "exp": 0,
+        "has_owned": False,
+        "color": tool.Colors.GRAY,
+        "effect": ["invincible_time", "speed"],
+        "base_power": [1.5, 1.1],
+        "growth": [0.1, 0.05],
+        "draw_weight": 70,
+    },
+    # --- Rare (稀有) ---
+    "green": {
+        "rarity": "Rare",
+        "level": 1,
+        "exp": 0,
+        "has_owned": False,
+        "color": tool.Colors.GREEN,
+        "effect": ["max_hp", "speed"],
+        "base_power": [1.2, 0.7],
+        "growth": [0.2, 0.08],
+        "draw_weight": 20,
+    },
+    "yellow": {
+        "rarity": "Rare",
+        "level": 1,
+        "exp": 0,
+        "has_owned": False,
+        "color": tool.Colors.YELLOW,
+        "effect": ["points_multiplier", "speed"],
+        "base_power": [1.7, 0.8],
+        "growth": [0.1, 0.08],
+        "draw_weight": 20,
+    },
+    "blue": {
+        "rarity": "Rare",
+        "level": 1,
+        "exp": 0,
+        "has_owned": False,
+        "color": tool.Colors.BLUE,
+        "effect": "enemy_damage",
+        "base_power": 0.7,
+        "growth": -0.04,  # 傷害倍率越低越強
+        "draw_weight": 20,
+    },
+    "purple": {
+        "rarity": "Rare",
+        "level": 1,
+        "exp": 0,
+        "has_owned": False,
+        "color": tool.Colors.PURPLE,
+        "effect": "speed",
+        "base_power": 1.2,
+        "growth": 0.1,
+        "draw_weight": 20,
+    },
+    # --- Epic (史詩) ---
+    "orange": {
+        "rarity": "Epic",
+        "level": 1,
+        "exp": 0,
+        "has_owned": False,
+        "color": tool.Colors.ORANGE,
+        "effect": "player_size",
+        "base_power": 0.9,
+        "growth": -0.01,  # 體型越小越強
+        "draw_weight": 8,
+    },
+    "light blue": {
+        "rarity": "Epic",
+        "level": 1,
+        "exp": 0,
+        "has_owned": False,
+        "color": tool.Colors.CYAN,
+        "effect": ["coin_multiplier", "player_size"],
+        "base_power": [1.9, 0.8],
+        "growth": [0.15, -0.02],
+        "draw_weight": 8,
+    },
+    "pink": {
+        "rarity": "Epic",
+        "level": 1,
+        "exp": 0,
+        "has_owned": False,
+        "color": tool.Colors.PINK,
+        "effect": ["speed", "points_coin_multiplier"],
+        "base_power": [1.8, 0.9],
+        "growth": [0.12, 0.1],
+        "draw_weight": 8,
+    },
+    "dark orange": {
+        "rarity": "Epic",
+        "level": 1,
+        "exp": 0,
+        "has_owned": False,
+        "color": tool.Colors.ORANGE_2,
+        "effect": ["points_multiplier", "max_hp", "speed"],
+        "base_power": [2.3, 0.7, 0.6],
+        "growth": [0.2, 0.1, 0.05],
+        "draw_weight": 8,
+    },
+    # --- Legendary (傳說) ---
     "gold": {
+        "rarity": "Legendary",
+        "level": 1,
+        "exp": 0,
+        "has_owned": False,
         "color": tool.Colors.GOLD,
-        "value": 3500,
-        "has_bought": False,
         "effect": ["coin_multiplier", "points_multiplier"],
-        "power": [4, 1.5],
+        "base_power": [4, 1.5],
+        "growth": [0.5, 0.2],
+        "draw_weight": 2,
     },
     "brown": {
+        "rarity": "Legendary",
+        "level": 1,
+        "exp": 0,
+        "has_owned": False,
         "color": tool.Colors.BROWN,
-        "value": 3000,
-        "has_bought": False,
         "effect": ["enemy_spawn_speed", "max_hp"],
-        "power": [2, 1.2],
+        "base_power": [2, 1.2],
+        "growth": [0.1, 0.25],
+        "draw_weight": 2,
     },
     "dark green": {
+        "rarity": "Legendary",
+        "level": 1,
+        "exp": 0,
+        "has_owned": False,
         "color": tool.Colors.DARK_GREEN,
-        "value": 3000,
-        "has_bought": False,
         "effect": ["max_hp", "speed"],
-        "power": [2.0, 1.2],
+        "base_power": [2.0, 1.2],
+        "growth": [0.3, 0.15],
+        "draw_weight": 2,
     },
 }
 
 
-a = UPGRADE_CONFIG["upgrade_p13"]["costs"]
-b = UPGRADE_CONFIG["upgrade_p13"]["skills"]
-# c = 0
+# a = UPGRADE_COMBAT["upgrade_p18"]["costs"]
+# b = UPGRADE_COMBAT["upgrade_p18"]["skills"]
+# # c = 0
 
-print(len(a) + 1)  # 測試用，懶著計算
-print(len(b))  # 測試用，懶著計算
-print(len(a) + 1 <= len(b))
+# print(len(a) + 1)  # 測試用，懶著計算
+# print(len(b))  # 測試用，懶著計算
+# print(len(a) + 1 <= len(b))
 
 # print([c := round(c + 0.6, 1) for _ in range(1, 40)])

@@ -11,12 +11,13 @@ from pathlib import Path
 import pygame
 
 import tool  # 載入你的工具包
-from config import UPGRADE_CONFIG, player_skins
+from config import UPGRADE_COMBAT, UPGRADE_SURVIVAL, player_skins
 from old_to_new import migrate_save_format
 
 WIDTH, HEIGHT = 700, 600
 
 now_treasure = {}
+shop_page = "survival"
 
 
 class Enemy:
@@ -49,10 +50,8 @@ class Enemy:
         self.show = False
         self.mode = "waiting"
         self.last_change_time = 0
+        self.time_lasting = 1000  # 要持續的時間
         self.random_time_limit = random.randint(800, 2300)  # 給 random_angle 用的
-
-    def update_angle(self, angle: tuple):
-        self.current_dx, self.current_dy = tool.get_direction(angle)
 
     def update(self, current_time_ms, current_time_sec, player_rect, mouse_pos, now_treasure, screen):
         # 1. 模式切換邏輯
@@ -140,6 +139,18 @@ class Enemy:
                 direction = direction.normalize()
                 self.x += direction.x * self.normal_speed * mode_speed_buff * self.current_speed
                 self.y += direction.y * self.normal_speed * mode_speed_buff * self.current_speed
+
+        elif self.type == "sprint":
+            sprint_boost = 1.0
+            time_passed = current_time_ms - self.last_change_time
+            if 4000 < time_passed <= (4000 + self.time_lasting):
+                sprint_boost = 2.0
+
+            self.x += self.current_dx * self.current_speed * self.x_dir * mode_speed_buff * sprint_boost
+            self.y += self.current_dy * self.current_speed * self.y_dir * mode_speed_buff * sprint_boost
+
+            if time_passed > 4000 + 1000:
+                self.last_change_time = current_time_ms
 
         elif self.type == "eat_coin":
             if now_treasure["show"]:
@@ -254,7 +265,7 @@ sounds["fast_heart_beat"].set_volume(1.0)
 sounds["slow_heart_beat"].set_volume(1.0)
 shoot_channel = pygame.mixer.Channel(1)
 heart_channel = pygame.mixer.Channel(2)
-upgrade_channel = pygame.mixer.Channel(3)
+buy_channel = pygame.mixer.Channel(3)
 current_heart = None
 current_vol = 0.5
 target_vol = 0.5
@@ -279,6 +290,15 @@ alphas = []
 for _ in range(20):
     alphas.append(255)
 
+scroll_ys = []
+for _ in range(20):
+    scroll_ys.append(0)
+
+
+def reset_scroll_ys():
+    scroll_ys[:] = [0] * len(scroll_ys)
+
+
 # 顯示專區
 next_spawn_range = random.randint(14, 20)
 
@@ -290,7 +310,7 @@ game_mode = g_m[gm_i]
 level_costs = [0, 0, 1000, 3000, 7000, 12000, 20000, 35000, 50000]  # 解鎖關卡的價格，第一個是卡位用，第一關是0元
 
 # 關卡
-all_levels = ["level" + str(i + 1) for i in range(len(level_costs) - 1)]  # 之後想加關卡直接在這裡加就好
+all_levels = ["level" + str(i + 1) for i in range(len(level_costs) - 1)]  # 自動新增關卡
 lv_i = 0
 current_level = all_levels[lv_i]
 
@@ -309,7 +329,9 @@ try:
 
     # 獲取 Rect 並設定位置
     left_rect = left_img_surface.get_rect()
-    left_rect.center = (80, 120)  # 之後改好版面後改成(120, 520)
+    upgrade_left_rect = left_rect.copy()
+    left_rect.center = (80, 120)
+    upgrade_left_rect.center = (70, 110)
     left_img_loaded = True
 except Exception as e:
     print(f"無法載入右箭頭: {e}")
@@ -326,7 +348,9 @@ try:
 
     # 獲取 Rect 並設定位置
     right_rect = right_img_surface.get_rect()
+    upgrade_right_rect = right_rect.copy()
     right_rect.center = (WIDTH - 80, 120)  # (WIDTH - 120, 520)
+    upgrade_right_rect.center = (WIDTH - 70, 110)
     right_img_loaded = True
 except Exception as e:
     print(f"無法載入右箭頭: {e}")
@@ -381,47 +405,39 @@ except FileNotFoundError as e:
     print(f"無法載入錢幣用木板圖片{e}")
     print("滑鼠圖片炸掉啦！")
 
+l_img_show, r_img_show = False, True
+
 points = 0
 total_points = 0
 
-current_levels = {f"upgrade_p{i}": 0 for i in range(1, len(UPGRADE_CONFIG) + 1)}
+current_levels = {f"upgrade_p{i}": 0 for i in range(1, len(UPGRADE_SURVIVAL) + len(UPGRADE_COMBAT) + 1)}
 
 
 def get_skill_val(p_key):
-    lvl = current_levels[p_key]
-    return UPGRADE_CONFIG[p_key]["skills"][lvl]
+    # 先從生存字典找，找不到再去戰鬥字典找
+    cfg = UPGRADE_SURVIVAL.get(p_key) or UPGRADE_COMBAT.get(p_key)
+
+    if not cfg:
+        print(f"Error: {p_key} 不存在於任何設定檔中")
+        return 0
+
+    lvl = current_levels.get(p_key, 0)
+    return cfg["skills"][lvl]
 
 
 def update_skill():
-    global now_p1_skill, now_p2_skill, now_p3_skill, now_p4_skill, now_p5_skill, now_p6_skill, now_p7_skill, now_p8_skill, now_p9_skill, now_p10_skill
-    global now_p11_skill, now_p12_skill, now_p13_skill, now_p14_skill, now_p15_skill, now_p16_skill, now_p17_skill, now_p18_skill
-    now_p1_skill = get_skill_val("upgrade_p1")
-    now_p2_skill = get_skill_val("upgrade_p2")
-    now_p3_skill = get_skill_val("upgrade_p3")
-    now_p4_skill = get_skill_val("upgrade_p4")
-    now_p5_skill = get_skill_val("upgrade_p5")
-    now_p6_skill = get_skill_val("upgrade_p6")
-    now_p7_skill = get_skill_val("upgrade_p7")
-    now_p8_skill = get_skill_val("upgrade_p8")
-    now_p9_skill = get_skill_val("upgrade_p9")
-    now_p10_skill = get_skill_val("upgrade_p10")
-    now_p11_skill = get_skill_val("upgrade_p11")
-    now_p12_skill = get_skill_val("upgrade_p12")
-    now_p13_skill = get_skill_val("upgrade_p13")
-    now_p14_skill = get_skill_val("upgrade_p14")
-    # now_p15_skill = get_skill_val("upgrade_p15")
-    # now_p16_skill = get_skill_val("upgrade_p16")
-    # now_p17_skill = get_skill_val("upgrade_p17")
-    # now_p18_skill = get_skill_val("upgrade_p18")
+    global now_skills
+    now_skills = {f"p{i}": get_skill_val(f"upgrade_p{i}") for i in range(1, 19)}
 
 
 update_skill()
+can_shoot = bool(now_skills["p15"])
 
 trying_to_touch_player = False
 player_max_hp = 10
 player_hp = player_max_hp
 last_hit_time = -10  # 上次受傷時間，預設負值確保開局能受傷
-invincible_duration = now_p8_skill / 1000  # 無敵時間 1秒，可升級
+invincible_duration = now_skills["p8"] / 1000  # 無敵時間 1秒，可升級
 has_save_survived_time = False
 draw_this_lock = False
 
@@ -463,60 +479,38 @@ crazy_btn_text = ""
 
 B_WIDTH = 240
 B_HEIGHT = 80
-scroll_y = 0
 max_scroll_y = 1435
 
 
 # --- 依照要求順序排列的升級商店資料 ---
+# 假設你有一個變數控制分頁：shop_tab = "survival" (或是 "combat")
+
+
 def update_upgrade_hub_layout():
     global upgrade_hub_layout
     upgrade_hub_layout = {}
 
-    # 1. 這裡定義你原本 p1 ~ p8 的專屬顏色 (順序不能亂)
-    # 對應: [速度, 金幣, 分數, 大小, 怪速, 血量, 回血, 無敵]
-    p_colors = [
-        tool.Colors.RED,  # p1 (速度)
-        tool.Colors.ORANGE,  # p2 (金幣)
-        tool.Colors.YELLOW,  # p3 (分數)
-        tool.Colors.GREEN,  # p4 (大小)
-        tool.Colors.CYAN,  # p5 (怪速)
-        tool.Colors.BLUE,  # p6 (血量)
-        tool.Colors.PURPLE,  # p7 (回血)
-        tool.Colors.PINK,  # p8 (無敵)
-        tool.Colors.RED,  # p9 (磁鐵)
-        tool.Colors.ORANGE,  # p10 (磁鐵強度)
-        tool.Colors.YELLOW,  # p11 (幸運)
-        tool.Colors.GREEN,  # p12 (錢幣)
-        tool.Colors.CYAN,  # p13 (閃避機率)
-        tool.Colors.BLUE,  # p14 (閃避檢傷%數)
-    ]
+    # 1. 根據目前分頁選擇資料源
+    current_cfg = UPGRADE_SURVIVAL if shop_page == "survival" else UPGRADE_COMBAT
 
-    # 2. 自動生成 8 個按鈕的資料
-    for i in range(1, len(UPGRADE_CONFIG) + 1):
-        key = f"upgrade_p{i}"
+    p_colors = [tool.Colors.RED, tool.Colors.ORANGE, tool.Colors.YELLOW, tool.Colors.GREEN, tool.Colors.CYAN, tool.Colors.BLUE, tool.Colors.PURPLE, tool.Colors.PINK]
 
-        # 確保這個升級存在於設定檔中
-        if key in UPGRADE_CONFIG:
-            cfg = UPGRADE_CONFIG[key]  # 取得標題、價格表
-            lvl = current_levels[key]  # 取得目前等級
-            costs = cfg["costs"]
+    # 2. 直接迭代字典，不用管數字編號了
+    for i, (key, cfg) in enumerate(current_cfg.items()):
+        lvl = current_levels.get(key, 0)
+        costs = cfg["costs"]
+        is_max = lvl >= len(costs)
 
-            # --- 判斷是否滿級 ---
-            is_max = lvl >= len(costs)
+        prefix = f"{cfg['title']}: Lv{lvl + 1} "
+        if is_max:
+            display_text = prefix + "Max Level"
+            display_color = tool.Colors.GRAY
+        else:
+            display_text = prefix + f"Cost: ${tool.num_to_KMBT(costs[lvl])}"
+            # 顏色根據當前分頁的順序跑循環
+            display_color = p_colors[i % len(p_colors)]
 
-            # --- 組合文字 (還原你原本的格式) ---
-            # 格式範例: "Player Speed: Lv5 Cost: $2500"
-            prefix = f"{cfg['title']}: Lv{lvl + 1} "
-
-            if is_max:
-                display_text = prefix + "Max Level"
-                display_color = tool.Colors.GRAY  # 滿級變灰色
-            else:
-                display_text = prefix + f"Cost: ${tool.num_to_KMBT(costs[lvl])}"
-                display_color = p_colors[i - 1]  # 沒滿級使用專屬顏色
-
-            # --- 存入字典 ---
-            upgrade_hub_layout[key] = {"title": display_text, "color": display_color}
+        upgrade_hub_layout[key] = {"title": display_text, "color": display_color}
 
 
 update_upgrade_hub_layout()
@@ -567,7 +561,7 @@ def load_data(file_path=None):
     # 宣告 global 變數 (注意這裡加入了 current_levels，移除了 p1_i 等舊變數)
     global total_points, target_points, current_levels, longest_survived_time, player_skins, now_player_skin
     global current_player_color_name, game_state, gm_i, has_buy_crazy, levels_unlocked
-    global current_active_path
+    global current_active_path, can_shoot
 
     try:
         target_path = file_path if file_path else SAVE_PATH
@@ -578,14 +572,7 @@ def load_data(file_path=None):
         else:
             print("❌ 沒有找到存檔檔案")
 
-        # --- 安全檢查：如果還殘留舊格式，強制跳錯讓玩家修復 ---
-        # 檢查 upgrades 內部是否有舊的鍵值 (如 "speed")
-        up_check = data.get("upgrades", {})
         longest_survived_time = data.get("records", longest_survived_time)
-        if "points_sum" in data or "speed" in up_check or "level6" not in longest_survived_time:
-            print("⚠️ 偵測到舊版存檔，進入修復模式。")
-            game_state = "save_game_error"
-            return
 
         # 1. 讀取金錢
         total_points = data.get("balance", 0)
@@ -594,20 +581,35 @@ def load_data(file_path=None):
         # 2. 讀取升級數據 (核心修改)
         # 直接讀取 "upgrade_p1" 對應的值，並存入 current_levels
         saved_ups = data.get("upgrades", {})
-        for i in range(1, len(UPGRADE_CONFIG) + 1):
+        for i in range(1, len(UPGRADE_SURVIVAL) + 1):
             key = f"upgrade_p{i}"
             # 如果存檔裡有這個等級就讀取，沒有就預設 0
             current_levels[key] = saved_ups.get(key, 0)
 
-        # 3. 讀取其他資料 (保持不變)
+        # 讀取其他資料 (保持不變)
         longest_survived_time = data.get("records", longest_survived_time)
-        load_player_skin = data.get("player_skins", player_skins)
+        # 讀取皮膚資料
+        load_player_skin_data = data.get("player_skins", {})  # 取得存檔中的皮膚字典
+
+        for name, skin in player_skins.items():
+            # 這裡可以先設定一個預設值，確保萬一存檔沒這筆資料，也不會壞掉
+            if name in load_player_skin_data:
+                saved_skin = load_player_skin_data[name]
+
+                # 直接修改 skin，player_skins 本體會同步更新
+                skin["has_owned"] = saved_skin.get("has_owned", saved_skin.get("has_bought", False))
+                skin["level"] = saved_skin.get("level", 1)
+                skin["exp"] = saved_skin.get("exp", 0)
+            else:
+                # 如果存檔裡沒這份皮膚，你可以在這裡決定要不要初始化它
+                # 比如紅皮膚預設就是 True
+                if name == "red":
+                    skin["has_owned"] = True
+
         now_player_skin = data.get("now_player_skin", now_player_skin)
         current_player_color_name = data.get("current_skin_name", "red")
         gm_i = data.get("gm_i", 1)
         has_buy_crazy = data.get("has_buy_crazy", False)
-        for name, skin in player_skins.items():
-            skin["has_bought"] = load_player_skin[name]["has_bought"]
         levels_unlocked = data.get("levels_unlocked", 1)
 
         print(f"✔️ 載入成功！當前等級: {current_levels}")
@@ -617,6 +619,8 @@ def load_data(file_path=None):
         # 出錯時初始化為 0
         for i in range(1, 9):
             current_levels[f"upgrade_p{i}"] = 0
+    update_skill()
+    can_shoot = bool(now_skills["p15"])
 
 
 def apply_skin_effects():
@@ -634,10 +638,14 @@ def apply_skin_effects():
 
     # 取得當前皮膚資訊
     skin_info = player_skins.get(current_player_color_name, {})
+    if not skin_info:
+        return
 
     # 1. 取得原始資料 (可能是單個值，也可能是列表，或者 None)
     raw_effects = skin_info.get("effect", "none")
-    raw_powers = skin_info.get("power", 1)
+    raw_powers = skin_info.get("base_power", 1)
+    raw_growths = skin_info.get("growth", 0)
+    level = skin_info.get("level", 1)
 
     # 2. 統一轉成列表 (List) 以便迴圈處理
     # 如果原本就是 list (多重效果)，就保持原樣
@@ -645,33 +653,56 @@ def apply_skin_effects():
     if isinstance(raw_effects, list):
         effects = raw_effects
         powers = raw_powers
+        growths = raw_growths
     else:
         effects = [raw_effects]
         powers = [raw_powers]
+        growths = [raw_growths]
 
-    for effect, power in zip(effects, powers, strict=False):
+    for effect, base_p, grow in zip(effects, powers, growths, strict=False):
+        final_power = base_p + (level - 1) * grow
         if effect == "speed":
-            player_speed_buff *= power
+            player_speed_buff *= final_power
         elif effect == "points_multiplier":
-            points_multiplier *= power
+            points_multiplier *= final_power
         elif effect == "coin_multiplier":
-            coin_multiplier *= power
+            coin_multiplier *= final_power
         elif effect == "points_coin_multiplier":
-            points_multiplier *= power
-            coin_multiplier *= power
+            points_multiplier *= final_power
+            coin_multiplier *= final_power
         elif effect == "max_hp":
-            player_max_hp_buff *= power
+            player_max_hp_buff *= final_power
         elif effect == "enemy_damage":
-            skin_enemy_damage_buff *= power
+            skin_enemy_damage_buff *= final_power
+            skin_enemy_damage_buff = tool.num_range(0.1, 1.0, skin_enemy_damage_buff)
         elif effect == "enemy_spawn_speed":
-            buffer_duration_buff *= power
+            buffer_duration_buff *= final_power
         elif effect == "invincible_time":
-            invincible_time_buff *= power
+            invincible_time_buff *= final_power
         elif effect == "player_size":
-            player_size_buff *= power
+            player_size_buff *= final_power
+            player_size_buff = tool.num_range(0.5, 5, player_size_buff)
         # 格式
         # elif effect == "":
         #     pass
+
+
+def calculate_final_stat(effect_type, base_p, grow, level):
+    # 原始計算公式
+    val = base_p + (level - 1) * grow
+
+    # 根據不同效果套用不同的限制 (跟 apply_skin_effects 裡面的一樣)
+    if effect_type == "enemy_damage":
+        return tool.num_range(0.1, 1.0, val)
+    elif effect_type == "player_size":
+        return tool.num_range(0.5, 5.0, val)
+    # 其他效果如果也有上限/下限，可以在這裡加 elif
+
+    return val  # 沒有特殊限制的效果直接回傳
+
+
+def get_upgrade_threshold(level):
+    return 100 + (level - 1) * 50
 
 
 def load_resets():
@@ -873,14 +904,14 @@ def reset_game():
 
     clicked_key = None
 
-    invincible_duration = now_p8_skill / 1000
+    invincible_duration = now_skills["p8"] / 1000
 
     # 玩家設定
-    player_size = now_p4_skill * player_size_buff
+    player_size = now_skills["p4"] * player_size_buff
     player_color, player_speed, current_player_speed = (
         now_player_skin,
-        (5 + now_p1_skill) * player_speed_buff,
-        (5 + now_p1_skill) * player_speed_buff,
+        (5 + now_skills["p1"]) * player_speed_buff,
+        (5 + now_skills["p1"]) * player_speed_buff,
     )
     player_rect = pygame.Rect(
         WIDTH // 2 - player_size // 2,
@@ -916,7 +947,7 @@ def reset_game():
     levels_button_text = "START"
     levels_button_text_color = tool.Colors.WHITE
 
-    player_max_hp = int(now_p6_skill * player_max_hp_buff)
+    player_max_hp = int(now_skills["p6"] * player_max_hp_buff)
     player_hp = player_max_hp
 
     change_dir_timer = 2  # 設定為兩秒
@@ -925,14 +956,14 @@ def reset_game():
 
     # 1. 定義寶藏的配置表格 (稀有度, 顏色, 機率, 分數範圍)
     treasure_config = [
-        ("Common", tool.Colors.WHITE, int(150 // (now_p11_skill * 3)), (2, 5)),
-        ("Uncommon", tool.Colors.GREEN, int(140 // (now_p11_skill * 2)), (5, 9)),
-        ("Rare", tool.Colors.BLUE, int(80 // now_p11_skill), (8, 12)),
-        ("Epic", tool.Colors.PURPLE, int(60 * now_p11_skill), (11, 15)),
-        ("Legendary", tool.Colors.ORANGE, int(40 * now_p11_skill), (15, 18)),
-        ("Mythic", tool.Colors.RED, int(24 * now_p11_skill * 2), (17, 20)),
-        ("Exotic", tool.Colors.CYAN, int(8 * now_p11_skill * 2), (20, 23)),
-        ("Divine", tool.Colors.GOLD, int(1 * now_p11_skill * 3), (23, 27)),
+        ("Common", tool.Colors.WHITE, int(150 // (now_skills["p11"] * 3)), (2, 5)),
+        ("Uncommon", tool.Colors.GREEN, int(140 // (now_skills["p11"] * 2)), (5, 9)),
+        ("Rare", tool.Colors.BLUE, int(80 // now_skills["p11"]), (8, 12)),
+        ("Epic", tool.Colors.PURPLE, int(60 * now_skills["p11"]), (11, 15)),
+        ("Legendary", tool.Colors.ORANGE, int(40 * now_skills["p11"]), (15, 18)),
+        ("Mythic", tool.Colors.RED, int(24 * now_skills["p11"] * 2), (17, 20)),
+        ("Exotic", tool.Colors.CYAN, int(8 * now_skills["p11"] * 2), (20, 23)),
+        ("Divine", tool.Colors.GOLD, int(1 * now_skills["p11"] * 3), (23, 27)),
     ]
 
     # 2. 自動生成 treasures 列表
@@ -959,7 +990,7 @@ def reset_game():
 
     # 統一計算第一次出現的時間
     cooldown = random.randint(*next_spawn_range)  # type: ignore
-    reduction = now_p2_skill
+    reduction = now_skills["p2"]
 
     # 設定目標時間：現在時間 + (隨機冷卻 - 技能減免)
     now_treasure["next_spawn_at"] = max(2, int(cooldown - reduction))
@@ -1034,7 +1065,7 @@ def player_move():
 
 def calculate_damage(damage):
     # 執行受傷邏輯 (扣血、飄字、設為無敵)
-    if random.random() * 100 > now_p13_skill:
+    if random.random() * 100 > now_skills["p13"]:
         # --- 閃避失敗：全額傷害 ---
         damage_multiplier = 1.0
         text_color = tool.Colors.RED
@@ -1043,13 +1074,13 @@ def calculate_damage(damage):
     else:
         # --- 閃避成功：減傷傷害 (擦邊球) ---
         # 假設 now_p14_skill 是 0.2 (代表只受 20% 傷害)
-        if now_p14_skill:
-            damage_multiplier = round(1 - now_p14_skill / 100, 2)
+        if now_skills["p14"]:
+            damage_multiplier = round(1 - now_skills["p14"] / 100, 2)
         else:
             damage_multiplier = 1.0
         dodged = True
         text_color = tool.Colors.BLUE
-        text_content = f"Dodge! -{int(damage * damage_multiplier)}hp  ({now_p14_skill}%)"
+        text_content = f"Dodge! -{int(damage * damage_multiplier)}hp  ({now_skills['p14']}%)"
         # print("[DEBUG]: Dodge!")
     return damage_multiplier, text_color, text_content, dodged
 
@@ -1074,10 +1105,13 @@ target_points = 0
 base_hp_rect = pygame.Rect(0, 0, 0, 0)
 
 enemy_list = []
+draw_button_color = tool.Colors.GOLD
+draw_button_text = "Draw Skin ($500)"
+last_draw_color = None
 
 
 def coin_rect():
-    global total_points, target_points, WIDTH, alphas
+    global total_points, target_points, WIDTH, alphas, coin_rect2
     diff = total_points - target_points
 
     if abs(diff) < 0.1:
@@ -1087,33 +1121,33 @@ def coin_rect():
     final_text = "$" + tool.num_to_KMBT(target_points)
 
     new_alpha = 255
-    coin_rect = pygame.Rect(WIDTH - 110, 20, 100, 40)
+    coin_rect2 = pygame.Rect(WIDTH - 110, 0, 100, 100)
 
-    # 檢查各項碰撞，滿足任一條件就變透明
-
-    # 檢查玩家
-    if player_rect.colliderect(coin_rect) or player_rect.colliderect(base_hp_rect):
+    if player_rect.colliderect(coin_rect2):
         new_alpha = 100
 
-    # 檢查怪物
-    if new_alpha == 255:  # 如果還沒變透明才檢查，省一點效能
+    if new_alpha == 255:
         for enemy in enemy_list:
+            if not getattr(enemy, "show", True):
+                continue  # 沒出現的不算
             e_rect = pygame.Rect(enemy.x, enemy.y, enemy.width, enemy.height)
-            if e_rect.colliderect(coin_rect) or e_rect.colliderect(base_hp_rect) and enemy.show:
+
+            # 怪物碰到右上 OR 碰到左上，兩個一起變透明
+            if e_rect.colliderect(coin_rect2):
                 new_alpha = 100
-                break  # 只要有一隻碰到就夠了，不用繼續跑迴圈
+                break
 
-    # 檢查場上的錢幣
-    if new_alpha == 255 and now_treasure["show"]:
-        now_treasure_rarity = now_treasure["rarity"].lower()
-        t_rect = COIN_IMAGES[now_treasure_rarity].get_rect(topleft=(now_treasure["x"], now_treasure["y"]))
-        if t_rect.colliderect(coin_rect) or t_rect.colliderect(base_hp_rect):
-            new_alpha = 100
+    if game_state == "3!2!1!":
+        new_alpha = 255
 
-    # 套用結果 ---
-    alphas[0] = new_alpha if game_state == "start_game" or game_state == "3!2!1!" else 255
+    # --- 4. 同步套用到所有相關圖片 ---
+    alphas[0] = new_alpha if game_state == "start_game" else 255
+
+    # 讓金幣框變透明
     coin_wood_img_surface.set_alpha(alphas[0])
     screen.blit(coin_wood_img_surface, coin_wood_rect)
+
+    # 文字也要同步
     tool.show_text(final_text, tool.Colors.WHITE, WIDTH - 60, 32, size=22, alpha=alphas[0], center=True)
 
 
@@ -1171,15 +1205,27 @@ for t in treasure_config:
 
 
 collide_player = True
+click_pos = None
 
-pygame.mixer.music.play(-1)  # 這裡決定要不要播放背景音樂
+# pygame.mixer.music.play(-1)  # 這裡決定要不要播放背景音樂
 pygame.mouse.set_visible(False)
+
+
+def get_key(t, cfg):
+    current_config = UPGRADE_SURVIVAL if shop_page == "survival" else UPGRADE_COMBAT
+    return t in current_config and cfg == current_config[t]
+
+
+upgrade_buttons = {}
+
 
 while running:
     screen_text = f"Escape Them! v1.0.0 - {game_state.replace('_', ' ')}"
     events = pygame.event.get()
     keys = pygame.key.get_pressed()
-    mouse_pos = pygame.mouse.get_pos(False)  # 取得滑鼠座標
+    mouse = pygame.mouse
+    mouse_pos = mouse.get_pos(False)  # 取得滑鼠座標
+    mouse_button = mouse.get_pressed()
 
     if shake_timer > 0:
         offset_x = random.randint(-shake_range, shake_range)
@@ -1290,7 +1336,7 @@ while running:
                 if levels_button.collidepoint(mouse_pos) and is_pressing[0]:
                     # reset_game()
                     game_state = "level_select"
-                    scroll_y = 0
+                    reset_scroll_ys()
                 if settings_button.collidepoint(mouse_pos) and is_pressing[1]:
                     game_state = "setting_p1"
                 if upgrade_button.collidepoint(mouse_pos) and is_pressing[2]:
@@ -1559,10 +1605,10 @@ while running:
                 if back_button.collidepoint(mouse_pos) and is_pressing[0]:
                     game_state = "setting_p1"
                     reset_pressing()
-        scroll_y = tool.num_range(0, scroll_y, max_scroll_y)  # 強制修正回合法範圍
+        scroll_ys[0] = tool.num_range(0, scroll_ys[0], max_scroll_y)  # 強制修正回合法範圍
         target_y = tool.num_range(0, target_y, max_scroll_y)  # 強制修正回合法範圍
-        if scroll_y != target_y or not tool.in_range(0, scroll_y, max_scroll_y):
-            scroll_y += (target_y - scroll_y) * 0.3  # 每次移動剩下的 30%
+        if scroll_ys[0] != target_y or not tool.in_range(0, scroll_ys[0], max_scroll_y):
+            scroll_ys[0] += (target_y - scroll_ys[0]) * 0.3  # 每次移動剩下的 30%
         draw_y = 110
         for gm in modes_config:
             tool.text_button(
@@ -1570,7 +1616,7 @@ while running:
                 tool.Colors.BLACK if gm[0] == "easy" or gm[0] == "normal" else tool.Colors.WHITE,
                 gm[1],
                 0,
-                draw_y - scroll_y,
+                draw_y - scroll_ys[0],
                 270,
                 60,
                 size=34,
@@ -1578,7 +1624,7 @@ while running:
             )
             draw_y += 90
             for level in all_levels:
-                tool.show_text(f"Level {level.replace('level', '')}: {tool.show_time_min(longest_survived_time[level][gm[0]])}", tool.Colors.WHITE, 0, draw_y - scroll_y, screen_center=True)
+                tool.show_text(f"Level {level.replace('level', '')}: {tool.show_time_min(longest_survived_time[level][gm[0]])}", tool.Colors.WHITE, 0, draw_y - scroll_ys[0], screen_center=True)
                 draw_y += 60
             draw_y -= 25
 
@@ -1597,7 +1643,7 @@ while running:
         )
         pygame.draw.rect(screen, tool.Colors.DARK_GRAY, (0, HEIGHT - 70, WIDTH, 70))
         back_button = tool.text_button("Back to Settings", tool.Colors.WHITE, tool.Colors.ORANGE, 0, HEIGHT - 65, 270, 60, size=28, b_center=True)
-        # pygame.draw.line(screen, tool.Colors.RED, (0, draw_y - scroll_y), (WIDTH, draw_y - scroll_y), 5)
+        # pygame.draw.line(screen, tool.Colors.RED, (0, draw_y - scroll_ys[0]), (WIDTH, draw_y - scroll_ys[0]), 5)
     # 存檔專區
     elif game_state == "setting_p2":
         screen.fill(tool.Colors.DARK_GRAY)
@@ -1709,7 +1755,7 @@ while running:
         # 列出所有存檔
         save_buttons = []
         for i, save in enumerate(save_files):
-            btn = tool.text_button(save.stem, tool.Colors.WHITE, tool.Colors.BLUE_2, 0, 150 + i * 70 - scroll_y, 300, 60, b_center=True)
+            btn = tool.text_button(save.stem, tool.Colors.WHITE, tool.Colors.BLUE_2, 0, 150 + i * 70 - scroll_ys[1], 300, 60, b_center=True)
             save_buttons.append((btn, save))
         pygame.draw.rect(screen, tool.Colors.DARK_GRAY, (0, HEIGHT - 110, WIDTH, 110))  # 擋住捲動後的檔案
         back_button = tool.text_button(
@@ -1726,8 +1772,7 @@ while running:
         tool.show_text("Choose Save File", tool.Colors.WHITE, 0, 80, size=50, screen_center=True)
         for event in events:
             if event.type == pygame.MOUSEWHEEL:
-                # 滑鼠滾輪向上滾動 (event.y > 0) 就往下移動列表 (scroll_y 增加)，反之則往上移動
-                scroll_y -= event.y * 30
+                scroll_ys[1] -= event.y * 30
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if back_button.collidepoint(mouse_pos):
                     is_pressing[0] = True
@@ -1760,21 +1805,152 @@ while running:
                 selected_save_name = None  # 重置
                 reset_pressing()
         max_scroll_y = max(0, 150 + len(save_files) * 70 - HEIGHT + 110)  # 根據存檔數量計算最大捲動高度
-        scroll_y = tool.num_range(0, scroll_y, max_scroll_y)  # 強制修正回合法範圍
+        scroll_ys[1] = tool.num_range(0, scroll_ys[1], max_scroll_y)  # 強制修正回合法範圍
     # 玩家皮膚購買與更換
     elif game_state == "setting_p3":
         screen.fill(tool.Colors.DARK_GRAY)
         coin_rect()
-        tool.show_text("Player Skins", tool.Colors.WHITE, 0, 80, size=50, screen_center=True)
-        display_points = tool.num_to_KMBT(round(total_points, 1))
-        tool.show_text(
-            f"Coins:{display_points}$",
-            tool.Colors.WHITE,
-            10,
-            120,
-            size=28,
-            screen_center=True,
-        )
+        start_x = 100  # 左邊起始位置
+        start_y = 180  # 列表上方起始位置 (空出標題跟金幣的位置)
+        row_gap = 80  # 每排之間的垂直距離
+        col_gap = 180  # 如果一排想放多個，左右距離
+        skin_list = list(player_skins.keys())
+
+        draw_button = tool.text_button(draw_button_text, tool.Colors.WHITE, draw_button_color, 180, 100, 190, 40, size=22)
+
+        if draw_button.collidepoint(mouse_pos):
+            draw_button_color = tool.Colors.GREEN if total_points >= 500 else tool.Colors.RED
+            draw_button_text = "Draw Skin ($500)" if total_points >= 500 else "Not Enough Money!"
+        else:
+            draw_button_color = tool.Colors.GOLD
+            draw_button_text = "Draw Skin ($500)"
+        click_pos = None
+        for event in events:
+            # A. 處理滑鼠捲動
+            if event.type == pygame.MOUSEWHEEL:
+                scroll_ys[4] -= event.y * 30
+
+            # B. 處理滑鼠按下 (is_pressing 紀錄)
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                # 檢查固定 UI 按鈕
+                if back_button.collidepoint(mouse_pos):
+                    is_pressing[0] = True
+                if left_rect.collidepoint(mouse_pos):
+                    is_pressing[1] = True
+                if draw_button.collidepoint(mouse_pos):
+                    is_pressing[2] = True
+                # 檢查列表區域 (這裡標記 3 代表準備點擊皮膚)
+                is_pressing[3] = True
+
+            # C. 處理滑鼠放開 (觸發動作)
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                # 如果放開時還在按鈕上，且當初是從按鈕按下的
+                if back_button.collidepoint(mouse_pos) and is_pressing[0]:
+                    game_state = "pause" if from_pause else "menu"
+
+                if left_rect.collidepoint(mouse_pos) and is_pressing[1]:
+                    game_state = "setting_p2"
+
+                if draw_button.collidepoint(mouse_pos) and is_pressing[2] and not from_pause:
+                    if total_points >= 500:
+                        total_points -= 500
+                        # 1. 準備抽獎名單與權重
+                        skin_names = list(player_skins.keys())
+                        weights = [player_skins[name]["draw_weight"] for name in skin_names]
+
+                        # 2. 執行抽獎 (k=1 代表抽一個，回傳的是 list，所以要加 [0])
+                        picked_name = random.choices(skin_names, weights=weights, k=1)[0]
+
+                        # 3. 處理抽獎結果
+                        skin = player_skins[picked_name]
+                        if not skin["has_owned"]:
+                            skin["has_owned"] = True
+                            print(f"🎉 獲得新皮膚：{picked_name}！")
+                            buy_channel.play(sounds["buy_success"])
+                        else:
+                            # 重複抽到，增加經驗值
+                            skin["exp"] += 50
+                            print(f"♻️ 重複抽到 {picked_name}，轉化為 50 EXP！")
+
+                            target_exp = get_upgrade_threshold(skin["level"])
+
+                            if skin["exp"] >= target_exp:
+                                skin["exp"] -= target_exp
+                                skin["level"] += 1
+                                print(f"🆙 {picked_name} 升級了！目前 Lv.{skin['level']}")
+                            buy_channel.play(sounds["buy_success"])
+                            last_draw_color = picked_name
+                        save_data()
+                    else:
+                        buy_channel.play(sounds["buy_error"])
+                    apply_skin_effects()
+                # 重要：如果剛才是按在列表區，放開時紀錄座標供皮膚列表判定
+                if is_pressing[3]:
+                    click_pos = mouse_pos
+                reset_pressing()  # 清空所有 is_pressing 狀態            if event.type == pygame.KEYDOWN:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT or event.key == pygame.K_a:
+                    game_state = "setting_p2"
+
+            # D. 處理鍵盤快捷鍵
+            if event.type == pygame.KEYDOWN:
+                if event.key in [pygame.K_LEFT, pygame.K_a]:
+                    game_state = "setting_p2"
+        total_rows = (len(skin_list) + 1) // 2
+        max_scroll = max(0, total_rows * row_gap - 300)
+        scroll_ys[4] = tool.num_range(0, max_scroll, scroll_ys[4])
+
+        for i, t in enumerate(skin_list):
+            skin_val = player_skins[t]
+
+            # --- 關鍵：動態計算 Y 座標 ---
+            # 計算公式： 起始位置 + (第幾個 * 間距) - 捲動量
+            # (i // 2) 代表一排兩個，如果你要一排一個就直接用 i
+            calc_y = start_y + (i // 2) * row_gap - scroll_ys[4]
+            calc_x = start_x + (i % 2) * col_gap
+
+            # 3. 檢查「可視範圍」：只畫出在螢幕中間的按鈕，避免蓋到標題
+            if 150 < calc_y < 500:
+                # 決定按鈕顯示文字
+                if skin_val["has_owned"]:
+                    display_text = f"{t} Lv.{skin_val['level']}"
+                    btn_color = skin_val["color"]
+                else:
+                    display_text = "???"
+                    btn_color = tool.Colors.GRAY
+
+                # 繪製按鈕並更新碰撞箱 (供點擊判定使用)
+                # 注意：這裡把算好的 calc_y 傳進去
+                btn_rect = tool.text_button(display_text, skin_unlocked_locks[t]["text_col"], btn_color, calc_x, calc_y, 150, 50, size=22)
+                skin_unlocked_locks[t]["rect"] = btn_rect
+                # print(skin_unlocked_locks[t])
+
+                # 4. 繪製經驗條 (如果有擁有)
+                if skin_val["has_owned"]:
+                    bar_y = calc_y + 55
+                    # 這裡呼叫剛剛定義的公式函數
+                    max_needed = get_upgrade_threshold(skin_val["level"])
+
+                    # 計算當前比例 (確保不超過 1.0)
+                    ratio = min(1.0, skin_val["exp"] / max_needed)
+
+                    # 繪製背景
+                    pygame.draw.rect(screen, tool.Colors.BLACK, (calc_x, bar_y, 150, 5))
+                    # 繪製綠色進度
+                    pygame.draw.rect(screen, tool.Colors.GREEN, (calc_x, bar_y, 150 * ratio, 5))
+                if click_pos and btn_rect.collidepoint(click_pos):
+                    if skin_val["has_owned"]:
+                        current_player_color_name = t
+                        now_player_skin = skin_val["color"]
+                        apply_skin_effects()
+                if t == current_player_color_name:
+                    # 在按鈕外面畫一個白色的空心框 (width=3)
+                    pygame.draw.rect(screen, tool.Colors.WHITE, btn_rect, 3)
+        tool.show_text("Player Skins", tool.Colors.WHITE, 0, 50, screen_center=True, size=30)
+        if left_img_loaded:
+            screen.blit(left_img_surface, left_rect)
+        else:
+            pygame.draw.rect(screen, tool.Colors.RED, left_rect)
         if from_pause:
             back_button_text = "back to pause"
         else:
@@ -1784,97 +1960,53 @@ while running:
             tool.Colors.WHITE,
             tool.Colors.ORANGE,
             0,
-            490,
+            520,
             200,
             60,
             b_center=True,
         )
-        if left_img_loaded:
-            screen.blit(left_img_surface, left_rect)
-        else:
-            pygame.draw.rect(screen, tool.Colors.RED, left_rect)
-        # 遍歷 unlocked_locks 字典
-        for t, info in skin_unlocked_locks.items():
-            # 從 player_skins 抓取對應的資料
-            skin_val = player_skins[t]
+        # 資料、皮膚顯示、預覽按鈕
+        pygame.draw.line(screen, tool.Colors.BLACK, (450, 80), (450, HEIGHT - 100), 5)
+        tool.show_text("Demo player:", tool.Colors.BLACK, 480, 80, size=30)
+        show_rect = pygame.draw.rect(screen, now_player_skin, (560, 120, 30, 30))
+        try_button = tool.text_button("Try to play", tool.Colors.BLACK, tool.Colors.PURPLE, 480, 400, 150, 40, size=20)
+        pygame.draw.line(screen, tool.Colors.BLACK, (470, 460), (650, 460), 5)
+        tool.show_text(
+            f"You got 1 {last_draw_color} skin!", tool.Colors.get_color(last_draw_color) if last_draw_color is not None else tool.Colors.WHITE, 470, 475, size=20, show=(last_draw_color is not None)
+        )
+        # --- 右側：皮膚詳細資訊區 ---
+        selected_name = current_player_color_name
+        skin = player_skins[selected_name]
 
-            # 建立碰撞偵測用的矩形
-            btn_rect = pygame.Rect(info["x"], info["y"], 100, 50)
+        # 1. 顯示皮膚大名
+        tool.show_text(f"Skin: {selected_name.upper()}", tool.Colors.BLACK, 570, 170, size=26, center=True)
 
-            # 邏輯判斷：決定按鈕文字
-            display_text = t
-            if btn_rect.collidepoint(mouse_pos) and not skin_val["has_bought"] and not from_pause:
-                display_text = f"${skin_val['value']}"  # 顯示價錢
-                info["show"] = False  # 滑鼠碰到時，隱藏鎖頭
-            else:
-                # 平時：如果沒買過，鎖頭就要顯示
-                info["show"] = not skin_val["has_bought"]
+        # 2. 準備效果資料 (處理單一值或列表)
+        effects = skin["effect"] if isinstance(skin["effect"], list) else [skin["effect"]]
+        powers = skin["base_power"] if isinstance(skin["base_power"], list) else [skin["base_power"]]
+        growths = skin["growth"] if isinstance(skin["growth"], list) else [skin["growth"]]
+        level = skin["level"]
 
-            # 繪製按鈕，並將回傳的 Rect 存入 info["rect"] 給點擊事件用
-            info["rect"] = tool.text_button(
-                display_text,
-                info["text_col"],
-                skin_val["color"],
-                info["x"],
-                info["y"],
-                100,
-                50,
-                size=25,
-            )
-        if from_pause:
-            for _, info in skin_unlocked_locks.items():
-                info["show"] = True
+        # 3. 迴圈顯示每一項能力
+        for i, (eff, base_p, grow) in enumerate(zip(effects, powers, growths, strict=False)):
+            # 計算當前數值
+            # print(f"[DEBUG]: {eff}")
+            current_val = calculate_final_stat(eff, base_p, grow, level)
 
-        tool.show_text("VIP Skins", tool.Colors.GOLD, 0, 400, screen_center=True)
+            # 格式化名稱 (例如 points_multiplier -> Points Multiplier)
+            display_name = eff.replace("_", " ").title()
 
-        # 最後統一畫出所有鎖頭 (要在按鈕畫完之後才畫，才會蓋在上面)
-        if lock_img_loaded:
-            for info in skin_unlocked_locks.values():
-                if info["show"]:
-                    screen.blit(lock_img_surface, (info["x"] + 5, info["y"] - 20))
+            # 繪製標題
+            tool.show_text(f"• {display_name}:", tool.Colors.BLACK, 470, 210 + (i * 60), size=18)
 
-        for event in events:
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if back_button.collidepoint(mouse_pos):
-                    is_pressing[0] = True
-                if left_rect.collidepoint(mouse_pos):
-                    is_pressing[1] = True
-            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                if back_button.collidepoint(mouse_pos) and is_pressing[0]:
-                    if from_pause:
-                        game_state = "pause"
-                    else:
-                        game_state = "menu"
-                if left_rect.collidepoint(mouse_pos) and is_pressing[1]:
-                    game_state = "setting_p2"
-                # --- 新增：處理所有皮膚按鈕的點擊 ---
-                for t, info in skin_unlocked_locks.items():
-                    # 檢查滑鼠是否點擊到該皮膚的 Rect (剛才在繪製迴圈存好的)
-                    if "rect" in info and info["rect"].collidepoint(mouse_pos) and not from_pause:
-                        skin_val = player_skins[t]
+            # 繪製數值 (保留兩位小數)
+            val_text = f"{round(current_val, 2)}x"
+            tool.show_text(val_text, tool.Colors.BLUE, 490, 235 + (i * 60), size=22)
 
-                        # 情況 A：已經買過了 -> 直接切換皮膚顏色
-                        if skin_val["has_bought"]:
-                            now_player_skin = skin_val["color"]
-                            current_player_color_name = t
-
-                        # 情況 B：還沒買過 -> 判斷錢夠不夠購買
-                        else:
-                            if total_points >= skin_val["value"]:
-                                total_points -= skin_val["value"]  # 扣錢
-                                skin_val["has_bought"] = True  # 標記為已購買
-                                now_player_skin = skin_val["color"]  # 買完直接換上
-                                current_player_color_name = t  # <-- 這裡也要加，確保買完功能立刻生效
-                            else:
-                                # 如果錢不夠，可以加個音效或提示
-                                print(f"錢不夠！需要 ${skin_val['value']}")
-                reset_pressing()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT or event.key == pygame.K_a:
-                    game_state = "setting_p2"
-        tool.show_text("Demo:", tool.Colors.WHITE, WIDTH - 130, 350, size=22)
-        show_rect = tool.CR(pygame.Rect(580, 380, 30, 30), now_player_skin)
-        show_rect.draw(screen)
+            # 繪製成長率提示 (讓玩家知道升級加多少)
+            if grow != 0:
+                grow_text = f"(+{grow}/lv)" if grow > 0 else f"({grow}/lv)"
+                tool.show_text(grow_text, tool.Colors.GRAY, 570, 238 + (i * 60), size=14)
 
     # --------------------------遊戲資料儲存與匯入--------------------------------
     elif game_state == "saving_file":
@@ -1980,32 +2112,68 @@ while running:
     # 玩家升級：
     # 升級列表
     elif game_state == "upgrade_hub":
+        current_config = UPGRADE_SURVIVAL if shop_page == "survival" else UPGRADE_COMBAT
         screen.fill(tool.Colors.DARK_GREEN)
-        update_upgrade_hub_layout()
+        update_upgrade_hub_layout()  # --- 繪製箭頭 ---
+        if left_img_loaded:
+            if l_img_show:
+                screen.blit(left_img_surface, upgrade_left_rect)
+        else:
+            pygame.draw.rect(screen, tool.Colors.RED, upgrade_left_rect)
+        if right_img_loaded:
+            if r_img_show:
+                screen.blit(right_img_surface, upgrade_right_rect)
+        else:
+            pygame.draw.rect(screen, tool.Colors.RED, upgrade_right_rect)
 
-        # [簡化] 統一處理事件 (捲動與返回)
         for event in events:
             if event.type == pygame.MOUSEWHEEL:
-                scroll_y -= event.y * 40
+                scroll_ys[2] -= event.y * 40
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if back_button.collidepoint(mouse_pos):
+                    is_pressing[0] = True
+                if upgrade_left_rect.collidepoint(mouse_pos):
+                    is_pressing[1] = True
+                if upgrade_right_rect.collidepoint(mouse_pos):
+                    is_pressing[2] = True
+                for key, rect in upgrade_buttons.items():
+                    if rect.collidepoint(mouse_pos):
+                        is_pressing[8] = True
+                        target_key = key
             if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 # 這裡我們不處理列表點擊，只處理固定的返回按鈕
-                if back_button.collidepoint(mouse_pos):
+                if back_button.collidepoint(mouse_pos) and is_pressing[0]:
                     game_state = "menu"
-                    scroll_y = 0
+                    scroll_ys[2] = 0
+                if upgrade_left_rect.collidepoint(mouse_pos) and l_img_show and is_pressing[1]:
+                    shop_page = "survival"
+                    l_img_show, r_img_show = False, True
+                    update_upgrade_hub_layout()
+                    scroll_ys[2] = 0
+                if upgrade_right_rect.collidepoint(mouse_pos) and r_img_show and is_pressing[2]:
+                    shop_page = "combat"
+                    l_img_show, r_img_show = True, False
+                    update_upgrade_hub_layout()
+                    scroll_ys[2] = 0
+                if is_pressing[8]:
+                    # 再次確認放開時滑鼠還在該按鈕上
+                    if upgrade_buttons.get(target_key) and upgrade_buttons[target_key].collidepoint(mouse_pos):
+                        game_state = target_key  # 🌟 成功切換畫面！
+                        scroll_ys[2] = 0  # 換頁時重置捲軸
+                reset_pressing()
         if keys[pygame.K_w] or keys[pygame.K_UP]:
-            scroll_y -= 20
+            scroll_ys[2] -= 20
         if keys[pygame.K_s] or keys[pygame.K_DOWN]:
-            scroll_y += 20
+            scroll_ys[2] += 20
 
         # 限制捲動範圍
-        scroll_y = max(0, min(scroll_y, len(upgrade_hub_layout) * 100 - 350))
+        scroll_ys[2] = max(0, min(scroll_ys[2], len(upgrade_hub_layout) * 100 - 350))
 
         # [簡化] 用一個迴圈搞定繪製與點擊感
+        upgrade_buttons.clear()
         for i, (key, info) in enumerate(upgrade_hub_layout.items()):
-            y = 130 + i * 100 - scroll_y
-
+            y = 130 + i * 100 - scroll_ys[2]
             if -80 < y < HEIGHT:
-                # 繪製按鈕
                 rect = tool.text_button(
                     info["title"],
                     tool.Colors.BLACK,
@@ -2017,17 +2185,8 @@ while running:
                     size=26,
                     b_center=True,
                 )
-
-                # [核心簡化] 使用 mouse.get_pressed 仿造 is_pressing 效果
-                mouse_click = pygame.mouse.get_pressed()[0]
-                if rect.collidepoint(mouse_pos):
-                    if mouse_click:
-                        is_pressing[8] = True  # 在按鈕內按下
-                    elif is_pressing[8]:  # 在按鈕內放開
-                        # print(f"Switching to: {key}")
-                        game_state = key
-                        is_pressing[8] = False
-                        reset_pressing()
+                # 🌟 把產生的 rect 存起來，對應它的 key (例如 upgrade_p1)
+                upgrade_buttons[key] = rect
 
         # 全域重置：如果滑鼠放開了，不管在哪裡都要重置 pressing
         if not pygame.mouse.get_pressed()[0]:
@@ -2056,26 +2215,26 @@ while running:
             size=50,
             b_center=True,
         )
+        tool.text_button(f"now_mode: {shop_page}", tool.Colors.WHITE, tool.Colors.DARK_GREEN, 0, 90, 500, 40, size=35, b_center=True)
         coin_rect()
-        for event in events:
-            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                if back_button.collidepoint(mouse_pos):
-                    game_state = "menu"
-                    scroll_y = 0
-            reset_pressing()
     # 這裡取代原本所有 upgrade_p1 ~ p8
     # ------------------------------------------------------------------
     # ✅ 通用升級頁面 (保留你的圖片、箭頭、按鈕樣式)
     # ------------------------------------------------------------------
-    elif game_state in UPGRADE_CONFIG:
+    elif game_state in UPGRADE_SURVIVAL or game_state in UPGRADE_COMBAT:
+        current_config = UPGRADE_SURVIVAL if shop_page == "survival" else UPGRADE_COMBAT
+        if game_state in UPGRADE_COMBAT:
+            current_data_source = UPGRADE_COMBAT
+        else:
+            current_data_source = UPGRADE_SURVIVAL
         # 1. 抓取當前頁面的數據
-        cfg = UPGRADE_CONFIG[game_state]  # 取得靜態設定 (標題、價格表...)
-        lvl = current_levels[game_state]  # 取得當前等級 (0, 1, 2...)
-        costs = cfg["costs"]  # 價格表
+        cfg = current_data_source[game_state]
+        lvl = current_levels[game_state]
+        costs = cfg["costs"]
 
-        # 解析目前是第幾頁 (例如 "upgrade_p1" -> 1)
+        all_configs = {**UPGRADE_SURVIVAL, **UPGRADE_COMBAT}
         current_p_num = int(game_state.replace("upgrade_p", ""))
-        total_pages = len(UPGRADE_CONFIG)  # 總頁數
+        total_pages = len(all_configs)
 
         # 2. 繪製背景與標題
         screen.fill(tool.Colors.DARK_GREEN)
@@ -2126,17 +2285,23 @@ while running:
             else:
                 # Level 1+ 的顯示方式 (例如: +1 HP / 10s)
                 display_text = f"+{hp} HP / {time}s"
+        # 2. 判斷是否為定格式
+        elif get_key("upgrade_p15", cfg):
+            display_text = f"Can Shoot: {bool(now_val)}"
 
-        # 2. 判斷是否為普通數字 (int/float) -> 針對 Speed, Size...
+        # 3. 判斷是否為普通數字 (int/float) -> 針對 Speed, Size...
         else:
+            if (get_key("upgrade_p16", cfg) or get_key("upgrade_p17", cfg)) and not can_shoot:
+                display_text = "You Had Not Buy 'Can Shoot'"
             # 這裡我們配合設定檔裡的 skill_desc
             # 例如 Speed 的 skill_desc 是 "Speed +{}"，這裡只要給數字就好
-            display_text = cfg["skill_desc"].format(now_val)
+            else:
+                display_text = cfg["skill_desc"].format(now_val)
 
         # 3. 針對 Regen 的特殊補強
         # 因為 Regen 的 skill_desc 我們設成了 "{}"，所以上面的 else 跑不到格式化
         # 我們手動加上前綴，讓它跟其他屬性看起來比較像
-        if "upgrade_p7" in UPGRADE_CONFIG and cfg == UPGRADE_CONFIG["upgrade_p7"]:
+        if "upgrade_p7" in UPGRADE_SURVIVAL and cfg == UPGRADE_SURVIVAL["upgrade_p7"]:
             display_text = f"Regen: {display_text}"
 
         # 4. 最後畫在螢幕上
@@ -2245,9 +2410,10 @@ while running:
                             size=24,
                         )
                         floating_texts.append(new_text)
-                        upgrade_channel.play(sounds["buy_success"])
+                        buy_channel.play(sounds["buy_success"])
+                        can_shoot = bool(now_skills["p15"])
                     else:
-                        upgrade_channel.play(sounds["buy_error"])
+                        buy_channel.play(sounds["buy_error"])
 
                 # 左切換
                 if left_rect.collidepoint(mouse_pos) and current_p_num > 1 and is_pressing[2]:
@@ -2290,7 +2456,7 @@ while running:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 clicked_pos = event.pos
             if event.type == pygame.MOUSEWHEEL:
-                scroll_y -= event.y * 40
+                scroll_ys[3] -= event.y * 40
                 # 假設每個按鈕高度+間距是 80 像素
                 total_content_height = (len(level_costs) + 1) * 80 + 100
 
@@ -2298,7 +2464,7 @@ while running:
                 max_scroll = max(0, total_content_height - HEIGHT)
 
                 # 限制 scroll_y 在 0 到 max_scroll 之間
-                scroll_y = tool.num_range(0, max_scroll, scroll_y)
+                scroll_ys[3] = tool.num_range(0, max_scroll, scroll_ys[3])
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if back_button.collidepoint(mouse_pos):
                     is_pressing[0] = True
@@ -2315,7 +2481,7 @@ while running:
                 tool.Colors.WHITE,
                 tool.Colors.BLUE if not is_locked else tool.Colors.GRAY,
                 0,
-                60 + i * 80 - scroll_y,
+                60 + i * 80 - scroll_ys[3],
                 200,
                 60,
                 b_center=True,
@@ -2335,16 +2501,16 @@ while running:
                         f"Unlock for ${tool.num_to_KMBT(display_cost)}",
                         tool.Colors.GREEN if total_points >= level_costs[i] else tool.Colors.RED,
                         0,
-                        60 + i * 80 + 25 - scroll_y,
+                        60 + i * 80 + 25 - scroll_ys[3],
                         screen_center=True,
                         size=20,
                     )
             if draw_this_lock:
                 # 圖層較高的鎖圖案
                 if lock_img_loaded and is_locked:
-                    screen.blit(lock_img_surface, (310, 60 + i * 80 - 20 - scroll_y))
+                    screen.blit(lock_img_surface, (310, 60 + i * 80 - 20 - scroll_ys[3]))
                 elif is_locked:
-                    pygame.draw.rect(screen, tool.Colors.GRAY, (310, 60 + i * 80 - 20 - scroll_y, 30, 30))
+                    pygame.draw.rect(screen, tool.Colors.GRAY, (310, 60 + i * 80 - 20 - scroll_ys[3], 30, 30))
             # --- 3. 判斷點擊 ---
             if clicked_pos and level_button.collidepoint(clicked_pos):
                 if not is_locked:
@@ -2449,10 +2615,14 @@ while running:
 
         player_move()
 
-        buffer_duration = now_p5_skill * buffer_duration_buff
+        buffer_duration = now_skills["p5"] * buffer_duration_buff
 
         for enemy in enemy_list:
             e_rect = enemy.update(current_time_ms, current_time_sec, player_rect, mouse_pos, now_treasure, screen)
+            # if (e_rect.colliderect(base_hp_rect) or e_rect.colliderect(coin_rect2)) and enemy.show:
+            #     alphas[0] = 100
+            # else:
+            #     alphas[0] = 255
 
             if enemy.show and e_rect is not None:
                 if enemy.mode == "attack" and player_rect.colliderect(e_rect) and current_time_sec - last_hit_time > invincible_duration:
@@ -2566,7 +2736,7 @@ while running:
                 bullet["collide_player"] = True
                 # 玩家受傷檢測
                 if current_time_sec - last_hit_time > invincible_duration:
-                    bullet_damage = int(10 * enemy_damage_buff * skin_enemy_damage_buff)  # 假設子彈固定傷害為 10
+                    bullet_damage = max(1, int(10 * enemy_damage_buff * skin_enemy_damage_buff))  # 假設子彈固定傷害為 10
                     bullet_damage = max(1, bullet_damage)  # 確保至少扣 1
 
                     damage_multiplier, text_color, text_content, dodged = calculate_damage(bullet_damage)
@@ -2636,7 +2806,7 @@ while running:
                 pygame.draw.rect(screen, bullet["color"], draw_b_rect)
 
         # 獲取目前的磁鐵範圍
-        magnet_range = now_p9_skill  # 直接使用升級後的磁鐵範圍數值
+        magnet_range = now_skills["p9"]  # 直接使用升級後的磁鐵範圍數值
 
         # 寶藏出現邏輯
         # 只有在「現在沒顯示」且「冷卻時間到了」才執行
@@ -2659,7 +2829,7 @@ while running:
         # 寶藏碰撞與繪製
         if now_treasure["show"]:
             # 1. 【磁鐵邏輯】放在這裡！錢幣顯示時才吸引
-            magnet_range = now_p9_skill  # 直接使用升級後的磁鐵範圍數值
+            magnet_range = now_skills["p9"]  # 直接使用升級後的磁鐵範圍數值
 
             player_vec = pygame.math.Vector2(player_rect.center)
             coin_vec = pygame.math.Vector2(now_treasure["x"] + 15, now_treasure["y"] + 15)
@@ -2671,8 +2841,8 @@ while running:
                 move_vec = player_vec - coin_vec
                 if move_vec.length() > 0:
                     # 速度可以設為 5，或是根據玩家速度調整
-                    now_treasure["x"] += move_vec.x * (0.05 * now_p10_skill)
-                    now_treasure["y"] += move_vec.y * (0.05 * now_p10_skill)
+                    now_treasure["x"] += move_vec.x * (0.05 * now_skills["p10"])
+                    now_treasure["y"] += move_vec.y * (0.05 * now_skills["p10"])
                 pygame.draw.line(
                     screen,
                     (*tool.Colors.GOLD, 150),  # 金色 (或是用 tool.Colors.GOLD)
@@ -2698,12 +2868,12 @@ while running:
                 else:
                     sounds["coin"].play()
                 # 1. 計算分數
-                min_p, max_p = (add * coin_multiplier * now_p12_skill for add in now_treasure["add_points"])
+                min_p, max_p = (add * coin_multiplier * now_skills["p12"] for add in now_treasure["add_points"])
                 base_val = random.uniform(min_p, max_p)
 
                 treasure_points += base_val
 
-                display_val = f"{round(base_val * gm_points_buff * now_p3_skill, 1):g}"
+                display_val = f"{round(base_val * gm_points_buff * now_skills['p3'], 1):g}"
 
                 coin_text = tool.FloatingText(f"+${display_val}", player_rect.x, player_rect.y, tool.Colors.GOLD)
                 floating_texts.append(coin_text)
@@ -2711,12 +2881,12 @@ while running:
                 # 3. 消失並設定「下一次」出現的時間
                 now_treasure["show"] = False
                 cooldown = random.randint(*next_spawn_range)  # type: ignore
-                reduction = now_p2_skill
+                reduction = now_skills["p2"]
                 now_treasure["next_spawn_at"] = current_time_sec + max(2, int(cooldown - reduction))
             for enemy in enemy_list:
                 if enemy.type == "eat_coin" and enemy.show:
                     cooldown = random.randint(*next_spawn_range)  # type: ignore
-                    reduction = now_p2_skill
+                    reduction = now_skills["p2"]
                     e_rect = pygame.Rect(enemy.x, enemy.y, enemy.width, enemy.height)
                     if e_rect.colliderect(t_rect):
                         now_treasure["show"] = False
@@ -2733,14 +2903,14 @@ while running:
         # 1. 確保只有在血量未滿且玩家還活著時才計算
         if player_hp < player_max_hp and player_hp > 0:
             # 2. 改用 >= 判斷，確保每隔指定秒數觸發一次
-            if current_time_sec - last_cure_time >= now_p7_skill["time"]:
-                player_hp += now_p7_skill["hp"]
+            if current_time_sec - last_cure_time >= now_skills["p7"]["time"]:
+                player_hp += now_skills["p7"]["hp"]
 
                 # 3. 修正：為了讓計時更準確，last_cure_time 應該加上冷卻時間，而不是直接等於當前時間
-                last_cure_time += now_p7_skill["time"]
+                last_cure_time += now_skills["p7"]["time"]
 
                 new_text = tool.FloatingText(
-                    f"+{now_p7_skill['hp']}hp" if player_max_hp >= player_hp else f"+{int(now_p7_skill['hp'] - (player_hp - player_max_hp))}hp",
+                    f"+{now_skills['p7']['hp']}hp" if player_max_hp >= player_hp else f"+{int(now_skills['p7']['hp'] - (player_hp - player_max_hp))}hp",
                     player_rect.x,
                     player_rect.y,
                     tool.Colors.GREEN,
@@ -2817,7 +2987,7 @@ while running:
         else:
             # 正常時：顯示原本皮膚顏色
             pygame.draw.rect(screen, player_color, p_rect)
-        points = (current_time_sec * points_multiplier + treasure_points) * gm_points_buff * now_p3_skill
+        points = (current_time_sec * points_multiplier + treasure_points) * gm_points_buff * now_skills["p3"]
         if selected_level == "level 2":
             points *= 1.2  # 關卡加成
         if selected_level == "level 3" and game_mode == "crazy":
@@ -2831,16 +3001,20 @@ while running:
         time_text = tool.show_text(f"Time: {tool.show_time_min(current_time_sec)}", tool.Colors.WHITE, 10, 10, size=24, alpha=alphas[1])
         display_points = tool.num_to_KMBT(round(points, 1))
         points_text = tool.show_text(f"Coins: ${display_points}$", tool.Colors.WHITE, 10, 40, size=24, alpha=alphas[1])
-        alphas[1] = 50 if player_rect.colliderect(time_text) or player_rect.colliderect(points_text) else 255
 
-        for enemy in enemy_list:
-            e_rect = pygame.Rect(enemy.x, enemy.y, enemy.width, enemy.height)
-            if e_rect.colliderect(time_text) or e_rect.colliderect(points_text) and enemy.show:
-                alphas[1] = 100
-        now_treasure_rarity = now_treasure["rarity"].lower()
-        t_rect = COIN_IMAGES[now_treasure_rarity].get_rect(topleft=(now_treasure["x"], now_treasure["y"]))
-        if now_treasure["show"] and t_rect.colliderect(time_text) or t_rect.colliderect(points_text):
+        if player_rect.colliderect(time_text) or player_rect.colliderect(points_text):
             alphas[1] = 100
+
+        if alphas[1] == 255:
+            for enemy in enemy_list:
+                if not getattr(enemy, "show", True):
+                    continue  # 沒出現的不算
+                e_rect = pygame.Rect(enemy.x, enemy.y, enemy.width, enemy.height)
+
+                # 怪物碰到右上 OR 碰到左上，兩個一起變透明
+                if e_rect.colliderect(time_text) or e_rect.colliderect(points_text):
+                    alphas[1] = 100
+                    break
 
         # 更新並繪製所有飄浮文字
         for ft in floating_texts[:]:  # 使用 [:] 確保刪除時不會出錯
@@ -2863,7 +3037,7 @@ while running:
             game_state = "game_over"
         # 在畫面上印出座標
         # tool.py_text(f"Pos: {player_rect.x}, {player_rect.y}", tool.Colors.WHITE, 50, 550, size=20)
-        tool.show_text(f"Spawn time: {tool.show_time_min(now_treasure["next_spawn_at"])}, Show: {now_treasure["show"]}", tool.Colors.GOLD, 10, HEIGHT - 20, size=15)
+        tool.show_text(f"Spawn time: {tool.show_time_min(now_treasure['next_spawn_at'])}, Show: {now_treasure['show']}", tool.Colors.GOLD, 10, HEIGHT - 20, size=15)
     # 遊戲暫停
     elif game_state == "pause":
         screen.fill(tool.Colors.BLACK2)

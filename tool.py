@@ -81,6 +81,10 @@ class Colors:
     @staticmethod
     def get_color(color_name: str, default=WHITE):
         # 將輸入轉為大寫，並嘗試從類別屬性中抓取
+        if color_name.upper() == "DARK ORANGE":
+            color_name = "ORANGE_2"
+        if color_name.upper() == "LIGHT BLUE":
+            color_name = "CYAN"
         return getattr(Colors, color_name.upper(), default)
 
 
@@ -95,7 +99,7 @@ def draw_rect(color, x, y, width=100, height=50, center=False, show=True):
         return button_rect
 
 
-def show_text(text: str, text_color: tuple, x: int|float, y: int|float, size=24, center=F, screen_center=F, show=True, font_type="", alpha=255):
+def show_text(text: str, text_color: tuple, x: int | float, y: int | float, size=24, center=F, screen_center=F, show=True, font_type="", alpha=255):
     """單純文字"""
     root = pathlib.Path(__file__).parent.resolve()
     if font_type == "":
@@ -121,7 +125,7 @@ def show_text(text: str, text_color: tuple, x: int|float, y: int|float, size=24,
     return t_rect  # 建議回傳 rect，方便做點擊偵測
 
 
-def text_button(text: str, text_color: tuple, color: tuple, x: int|float, y: int|float, width=100, height=50, t_x=None, t_y=None, t_center=F, b_center=F, size=28, show=T, font_type="", alpha=255):
+def text_button(text: str, text_color: tuple, color: tuple, x: int | float, y: int | float, width=100, height=50, t_x=None, t_y=None, t_center=F, b_center=F, size=28, show=T, font_type="", alpha=255):
     """包含文字以及方塊的物件，會回傳一個方塊，可以偵測碰撞"""
     button_surf = p.Surface((width, height), p.SRCALPHA)
     # 2. 決定按鈕在主畫面上的位置 (Rect)
@@ -168,9 +172,12 @@ def os_open_file(pt):
 
 
 def num_range(start, end, num):
-    # if start > end:
-    #     raise RangeError("'start' can't less then 'end'")
-    return max(start, min(num, end))
+    res = num
+    if end is not None:
+        res = min(res, end)
+    if start is not None:  # 改成 if，確保下限也會被檢查
+        res = max(res, start)
+    return res
 
 
 def in_range(start, end, num):
