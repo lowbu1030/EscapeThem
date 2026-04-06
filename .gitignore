@@ -210,4 +210,4 @@ __marimo__/
 save_game*
 # others
 .txt
-enemies/making*.json
+levels/making*.json

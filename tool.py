@@ -53,7 +53,7 @@ class Colors:
     # --- 暖色系 (紅、橙、黃、金) ---
     RED = (255, 0, 0)
     RED_2 = (200, 0, 0)
-    DARK_RED = (180, 0, 0)
+    DARK_RED = (160, 0, 0)
     ORANGE = (255, 100, 0)
     ORANGE_2 = (200, 50, 0)
     YELLOW = (255, 255, 0)
@@ -87,6 +87,19 @@ class Colors:
             color_name = "CYAN"
         return getattr(Colors, color_name.upper(), default)
 
+    @staticmethod
+    def two_color_gradient(color1, color2, ratio):
+        """ratio 是 color1 的比例，回傳兩個顏色的漸層色"""
+        r = int(color1[0] * ratio + color2[0] * (1 - ratio))
+        g = int(color1[1] * ratio + color2[1] * (1 - ratio))
+        b = int(color1[2] * ratio + color2[2] * (1 - ratio))
+        return (r, g, b)
+
+    @staticmethod
+    def two_color_change(color1, color2, condition):
+        """condition 為 True 時回傳 color1, 為 False 時回傳 color2"""
+        return color1 if condition else color2
+
 
 def draw_rect(color, x, y, width=100, height=50, center=False, show=True):
     """單純方塊"""
@@ -99,33 +112,76 @@ def draw_rect(color, x, y, width=100, height=50, center=False, show=True):
         return button_rect
 
 
-def show_text(text: str, text_color: tuple, x: int | float, y: int | float, size=24, center=F, screen_center=F, show=True, font_type="", alpha=255):
-    """單純文字"""
+def show_text(text, text_color, x, y, size=24, center=False, screen_center=False, show=True, font_type="", alpha=255, line_gap=5):
+    t_rects = []
     root = pathlib.Path(__file__).parent.resolve()
+
+    # 字體選擇邏輯
     if font_type == "":
         font = p.font.Font(str(root / "Ubuntu.ttf"), size)
     elif font_type == "None":
         font = p.font.SysFont(None, size)
     else:
         font = p.font.SysFont(font_type, size)
-    draw_color = (*text_color, alpha) if len(text_color) == 3 else text_color
-    t_surf = font.render(text, T, draw_color)
-    temp_surf = p.Surface(t_surf.get_size(), p.SRCALPHA)
-    temp_surf.set_alpha(alpha)
-    t_rect = t_surf.get_rect()
-    if center:
-        t_rect.center = (x, y)
-    elif screen_center:
-        t_rect.center = (W // 2, y)
-    else:
-        t_rect.topleft = (x, y)
-    if show:
+
+    if isinstance(text, str):
+        text = [text]
+
+    current_y = y
+    for t in text:
+        # 渲染文字
+        t_surf = font.render(t, True, text_color)
+
+        # 透明度處理
+        temp_surf = p.Surface(t_surf.get_size(), p.SRCALPHA)
         temp_surf.blit(t_surf, (0, 0))
-        s.blit(temp_surf, (t_rect.x, t_rect.y))
-    return t_rect  # 建議回傳 rect，方便做點擊偵測
+        temp_surf.set_alpha(alpha)
+
+        t_rect = temp_surf.get_rect()
+
+        # 🌟 修正：垂直方向統一使用 top 確保換行正常
+        t_rect.top = current_y
+
+        if center:
+            # 如果是置中模式，x 和 y 都代表中心點
+            t_rect.center = (x, current_y)
+        else:
+            # 否則，y 代表頂端位置
+            t_rect.top = current_y
+            if screen_center:
+                t_rect.centerx = W // 2
+            else:
+                t_rect.x = x
+
+        if show:
+            # 注意：這裡要用 t_rect.topleft 繪製
+            s.blit(temp_surf, t_rect)
+
+        t_rects.append(t_rect)
+        # 更新下一行的高度 (當前底部 + 行距)
+        current_y = t_rect.bottom + line_gap
+
+    return t_rects[0] if t_rects else None
 
 
-def text_button(text: str, text_color: tuple, color: tuple, x: int | float, y: int | float, width=100, height=50, t_x=None, t_y=None, t_center=F, b_center=F, size=28, show=T, font_type="", alpha=255):
+def text_button(
+    text: str,
+    text_color: tuple[int, ...],
+    color: tuple,
+    x: int | float,
+    y: int | float,
+    width=100,
+    height=50,
+    t_x=None,
+    t_y=None,
+    t_center=F,
+    b_center=F,
+    size=28,
+    show=T,
+    font_type="",
+    alpha=255,
+    border_radius=0,
+):
     """包含文字以及方塊的物件，會回傳一個方塊，可以偵測碰撞"""
     button_surf = p.Surface((width, height), p.SRCALPHA)
     # 2. 決定按鈕在主畫面上的位置 (Rect)
@@ -136,14 +192,14 @@ def text_button(text: str, text_color: tuple, color: tuple, x: int | float, y: i
 
     if show:
         draw_color = (*color, alpha) if len(color) == 3 else color
-        p.draw.rect(button_surf, draw_color, (0, 0, width, height))
+        p.draw.rect(button_surf, draw_color, (0, 0, width, height), border_radius=border_radius)
 
         s.blit(button_surf, (button_rect.x, button_rect.y))
 
         text_x = t_x if t_x is not None else button_rect.centerx
         text_y = t_y if t_y is not None else button_rect.centery
 
-        show_text(text, text_color, text_x, text_y - size // 5, center=T if t_x is None else t_center, size=size, font_type=font_type, alpha=alpha)
+        show_text(text, text_color, text_x, text_y - size // 10, center=T if t_x is None else t_center, size=size, font_type=font_type, alpha=alpha)
 
     return button_rect
 
@@ -207,7 +263,7 @@ def sec_timer(update=False):
         if start_time is not None:
             paused_time = time.time() - start_time
         start_time = None
-    return int(elapsed_time)
+    return int(elapsed_time), int(elapsed_time * 1000)
 
 
 def reset_timer():
@@ -290,20 +346,25 @@ class FloatingText:
 
     def draw(self, surface):
         if self.timer > 0:
-            # 渲染文字
             text_surf = self.font.render(self.text, True, self.color)
 
-            # --- 計算置中座標 ---
-            draw_x = self.x
-            if self.center:
-                # 如果要置中，就把畫布位置向左偏移文字寬度的一半
-                draw_x = self.x - (text_surf.get_width() // 2)
-
-            # ✨ 加入透明度
-            alpha = int((self.timer / self.max_time) * 255)
+            # ✨ 建立支援透明度的暫存畫布
             temp_surf = p.Surface(text_surf.get_size(), p.SRCALPHA)
             temp_surf.blit(text_surf, (0, 0))
+
+            # 設定透明度 (隨時間淡出)
+            alpha = int((self.timer / self.max_time) * 255)
             temp_surf.set_alpha(alpha)
 
-            # 使用計算後的 draw_x 繪製
-            surface.blit(temp_surf, (int(draw_x), int(self.y)))
+            # 使用 Rect 處理位置
+            t_rect = temp_surf.get_rect()
+            if self.center:
+                t_rect.center = (int(self.x), int(self.y))
+            else:
+                t_rect.topleft = (int(self.x), int(self.y))
+
+            # 邊界保護 (防止超出螢幕左側或右側)
+            t_rect.left = max(10, t_rect.left)
+            t_rect.right = min(W - 10, t_rect.right)
+
+            surface.blit(temp_surf, t_rect)

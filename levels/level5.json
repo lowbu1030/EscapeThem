@@ -1,5 +1,6 @@
 {
     "level_name": "Level 5",
+    "level_multiplier": 1.6,
     "enemies": [
         {
             "show_time": -10,
