@@ -1,7 +1,6 @@
 # 🎮 Escape Them!
 
-## Logo 
-![alt text](images/README_use/image-11.png)
+## Logo ![alt text](images/Escape_Them.png)
 
 一個由 Python 與 Pygame 開發的快節奏生存遊戲。躲避不斷湧現的怪物，賺取金錢，並打造最強的玩家屬性！
 
@@ -51,16 +50,18 @@ python + 這個資料夾的路徑 + main.py
 
 # 遊玩畫面
 
-## 主畫面 ![alt text](images/README_use/image-10.png)
+## 主畫面 ![alt text](images/README_use/menu.png)
 
-## 設定第三頁 ![alt text](images/README_use/image-3.png)
+## 設定第三頁 ![alt text](images/README_use/settings_p3.png)
 
-## Level1 ![alt text](images/README_use/image-1.png)
+## Level1 ![alt text](images/README_use/level1.png)
 
-## Level2 ![alt text](images/README_use/image-4.png)
+## Level2 ![alt text](images/README_use/level2.png)
 
-## 死亡畫面 ![alt text](images/README_use/image-5.png)
+## Level9 ![alt text](images/README_use/level9.png)
 
-## 升級總表 ![alt text](images/README_use/image-6.png)
+## 死亡畫面 ![alt text](images/README_use/die.png)
 
-## 升級畫面 ![alt text](images/README_use/image-7.png)
+## 升級總表 ![alt text](images/README_use/upgrade_hub.png)
+
+## 升級畫面 ![alt text](images/README_use/upgrade.png)

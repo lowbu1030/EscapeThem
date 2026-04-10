@@ -1,0 +1,227 @@
+{
+    "level_name": "Level 9 - Get Coin Faster",
+    "level_multiplier": 2.5,
+    "enemies": [
+        {
+            "show_time": -10,
+            "speed": 1,
+            "slow_speed": 0.5,
+            "color": "YELLOW",
+            "type": [
+                "eat_coin",
+                "random_angle"
+            ]
+        },
+        {
+            "show_time": 10,
+            "speed": 4,
+            "slow_speed": 3,
+            "color": "GRAY",
+            "type": [
+                "eat_coin",
+                "chaser"
+            ]
+        },
+        {
+            "show_time": 30,
+            "speed": 10,
+            "slow_speed": 7,
+            "color": "BLUE",
+            "type": [
+                "sprint",
+                "random_angle"
+            ]
+        },
+        {
+            "show_time": 45,
+            "speed": 2,
+            "slow_speed": 1,
+            "color": "GREEN",
+            "type": [
+                "eat_coin",
+                "wave"
+            ]
+        },
+        {
+            "show_time": 60,
+            "speed": 4,
+            "slow_speed": 3,
+            "color": "RED",
+            "type": "random"
+        },
+        {
+            "show_time": 70,
+            "speed": 5,
+            "slow_speed": 3,
+            "color": "CYAN",
+            "type": "eat_coin"
+        },
+        {
+            "show_time": 80,
+            "speed": 5,
+            "slow_speed": 3,
+            "color": "PINK",
+            "type": [
+                "eat_coin",
+                "random"
+            ]
+        },
+        {
+            "show_time": 80,
+            "speed": 4,
+            "slow_speed": 2,
+            "color": "BLACK",
+            "type": [
+                "eat_coin",
+                "normal"
+            ]
+        },
+        {
+            "show_time": 90,
+            "speed": 6,
+            "slow_speed": 3,
+            "color": "ORANGE",
+            "type": "eat_coin"
+        },
+        {
+            "show_time": 100,
+            "speed": 20,
+            "slow_speed": 13,
+            "color": "DARK_GREEN",
+            "type": "normal",
+            "size": 30,
+            "damage": 20
+        },
+        {
+            "show_time": 180,
+            "speed": 2,
+            "slow_speed": 1,
+            "color": "YELLOW",
+            "type": [
+                "eat_coin",
+                "sprint",
+                "random_angle"
+            ]
+        },
+        {
+            "show_time": 190,
+            "speed": 5,
+            "slow_speed": 3,
+            "color": "GRAY",
+            "type": "chaser"
+        },
+        {
+            "show_time": 200,
+            "speed": 10,
+            "slow_speed": 7,
+            "color": "BLUE",
+            "type": [
+                "sprint",
+                "random_angle"
+            ]
+        },
+        {
+            "show_time": 210,
+            "speed": 2,
+            "slow_speed": 1,
+            "color": "GREEN",
+            "type": [
+                "eat_coin",
+                "wave"
+            ]
+        },
+        {
+            "show_time": 220,
+            "speed": 4,
+            "slow_speed": 3,
+            "color": "RED",
+            "type": "random"
+        },
+        {
+            "show_time": 225,
+            "speed": 6,
+            "slow_speed": 4,
+            "color": "CYAN",
+            "type": "eat_coin"
+        },
+        {
+            "show_time": 230,
+            "speed": 4,
+            "slow_speed": 3,
+            "color": "PINK",
+            "type": [
+                "eat_coin",
+                "wave"
+            ]
+        },
+        {
+            "show_time": 235,
+            "speed": 8,
+            "slow_speed": 5,
+            "color": "BLACK",
+            "type": "eat_coin"
+        },
+        {
+            "show_time": 240,
+            "speed": 6,
+            "slow_speed": 3,
+            "color": "ORANGE",
+            "type": ["eat_coin", "sprint"]
+        },
+        {
+            "show_time": 250,
+            "speed": 20,
+            "slow_speed": 13,
+            "color": "DARK_GREEN",
+            "type": "sprint",
+            "size": 30,
+            "damage": 20
+        }
+    ],
+    "cannons": [
+        {
+            "show_time": 20,
+            "x": 0,
+            "y": 300,
+            "angle": 0,
+            "fire_rate": 1200,
+            "bullet_speed": 5,
+            "color": "YELLOW",
+            "type": "Y_move",
+            "move_speed": 5
+        },
+        {
+            "show_time": 90,
+            "x": 200,
+            "y": 700,
+            "angle": 270,
+            "fire_rate": 1000,
+            "bullet_speed": 5,
+            "color": "WHITE",
+            "type": "X_move",
+            "move_speed": 7
+        },
+        {
+            "show_time": 150,
+            "x": 350,
+            "y": 300,
+            "angle": 0,
+            "fire_rate": 800,
+            "bullet_speed": 7,
+            "color": "CYAN",
+            "type": "track",
+            "move_speed": 6
+        },
+        {
+            "show_time": 250,
+            "x": 0,
+            "y": 0,
+            "angle": 90,
+            "fire_rate": 800,
+            "bullet_speed": 7,
+            "color": "DARK_GREEN",
+            "type": "X_move",
+            "move_speed": 6
+        }
+    ]
+}

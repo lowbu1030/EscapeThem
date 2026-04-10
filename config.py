@@ -207,14 +207,14 @@ UPGRADE_COMBAT = {
     },
     "upgrade_p16": {
         "title": "Shoot CD",
-        "costs": [800, 1200, 1800, 2450, 3100],
-        "skills": [0, 5, 4, 3, 2, 1],
+        "costs": [800, 2300, 4500, 5100, 7500, 12000, 15000],
+        "skills": [500, 450, 400, 350, 300, 250, 200, 150],
         "skill_desc": "CD: {}s",
     },
     "upgrade_p17": {
         "title": "Bullet Speed",
-        "costs": [900, 1400, 2000, 3100, 4500, 5700],
-        "skills": [3, 6, 9, 12, 15, 18, 20],
+        "costs": [900, 1400, 2000, 3100, 4500, 5700, 7000, 9500],
+        "skills": [3, 5, 7, 9, 11, 13, 15, 17, 19],
         "skill_desc": "Speed: {}",
     },
     "upgrade_p18": {
@@ -223,7 +223,30 @@ UPGRADE_COMBAT = {
         "skills": [5, 6, 7, 8, 9, 10, 11, 12],
         "skill_desc": "Size: {}",
     },
+    "upgrade_p19": {
+        "title": "Shoot Get Points",
+        "costs": [1000, 2000, 3000, 5000, 7000, 10200, 15000, 18500, 24000],
+        "skills": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        "skill_desc": "Points: {}",
+    },
+    "upgrade_p20": {
+        "title": "Alto Shoot",
+        "costs": [10000],
+        "skills": [0, 1],
+        "skill_desc": "Range: {}",
+    },
 }
+
+# a = UPGRADE_COMBAT["upgrade_p20"]["costs"]
+# b = UPGRADE_COMBAT["upgrade_p20"]["skills"]
+# # c = 0
+
+# print(len(a) + 1)  # 測試用，懶著計算
+# print(len(b))  # 測試用，懶著計算
+# print(len(a) + 1 <= len(b))
+
+
+# # print([c := round(c + 0.6, 1) for _ in range(1, 40)])
 
 player_skins = {
     # --- Common (一般) ---
@@ -355,7 +378,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool.Colors.ORANGE_2,
+        "color": tool.Colors.ORANGE2,
         "effect": ["points_multiplier", "max_hp", "speed"],
         "base_power": [2.3, 0.7, 0.6],
         "growth": [0.2, 0.1, 0.05],
@@ -418,7 +441,7 @@ def get_skill_val(p_key):
 
 def update_skill():
     global now_skills
-    now_skills = {f"p{i}": get_skill_val(f"upgrade_p{i}") for i in range(1, 19)}
+    now_skills = {f"p{i}": get_skill_val(f"upgrade_p{i}") for i in range(1, len(UPGRADE_SURVIVAL) + len(UPGRADE_COMBAT) + 1)}
 
 
 update_skill()
@@ -545,7 +568,7 @@ except FileNotFoundError as e:
 # --- 標題圖片載入 ---
 title_rect = pygame.Rect(WIDTH // 2 - 200, 120, 400, 180)
 try:
-    title_img_surface = pygame.image.load(str(IMG_PATH) + "/images/Escape Them.png").convert_alpha()
+    title_img_surface = pygame.image.load(str(IMG_PATH) + "/images/Escape_Them.png").convert_alpha()
     title_img_surface = pygame.transform.scale(title_img_surface, (400, 180))
     title_img_loaded = True
 
@@ -555,9 +578,9 @@ except FileNotFoundError as e:
     title_img_loaded = False
     title_rect.center = pygame.Rect(WIDTH // 2, 200, 400, 150)
     print(f"無法載入標題圖片{e}")
-# 錢幣用木板
+# 錢幣用圖片
 try:
-    coin_wood_img_surface = pygame.image.load(str(IMG_PATH) + "/images/coin_wood.png").convert_alpha()
+    coin_wood_img_surface = pygame.image.load(str(IMG_PATH) + "/images/coin_img.png").convert_alpha()
     coin_wood_img_surface = pygame.transform.scale(coin_wood_img_surface, (100, 40))
     coin_wood_img_loaded = True
 
@@ -570,7 +593,7 @@ except FileNotFoundError as e:
 # 滑鼠
 try:
     orig_mouse_img_surface = pygame.image.load(str(IMG_PATH) + "/images/mouse.png").convert_alpha()
-    orig_mouse_img_surface = pygame.transform.scale(orig_mouse_img_surface, (40, 40))
+    orig_mouse_img_surface = pygame.transform.scale(orig_mouse_img_surface, (36, 45))
     mouse_img_surface = orig_mouse_img_surface
     mouse_img_loaded = True
 
@@ -798,45 +821,35 @@ class Bullet:
         self.rect = pygame.Rect(self.x, self.y, 25, 25)
         out_of_bounds = self.x < 0 or self.x > WIDTH or self.y < 0 or self.y > HEIGHT
 
-        # 正常飛行階段
-        if not (out_of_bounds or self.collide_player):
-            # 檢查是否撞到玩家
-            if player_rect.colliderect(self.rect):
-                self.collide_player = True
-                # --- 執行擊退邏輯 ---
-                dist = math.hypot(player_rect.centerx - self.x, player_rect.centery - self.y)
-                knockback_force = dist * 0.5
-
-                if player_rect.centerx < self.x:
-                    player_rect.x -= knockback_force
-                else:
-                    player_rect.x += knockback_force
-                if player_rect.centery < self.y:
-                    player_rect.y -= knockback_force
-                else:
-                    player_rect.y += knockback_force
-
-            # 位移計算
-            bullet_dx, bullet_dy = tool.get_direction(self.angle)
-            self.x += bullet_dx * self.speed * mode_speed_buff
-            self.y += bullet_dy * self.speed * mode_speed_buff
-            return "FLYING", self.rect
-
-        # 爆炸動畫階段 (只要出界或撞到人都會進來)
-        else:
-            self.is_exploding = True  # 🌟 確定進入爆炸狀態
-
-            # 🌟 第一次進入爆炸的第一幀
+        # 🌟 核心修改：如果已經被標記為爆炸（例如被打中），直接跳過飛行，進入爆炸動畫
+        if self.is_exploding:
             if not self.has_triggered_explosion:
                 self.has_triggered_explosion = True
                 return "HIT", self.rect
 
-            # 爆炸演進
             if self.current_bom_radius <= self.bom_range:
                 self.current_bom_radius += 5
                 return "EXPLODING", self.rect
             else:
                 return "REMOVE", None
+
+        # 正常飛行階段 (增加判斷：如果沒出界也沒撞人)
+        if not (out_of_bounds or self.collide_player):
+            # ... 原有的檢查撞玩家邏輯 ...
+            if player_rect.colliderect(self.rect):
+                self.collide_player = True
+                self.is_exploding = True  # 撞到人也標記爆炸
+                # (擊退邏輯保持不變)
+
+            # 位移計算
+            self.x += self.dx * self.speed * mode_speed_buff
+            self.y += self.dy * self.speed * mode_speed_buff
+            return "FLYING", self.rect
+
+        else:
+            # 這是原本的出界處理
+            self.is_exploding = True
+            return "FLYING", self.rect  # 這一幀先回傳飛行，下一幀會進入最上面的 is_exploding 判斷
 
     def draw(self, screen, offset_x, offset_y):
         if self.is_exploding:
@@ -844,6 +857,34 @@ class Bullet:
         else:
             draw_rect = pygame.Rect(self.x - offset_x, self.y - offset_y, 25, 25)
             pygame.draw.rect(screen, self.color, draw_rect)
+
+
+class Player_Bullet:
+    def __init__(self, x, y, angle):
+        self.x = x
+        self.y = y
+        self.speed = now_skills["p17"]  # 子彈速度
+        self.angle = angle  # 弧度 (Radians)
+        self.radius = now_skills["p18"]  # 子彈大小
+        self.active = True
+
+    def update(self):
+        # 根據角度計算 X 和 Y 的位移
+        self.x += math.cos(self.angle) * self.speed
+        self.y += math.sin(self.angle) * self.speed
+
+        # 如果超出螢幕就失效
+        if self.x < 0 or self.x > WIDTH or self.y < 0 or self.y > HEIGHT:
+            self.active = False
+
+        return pygame.draw.circle(screen, tool.Colors.YELLOW, (int(self.x), int(self.y)), self.radius)
+
+    def draw(self, screen):
+        pygame.draw.circle(screen, tool.Colors.YELLOW, (int(self.x), int(self.y)), self.radius)
+
+
+player_bullets = []
+last_shot_time = 0  # 用來控制射速 (Cooldown)
 
 
 # 作弊變數
@@ -922,6 +963,10 @@ def reset_scroll_ys():
     scroll_ys[:] = [0] * len(scroll_ys)
 
 
+buttons = []
+for _ in range(20):
+    buttons.append(pygame.Rect(0, 0, 0, 0))
+
 # 顯示專區
 next_spawn_range = random.randint(14, 20)
 
@@ -944,6 +989,7 @@ l_img_show, r_img_show = False, True
 
 points = 0
 total_points = 0
+shoot_points = 0
 
 
 update_skill()
@@ -1096,25 +1142,6 @@ def load_resets():
     mode_speed_buff *= Let_Time_Go_Fast
 
 
-color_map = {
-    "RED": tool.Colors.RED,
-    "RED_2": tool.Colors.RED_2,
-    "ORANGE": tool.Colors.ORANGE,
-    "ORANGE_2": tool.Colors.ORANGE_2,
-    "YELLOW": tool.Colors.YELLOW,
-    "GREEN": tool.Colors.GREEN,
-    "DARK_GREEN": tool.Colors.DARK_GREEN,
-    "CYAN": tool.Colors.CYAN,
-    "BLUE": tool.Colors.BLUE,
-    "BLUE_2": tool.Colors.BLUE_2,
-    "PURPLE": tool.Colors.PURPLE,
-    "PINK": tool.Colors.PINK,
-    "WHITE": tool.Colors.WHITE,
-    "GRAY": tool.Colors.GRAY,
-    "BLACK": tool.Colors.BLACK,
-}
-
-
 def make_enemy_list(level):
     json_path = LEVELS_PATH / f"level{level}.json"
 
@@ -1131,7 +1158,7 @@ def make_enemy_list(level):
     for e in data["enemies"]:
         # 1. 處理參數 (維持你原本的預設值邏輯)
         a_range = tuple(e.get("angle_range", (10, 80)))
-        e_color = color_map.get(e["color"], tool.Colors.WHITE)
+        e_color = tool.Colors.get_color(e["color"], tool.Colors.WHITE)
 
         # 2. 【關鍵改動】直接建立 Enemy 物件
         # 這裡傳入的參數要對應你 Enemy 類別 __init__ 的順序
@@ -1193,7 +1220,7 @@ def make_cannon_list(level):
             show_time=c["show_time"],
             fire_rate=c.get("fire_rate", 2000),
             bullet_speed=c.get("bullet_speed", 5),
-            color=color_map.get(c["color"], tool.Colors.GRAY),  # 沒抓到就給灰色
+            color=tool.Colors.get_color(c["color"], tool.Colors.GRAY),  # 沒抓到就給灰色
             move_speed=c.get("move_speed", 0),
             type=c.get("type", "normal"),
             bullet_type=c.get("bullet_type", "normal"),
@@ -1210,7 +1237,8 @@ def get_level_data(level):
     with open(LEVELS_PATH / f"level{level}.json", encoding="utf-8") as f:
         data = json.load(f)
         level_mutiply = data.get("level_multiplier", 1)
-    return enemy_list, cannon_list, level_mutiply
+        level_name = data.get("level_name")
+    return enemy_list, cannon_list, level_mutiply, level_name
 
 
 # 砲台的子彈生成函式，放在外面讓子彈生成時也能呼叫
@@ -1223,10 +1251,11 @@ now_bom_range = 1
 
 
 def reset_game():
-    global player_rect, player_size, player_color, player_speed, current_player_speed, treasures, treasure_points, next_spawn_range, points, mode_speed_buff, gm_points_buff, maybe_cheat
+    global player_rect, player_size, player_color, player_speed, current_player_speed, treasures, treasure_points, next_spawn_range, points, mode_speed_buff, gm_points_buff, maybe_cheat, shoot_point
     global from_pause, level_button_color, last_hit_time, player_hp, player_max_hp, countdown, passed_time
-    global coin_chance, now_treasure, treasure_config, last_cure_time, has_plus_points, has_save_survived_time, countdowning, trying_to_touch_player, invincible_duration, now_p8_skill
-    global clicked_key, afk_timer, last_player_pos, AFK_LIMIT, change_dir_timer, lv_flash_timer, collide_player, bullet_damage, target_vol, shake_timer
+    global coin_chance, now_treasure, treasure_config, last_cure_time, has_plus_points, has_save_survived_time, countdowning, trying_to_touch_player, invincible_duration
+    global clicked_key, afk_timer, last_player_pos, AFK_LIMIT, change_dir_timer, lv_flash_timer, collide_player, bullet_damage, target_vol
+    global shake_timer, flash_timer, total_flash_time, max_alpha, freeze_timer
 
     load_resets()
     apply_skin_effects()
@@ -1235,7 +1264,15 @@ def reset_game():
 
     shake_timer = 0
 
+    flash_timer = 0  # 當前剩餘時間
+    total_flash_time = 30  # 框框顯示的總影格數
+    max_alpha = 150  # 紅框最亮時的透明度（0-255）
+
+    freeze_timer = 0
+
     lv_flash_timer = 0
+
+    shoot_point = 0
 
     clicked_key = None
 
@@ -1345,6 +1382,43 @@ def reset_game():
 
 reset_game()
 
+now_flash_color = tool.Colors.RED
+
+
+# config.py 內部
+
+
+def draw_screen_flash(color, total_time, max_alpha, flash_width):
+    """
+    專門處理受傷閃爍的函式
+    不需要傳入 flash_timer，因為我們直接從全域拿
+    """
+    # 這裡要宣告 global，才拿得到外面那個 flash_timer 變數
+    global flash_timer
+
+    if not isinstance(color, (tuple, list)) or len(color) < 3:
+        color = (255, 0, 0)
+        print(f"[DEBUG]: 傳入的顏色格式錯誤({color})，已使用預設紅色。")
+
+    if flash_timer > 0:
+        # print("--- 閃爍偵錯 ---")
+        # print(f"傳入顏色: {color} (型態: {type(color)})")
+        # print(f"計時器值: {flash_timer}")
+        # 計算進度比例
+        ratio = flash_timer / total_time
+
+        # 根據比例決定厚度與透明度
+        dynamic_width = int(flash_width * ratio)
+        current_alpha = int(ratio * max_alpha)
+
+        # 呼叫你的按鈕工具畫出邊框
+        # 注意：這裡直接用 WIDTH, HEIGHT，因為它們也在 config 裡
+        tool.text_button("", tool.Colors.BLACK, color, 0, 0, WIDTH, HEIGHT, alpha=current_alpha, width_line=dynamic_width)
+
+        # 🌟 這裡最重要：直接修改外面的 flash_timer
+        flash_timer -= 1
+
+
 selected_level = "level1"
 
 
@@ -1418,6 +1492,8 @@ def calculate_damage(damage):
 
 
 shake_range = 0
+current_range = 0
+total_shake_time = 0
 
 running = True
 game_state = "menu"
@@ -1526,6 +1602,8 @@ def get_key(t, cfg):
 
 upgrade_buttons = {}
 
+alto_shoot = now_skills["p20"]
+
 # 設定文字與玩家的間距
 padding = 25
 
@@ -1567,7 +1645,7 @@ initial_data = {
             "rarity": "Common",
             "level": 1,
             "exp": 0,
-            "has_owned": True,
+            "has_owned": False,
             "color": [255, 255, 255],
             "effect": ["speed", "points_multiplier"],
             "base_power": [1.3, 1.2],
@@ -1704,13 +1782,3 @@ initial_data = {
     "has_buy_crazy": False,
     "levels_unlocked": 1,
 }
-
-# a = UPGRADE_SURVIVAL["upgrade_p4"]["costs"]
-# b = UPGRADE_SURVIVAL["upgrade_p4"]["skills"]
-# # c = 0
-
-# print(len(a) + 1)  # 測試用，懶著計算
-# print(len(b))  # 測試用，懶著計算
-# print(len(a) + 1 <= len(b))
-
-# print([c := round(c + 0.6, 1) for _ in range(1, 40)])

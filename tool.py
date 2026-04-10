@@ -55,7 +55,7 @@ class Colors:
     RED_2 = (200, 0, 0)
     DARK_RED = (160, 0, 0)
     ORANGE = (255, 100, 0)
-    ORANGE_2 = (200, 50, 0)
+    ORANGE2 = (200, 50, 0)
     YELLOW = (255, 255, 0)
     GOLD = (255, 215, 0)
     BROWN = (200, 100, 50)
@@ -67,7 +67,8 @@ class Colors:
     # --- 冷色系 (藍、青、紫、粉) ---
     CYAN = (135, 206, 235)  # 天藍/青色
     BLUE = (0, 0, 255)
-    BLUE_2 = (0, 0, 190)
+    BLUE2 = (0, 0, 170)
+    BLUE3 = (50, 0, 100)
     PURPLE = (128, 0, 128)
     PINK = (255, 0, 255)
 
@@ -82,7 +83,7 @@ class Colors:
     def get_color(color_name: str, default=WHITE):
         # 將輸入轉為大寫，並嘗試從類別屬性中抓取
         if color_name.upper() == "DARK ORANGE":
-            color_name = "ORANGE_2"
+            color_name = "ORANGE 2"
         if color_name.upper() == "LIGHT BLUE":
             color_name = "CYAN"
         return getattr(Colors, color_name.upper(), default)
@@ -181,6 +182,7 @@ def text_button(
     font_type="",
     alpha=255,
     border_radius=0,
+    width_line=0,
 ):
     """包含文字以及方塊的物件，會回傳一個方塊，可以偵測碰撞"""
     button_surf = p.Surface((width, height), p.SRCALPHA)
@@ -192,7 +194,7 @@ def text_button(
 
     if show:
         draw_color = (*color, alpha) if len(color) == 3 else color
-        p.draw.rect(button_surf, draw_color, (0, 0, width, height), border_radius=border_radius)
+        p.draw.rect(button_surf, draw_color, (0, 0, width, height), border_radius=border_radius, width=width_line)
 
         s.blit(button_surf, (button_rect.x, button_rect.y))
 

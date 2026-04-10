@@ -1,5 +1,5 @@
 {
-    "level_name": "Level 1",
+    "level_name": "Level 1 - Normal",
     "enemies": [
         {
             "show_time": -10,
@@ -47,7 +47,7 @@
             "show_time": 57,
             "speed": 15,
             "slow_speed": 10,
-            "color": "ORANGE_2",
+            "color": "ORANGE2",
             "angle_range": [
                 30,
                 50
@@ -104,7 +104,7 @@
             "show_time": 190,
             "speed": 14,
             "slow_speed": 9,
-            "color": "ORANGE_2"
+            "color": "ORANGE2"
         },
         {
             "show_time": 198,
