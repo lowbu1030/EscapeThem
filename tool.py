@@ -51,6 +51,7 @@ class Colors:
     """提供各種顏色 (依色相與色調排序)"""
 
     # --- 暖色系 (紅、橙、黃、金) ---
+    LIGHT_RED = (255, 80, 80)
     RED = (255, 0, 0)
     RED_2 = (200, 0, 0)
     DARK_RED = (160, 0, 0)
@@ -61,23 +62,36 @@ class Colors:
     BROWN = (200, 100, 50)
 
     # --- 綠色系 ---
+    CHARTREUSE = (127, 255, 0)
+    OLIVE = (127, 127, 0)
+    EMERALD = (80, 180, 130)
     GREEN = (0, 255, 0)
+    PARIS_GREEN = (80, 200, 120)
     DARK_GREEN = (0, 100, 0)
 
     # --- 冷色系 (藍、青、紫、粉) ---
-    CYAN = (135, 206, 235)  # 天藍/青色
+    CYAN = (135, 206, 235)
     BLUE = (0, 0, 255)
     BLUE2 = (0, 0, 170)
     BLUE3 = (50, 0, 100)
+    VIOLET = (143, 0, 255)
     PURPLE = (128, 0, 128)
+    TYRIAN_PURPLE = (102, 2, 60)
+    FUCHSIA = (255, 50, 180)
+    CLARET = (191, 0, 64)
     PINK = (255, 0, 255)
 
     # --- 無彩色系 (白、灰、黑) ---
+    COSMIC_LATTE = (255, 248, 231)
     WHITE = (255, 255, 255)
     GRAY = (150, 150, 150)
     DARK_GRAY = (90, 90, 90)
-    BLACK2 = (30, 30, 30)
     BLACK = (0, 0, 0)
+    BLACK2 = (30, 30, 30)
+    BLACK_3 = (60, 60, 60)
+
+    # 實驗中顏色
+    TEST_COLOR =  (127, 255, 0)
 
     @staticmethod
     def get_color(color_name: str, default=WHITE):
@@ -97,10 +111,16 @@ class Colors:
         return (r, g, b)
 
     @staticmethod
+    def two_color_wave(color1, color2, speed, time_func=p.time.get_ticks):
+        """根據時間在兩個顏色之間波動，\n time_func 是要用的時間函式，預設是 pygame 的 get_ticks()"""
+        import math
+        ratio = (math.sin(time_func() / 1000.0 * speed) + 1) / 2  # 產生 0 到 1 的波動
+        return Colors.two_color_gradient(color1, color2, ratio)
+
+    @staticmethod
     def two_color_change(color1, color2, condition):
         """condition 為 True 時回傳 color1, 為 False 時回傳 color2"""
         return color1 if condition else color2
-
 
 def draw_rect(color, x, y, width=100, height=50, center=False, show=True):
     """單純方塊"""

@@ -1,0 +1,231 @@
+{
+    "level_name": "Level 10 - World 1's End",
+    "level_multiplier": 3,
+    "enemies": [
+        {
+            "show_time": -10,
+            "speed": 1,
+            "slow_speed": 0.5,
+            "color": "RED",
+            "type": "normal"
+        },
+        {
+            "show_time": -10,
+            "speed": 5,
+            "slow_speed": 3,
+            "color": "ORANGE",
+            "type": "normal"
+        },
+        {
+            "show_time": -10,
+            "speed": 10,
+            "slow_speed": 7,
+            "color": "YELLOW",
+            "type": "normal"
+        },
+        {
+            "show_time": 10,
+            "speed": 1,
+            "slow_speed": 0.5,
+            "color": "GREEN",
+            "type": "chaser"
+        },
+        {
+            "show_time": 10,
+            "speed": 5,
+            "slow_speed": 3,
+            "color": "DARK_GREEN",
+            "type": "eat_coin"
+        },
+        {
+            "show_time": 10,
+            "speed": 10,
+            "slow_speed": 7,
+            "color": "CYAN",
+            "type": "random"
+        },
+        {
+            "show_time": 30,
+            "speed": 1,
+            "slow_speed": 0.5,
+            "color": "BLUE",
+            "type": [
+                "random_angle",
+                "sprint"
+            ]
+        },
+        {
+            "show_time": 30,
+            "speed": 5,
+            "slow_speed": 3,
+            "color": "BLUE2",
+            "type": "normal",
+            "damage": 20,
+            "size": 20
+        },
+        {
+            "show_time": 30,
+            "speed": 10,
+            "slow_speed": 7,
+            "color": "BLUE3",
+            "type": "random",
+            "damage": 20,
+            "size": 20
+        },
+        {
+            "show_time": 60,
+            "speed": 8,
+            "slow_speed": 5,
+            "color": "PRUPLE",
+            "type": [
+                "random_angle",
+                "sprint"
+            ]
+        },
+        {
+            "show_time": 60,
+            "speed": 12,
+            "slow_speed": 7,
+            "color": "PINK",
+            "type": "wave",
+            "damage": 20
+        },
+        {
+            "show_time": 60,
+            "speed": 10,
+            "slow_speed": 7,
+            "color": "WHITE",
+            "type": "sprint",
+            "damage": 20
+        }
+    ],
+    "cannons": [
+        {
+            "show_time": 50,
+            "x": 0,
+            "y": 0,
+            "angle": 0,
+            "fire_rate": 1000,
+            "bullet_speed": 2,
+            "color": "RED",
+            "type": "normal",
+            "damage": 12
+        },
+        {
+            "show_time": 50,
+            "x": 0,
+            "y": 150,
+            "angle": 90,
+            "fire_rate": 2000,
+            "bullet_speed": 7,
+            "color": "ORANGE",
+            "type": "normal",
+            "damage": 10
+        },
+        {
+            "show_time": 50,
+            "x": 0,
+            "y": 300,
+            "angle": 0,
+            "fire_rate": 1800,
+            "bullet_speed": 5,
+            "color": "YELLOW",
+            "type": "normal",
+            "damage": 10
+        },
+        {
+            "show_time": 50,
+            "x": 0,
+            "y": 450,
+            "angle": 0,
+            "fire_rate": 1600,
+            "bullet_speed": 10,
+            "color": "GREEN",
+            "type": "normal",
+            "damage": 10
+        },
+        {
+            "show_time": 50,
+            "x": 0,
+            "y": 600,
+            "angle": 0,
+            "fire_rate": 2400,
+            "bullet_speed": 2,
+            "color": "DARK_GREEN",
+            "type": "normal",
+            "damage": 20
+        },
+        {
+            "show_time": 100,
+            "x": 700,
+            "y": 100,
+            "angle": 180,
+            "fire_rate": 1000,
+            "bullet_speed": 20,
+            "color": "CYAN",
+            "type": "Y_move",
+            "damage": 7,
+            "move_speed": 5
+        },
+        {
+            "show_time": 100,
+            "x": 700,
+            "y": 500,
+            "angle": 180,
+            "fire_rate": 1800,
+            "bullet_speed": 5,
+            "color": "BLUE",
+            "type": "Y_move",
+            "damage": 20,
+            "move_speed": 2
+        },
+        {
+            "show_time": 100,
+            "x": 700,
+            "y": 500,
+            "angle": 0,
+            "fire_rate": 1200,
+            "bullet_speed": 5,
+            "color": "BLUE2",
+            "type": "Y_move",
+            "damage": 20,
+            "move_speed": 10
+        },
+        {
+            "show_time": 100,
+            "x": 100,
+            "y": 600,
+            "angle": 0,
+            "fire_rate": 1100,
+            "bullet_speed": 8,
+            "color": "BLUE3",
+            "type": "X_move",
+            "damage": 10,
+            "move_speed": 4
+        },
+        {
+            "show_time": 100,
+            "x": 500,
+            "y": 600,
+            "angle": 0,
+            "fire_rate": 1200,
+            "bullet_speed": 1,
+            "color": "PRUPLE",
+            "type": "X_move",
+            "damage": 20,
+            "move_speed": 10
+        },
+        {
+            "show_time": 100,
+            "x": 300,
+            "y": 600,
+            "angle": 0,
+            "fire_rate": 1200,
+            "bullet_speed": 10,
+            "color": "PINK",
+            "type": "X_move",
+            "damage": 5,
+            "move_speed": 10
+        }
+    ]
+}

@@ -3,13 +3,18 @@ from pathlib import Path
 
 # 設定路徑
 BASE_DIR = Path(__file__).parent
-SAVE_FILE = BASE_DIR / "save_game.json"
+
+
+def cheak_version(file_name):
+    with open(file_name, encoding="utf-8") as f:
+        data = json.load(f)
+        return data.get("save_game_version", 1) < 2
 
 
 def migrate_save_format(file_name):
     """
     存檔遷移工具 (Universal Save Migrator) \n
-    功能：將舊版變數名稱 (sp_i, speed...) 轉換為新版統一格式 (upgrade_p1...)
+    功能：將舊版變數名稱、檔案格式轉換為新版統一格式
     """
     file_path = BASE_DIR / file_name
     if not file_path.exists():
@@ -22,94 +27,46 @@ def migrate_save_format(file_name):
         with file_path.open("r", encoding="utf-8") as f:
             old_data = json.load(f)
 
-        # 2. 定義新舊鍵值對照表
-        # 格式： "新鍵值": ["舊鍵值版本1", "舊鍵值版本2", "舊鍵值版本3"]
-        # 程式會依序尋找，找到哪個用哪個
-        mapping_rules = {
-            "upgrade_p1": ["speed", "sp_i", "p1_i"],  # 速度
-            "upgrade_p2": ["coin_spawn", "ph_i", "p2_i"],  # 金幣生成 (注意: ph_i 可能是你舊版變數)
-            "upgrade_p3": ["multiplier", "pb_i", "p3_i"],  # 分數倍率
-            "upgrade_p4": ["size", "si_i", "p4_i"],  # 玩家大小
-            "upgrade_p5": ["spawn", "es_i", "co_i", "p5_i"],  # 怪物生成 (這裡容錯 co_i 和 es_i)
-            "upgrade_p6": ["max_hp", "mh_i", "p6_i"],  # 血量上限
-            "upgrade_p7": ["regen", "phc_i", "p7_i"],  # 回血
-            "upgrade_p8": ["invincible", "pi_i", "p8_i"],  # 無敵時間
-        }
+        """因為現在已經是最新版，所以不需要判斷"""
+        # 1. 檢查版本：如果已經是版本 3，直接結束
+        save_version = old_data.get("save_version", 1)
+        if save_version >= 2:
+            print(f"✅ {file_name} 已經是最新版本，無需更新。")
+            return
 
-        # 3. 提取舊資料 (或是原本就存在的 upgrades 字典)
-        # 有些版本資料直接散落在根目錄，有些在 "upgrades" 字典裡
-        source_data = old_data
-        if "upgrades" in old_data and isinstance(old_data["upgrades"], dict):
-            # 如果已經有 upgrades 字典，優先從裡面找
-            # 但也要保留根目錄的查找權限（防止混合格式）
-            source_upgrades = old_data["upgrades"]
-        else:
-            source_upgrades = old_data
-
-        # 4. 建立新的升級字典
-        new_upgrades = {}
-
-        for new_key, old_keys in mapping_rules.items():
-            found_value = 0  # 預設值
-
-            # 嘗試從所有可能的舊名稱中找值
-            for key in old_keys:
-                # 先找 upgrades 字典內
-                if isinstance(source_upgrades, dict) and key in source_upgrades:
-                    found_value = source_upgrades[key]
-                    break
-                # 再找根目錄
-                if key in source_data:
-                    found_value = source_data[key]
-                    break
-
-            new_upgrades[new_key] = found_value
-            print(f"   🔄 轉換: {new_key} <- 值: {found_value}")
-
-        new_upgrades.update({"upgrade_p9": 0, "upgrade_p10": 0, "upgrade_p11": 0})  # 新增三個升級欄位，預設為 0
-
-        # 5. 重新打包完整資料
+        # 4. 處理 Records (自動補齊 1-9)
         old_records = old_data.get("records", {})
-        if "level1" in old_records:
-            # 如果已經是新格式，直接整包接管，不要塞進 level1 裡
-            final_records = old_records
-        else:
-            # 如果是超舊版，才手動建立
-            final_records = {
-                "level1": {
-                    "easy": old_data.get("longest_survived_time", {}).get("easy", 0),
-                    "normal": old_data.get("longest_survived_time", {}).get("normal", 0),
-                    "hard": old_data.get("longest_survived_time", {}).get("hard", 0),
-                    "super_hard": old_data.get("longest_survived_time", {}).get("super_hard", 0),
-                    "crazy": old_data.get("longest_survived_time", {}).get("crazy", 0),
-                },
-                "level2": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
-                "level3": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
-                "level4": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
-                "level5": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
-                "level6": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
-            }
-        new_data = {
-            # 餘額：相容 points_sum 或 balance
-            "balance": old_data.get("balance", old_data.get("points_sum", 0)),
-            # 升級：使用剛剛轉換好的字典
-            "upgrades": new_upgrades,
-            # 紀錄：保留原本的紀錄，如果沒有則初始化
-            "records": final_records,
-            # 皮膚：保留原本的皮膚資料
-            "player_skins": old_data.get("player_skins", {}),
-            # 保留目前使用的皮膚名稱
-            "current_skin_name": old_data.get("current_skin_name", "red"),
-        }
+        final_records = {}
+        for i in range(1, 11):
+            level_key = f"level{i}"
+            # 如果舊存檔有這一關，就搬過來；沒有就給初始 0 分字典
+            final_records[level_key] = old_records.get(level_key, {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0})
 
-        # 6. 寫回檔案
-        # 為了安全，我們直接覆蓋 save_game.json，因為這是一次性遷移
-        # 如果你擔心，可以先手動備份一個
-        with SAVE_FILE.open("w", encoding="utf-8") as f:
+        level_costs = [0, 0, 500, 1000, 5000, 15000, 35000, 50000, 75000, 100000, 130000]
+        old_unlocked = old_data.get("levels_unlocked", 1)
+        # 如果玩家以前解鎖到第 9 關，就要退還 2~9 關的所有花費
+        if save_version == 1:
+            # 版本 1 才要退錢，版本 2 已經不需要了
+            total_refund = sum(level_costs[: old_unlocked + 1])
+
+        # 5. 組合成新資料並加入版本號
+        new_data = {
+            "balance": old_data.get("balance", 0) + total_refund,  # 退還已解鎖關卡的花費
+            "upgrades": old_data["upgrades"],
+            "records": final_records,
+            "player_skins": old_data.get("player_skins", {}),
+            "now_player_skin": old_data.get("now_player_skin", [255, 0, 0]),
+            "current_skin_name": old_data.get("current_skin_name", "red"),
+            "levels_unlocked": {"world1": 1, "world2": 1},  # 重置解鎖關卡為 1，玩家需要重新解鎖
+            "save_game_version": 2,  # 重要：標記為版本 2
+            "gm_i": 1,
+            "has_buy_crazy": old_data.get("has_buy_crazy", False),
+        }
+        with (BASE_DIR / file_name).open("w", encoding="utf-8") as f:
             json.dump(new_data, f, indent=4, ensure_ascii=False)
 
-        print("\n✅ 成功！ save_game.json 已更新為最新格式！")
-        print("現在請執行 code_use.py，存檔應該可以正常載入了。")
+        print(f"💰 退款完成：已退還 {total_refund} 元至餘額。")
+        print("✅ 存檔已重置並遷移至 Version 2。玩家現在需手動解鎖關卡。")
 
     except Exception as e:
         print(f"🧨 轉換過程中出錯: {e}")

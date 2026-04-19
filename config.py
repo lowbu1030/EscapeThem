@@ -975,12 +975,49 @@ g_m = ["easy", "normal", "hard", "super_hard", "crazy"]
 gm_i = 1
 game_mode = g_m[gm_i]
 
-level_costs = [0, 0, 1000, 3000, 7000, 12000, 20000, 35000, 50000, 75000]  # 解鎖關卡的價格，第一個是卡位用，第一關是0元
+# 解鎖關卡的價格，第一個是卡位用，第一關是０元
+level_costs = {
+    "world1": [0, 0, 500, 1000, 5000, 15000, 35000, 50000, 75000, 100000, 130000],
+    "world2": [0, 0]  # 目前還沒有關卡
+}
 
-# 關卡
-all_levels = ["level" + str(i + 1) for i in range(len(level_costs) - 1)]  # 自動新增關卡
+# 下個關卡需要秒數，第一個卡位用
+level_need_record = {
+    "world1": [0, 0, 50, 60, 60, 70, 70, 80, 90, 90, 100],
+    "world2": [0, 0]  # , 50, 60, 60, 70, 70, 80, 90, 90, 100
+}
+# 說明：第二關需要第一關(普通模式)有超過八十秒的生存時間，以此類推
+
+
+def update_current_world_data(select_world):
+    global all_levels, current_world_costs, current_world_need_record, lv_i, current_level, levels_unlocked
+    world_key = f"world{select_world}"
+    all_levels = ["level" + str(i + 1) for i in range(len(level_costs[world_key]) - 1)]
+    current_world_costs = level_costs[world_key]  # 確保第一個卡位是0元
+    current_world_need_record = level_need_record[world_key]  # 確保第一個卡位是0秒
+    levels_unlocked = all_worlds_unlocked.get(world_key, 1)  # 預設至少解鎖第一關
+    lv_i = 0
+    if all_levels:
+        current_level = all_levels[lv_i]
+
+
+levels_unlocked = 1  # 這是給遊戲邏輯用的數字
+all_worlds_unlocked = {"world1": 1, "world2": 1} # 這是給存檔紀錄用的字典
+
+
+def update_world_data(select_world):
+    global current_world_costs, current_world_need_record
+    world_key = f"world{select_world}"
+    level_costs[world_key] = current_world_costs  # 確保第一個卡位是0元
+    level_need_record[world_key] = current_world_need_record  # 確保第一個卡位是0秒
+    all_worlds_unlocked[world_key] = levels_unlocked
+
+
+select_world = 1
+update_current_world_data(select_world)
 lv_i = 0
 current_level = all_levels[lv_i]
+
 
 # 載入圖片
 IMG_PATH = Path(__file__).parent
@@ -1077,9 +1114,6 @@ def update_upgrade_hub_layout():
 
 update_upgrade_hub_layout()
 
-levels_unlocked = 1  # 這裡你可以根據玩家進度調整解鎖的關卡數量
-
-
 def calculate_final_stat(effect_type, base_p, grow, level):
     # 原始計算公式
     val = base_p + (level - 1) * grow
@@ -1140,6 +1174,7 @@ def load_resets():
         spawn_time_debuff = 0.4
         enemy_damage_buff = 1.5
     mode_speed_buff *= Let_Time_Go_Fast
+    update_current_world_data(select_world)
 
 
 def make_enemy_list(level):
@@ -1638,6 +1673,7 @@ initial_data = {
         "level6": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
         "level7": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
         "level8": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+        "level9": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
     },
     "player_skins": {
         "red": {"rarity": "Common", "level": 1, "exp": 50, "has_owned": True, "color": [255, 0, 0], "effect": "none", "base_power": 1, "growth": 0, "draw_weight": 70},
@@ -1781,4 +1817,5 @@ initial_data = {
     "gm_i": 0,
     "has_buy_crazy": False,
     "levels_unlocked": 1,
+    "save_version": 2,
 }

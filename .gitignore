@@ -211,3 +211,4 @@ save_game*
 # others
 .txt
 levels/making*.json
+pyproject.toml

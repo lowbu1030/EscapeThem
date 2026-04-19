@@ -10,8 +10,8 @@ import sys
 import pygame
 
 import config  # 所有的全域變數與初始化都在這裡
+import old_to_new
 import tool  # 載入你的工具包
-from old_to_new import migrate_save_format
 
 # 1. 取得 config 中已經初始化好的物件
 screen = config.screen
@@ -43,7 +43,9 @@ def load_data(file_path=None):
         config.longest_survived_time = data.get("records", config.longest_survived_time)
         config.gm_i = data.get("gm_i", 1)
         config.has_buy_crazy = data.get("has_buy_crazy", False)
-        config.levels_unlocked = data.get("levels_unlocked", 1)
+        config.select_world = data.get("select_world", 1)
+        config.all_worlds_unlocked = data.get("levels_unlocked", {"world1": 1, "world2": 1})
+        print(f"DEBUG: 載入的字典內容是 {config.all_worlds_unlocked}")
 
         # 2. 讀取升級數據 (修正變數路徑)
         saved_ups = data.get("upgrades", {})
@@ -83,6 +85,7 @@ def load_data(file_path=None):
 
 
 def save_data():
+    config.update_world_data(config.select_world)
     try:
         # 準備要寫入的資料，全部指向 config
         data = {
@@ -94,7 +97,9 @@ def save_data():
             "current_skin_name": config.current_player_color_name,
             "gm_i": config.gm_i,
             "has_buy_crazy": config.has_buy_crazy,
-            "levels_unlocked": config.levels_unlocked,
+            "levels_unlocked": config.all_worlds_unlocked, # 存入完整的字典
+            "save_game_version": 2,  # 標記存檔版本，方便未來升級
+            "select_world": config.select_world,
         }
 
         # 使用 config 裡面的路徑
@@ -126,9 +131,14 @@ else:
     active_save = config.BASE_DIR / "save_game.json"
 
 
-def get_current_mouse_state():
-    return pygame.mouse.get_pos(False), pygame.mouse.get_pressed()
+def cheak_data(path):
+    """檢查存檔版本，並在需要時進行遷移"""
+    if old_to_new.cheak_version(path):
+        print("⚠️ 發現舊版本存檔，正在嘗試遷移格式...")
+        old_to_new.migrate_save_format(path)
 
+
+cheak_data(active_save)
 
 # --- 關鍵修正：同步給 config ---
 config.current_active_path = active_save
@@ -137,7 +147,12 @@ config.current_active_path = active_save
 load_data(config.current_active_path)
 config.load_resets()
 
-lv_button = draw_button = levels_button = settings_button = upgrade_button = help_button = exit_button = player_rect = back_button = enemy_rect = pygame.Rect(0, 0, 0, 0)
+leave_button = menu_button = restart_button = resume_button = lv_button = draw_button = levels_button = pygame.Rect(0, 0, 0, 0)
+settings_button = upgrade_button = help_button = exit_button = player_rect = back_button = enemy_rect = pygame.Rect(0, 0, 0, 0)
+
+
+def get_current_mouse_state():
+    return pygame.mouse.get_pos(False), pygame.mouse.get_pressed()
 
 
 current_time_sec = 0
@@ -618,11 +633,13 @@ while config.running:
                         if save == selected_save_name and btn.collidepoint(mouse_pos):
                             # 1. 確保它是 Path 物件，如果 save 本身已經是 Path 就不用包 Path()
                             # 但建議統一轉換成絕對路徑，最保險的做法是：
-                            current_active_path = config.BASE_DIR / selected_save_name if isinstance(selected_save_name, str) else selected_save_name
+                            config.current_active_path = config.BASE_DIR / selected_save_name if isinstance(selected_save_name, str) else selected_save_name
 
-                            print(f"載入存檔: {current_active_path}")
+                            cheak_data(config.current_active_path)
+
+                            print(f"載入存檔: {config.current_active_path}")
                             config.game_state = "menu"  # 切換回選單
-                            load_data(current_active_path)  # 傳入 Path 物件
+                            load_data(config.current_active_path)  # 傳入 Path 物件
                             config.load_resets()  # 重置遊戲狀態
 
                 selected_save_name = None  # 重置
@@ -1073,7 +1090,7 @@ while config.running:
                 config.upgrade_buttons[key] = rect
 
         # 全域重置：如果滑鼠放開了，不管在哪裡都要重置 pressing
-        if not pygame.mouse.get_pressed()[0]:
+        if not mouse_buttons[0]:
             is_pressing[8] = False
 
         # 固定底部的 BACK 按鈕
@@ -1174,18 +1191,11 @@ while config.running:
 
         # 4. 最後畫在螢幕上
         # 注意：這裡直接顯示 display_text，不要再 format 一次了
-        tool.show_text(
-            f"Effect: {display_text}",
-            tool.Colors.WHITE,
-            0,
-            400,
-            size=25,
-            screen_center=True,
-        )
+        tool.show_text(f"Effect: {display_text}", tool.Colors.WHITE, 0, 400, size=25, screen_center=True)
         # --- 萬能數值顯示邏輯 (結束) ---
 
         if config.game_state == "upgrade_p20":
-            tool.show_text("While you're playing, press 'O' to alto shoot!", tool.Colors.YELLOW, 0, 215, size=20, screen_center=True)
+            tool.show_text("While you're playing, press 'T' to alto shoot!", tool.Colors.YELLOW, 0, 215, size=20, screen_center=True)
 
         # --- 保留你的圖片繪製邏輯 ---
         config.coin_rect()  # 繪製金幣圖示
@@ -1327,7 +1337,7 @@ while config.running:
             if event.type == pygame.MOUSEWHEEL:
                 scroll_ys[3] -= event.y * 40
                 # 假設每個按鈕高度+間距是 80 像素
-                total_content_height = (len(config.level_costs) + 1) * 80 + 100
+                total_content_height = (len(config.current_world_costs) + 1) * 80 + 100
 
                 # 最大捲動距離 = 總長度 減去 畫面高度 (600)
                 max_scroll = max(0, total_content_height - config.HEIGHT)
@@ -1341,19 +1351,22 @@ while config.running:
                 if back_button.collidepoint(mouse_pos) and is_pressing[0]:
                     config.game_state = "menu"
                 reset_pressing()
-
-        for i in range(1, len(config.level_costs)):
-            is_locked = i > config.levels_unlocked
+        config.update_current_world_data(config.select_world)
+        for i in range(1, len(config.current_world_costs)):
+            is_locked = i > config.levels_unlocked  # 這裡使用剛剛取出的數字
             is_next_level = i == config.levels_unlocked + 1
-            level_button = tool.text_button(
-                f"Level {i}",
-                tool.Colors.WHITE,
-                tool.Colors.BLUE if not is_locked else tool.Colors.GRAY,
-                0,
-                60 + i * 80 - scroll_ys[3],
-                200,
-                60,
-                b_center=True,
+            level_button = tool.text_button(f"Level {i}", tool.Colors.WHITE, tool.Colors.BLUE if not is_locked else tool.Colors.GRAY, 120, 60 + i * 80 - scroll_ys[3], 200, 60)
+            pygame.draw.line(screen, tool.Colors.WHITE, (350, 100), (350, 500), 2)
+            pygame.draw.line(screen, tool.Colors.WHITE, (50, 130 + i * 80 - scroll_ys[3]), (600, 130 + i * 80 - scroll_ys[3]), 2)
+            prev_level_record = config.longest_survived_time.get(f"level{i - 1}", {}).get("normal", 0)
+            required_time = config.current_world_need_record[i]
+            tool.show_text(
+                f"Need time: {tool.show_time_min(required_time)}",
+                tool.Colors.two_color_change(tool.Colors.GREEN, tool.Colors.RED, prev_level_record >= required_time),
+                380,
+                80 + i * 80 - scroll_ys[3],
+                size=18,
+                show=is_locked,
             )
 
             draw_this_lock = is_locked
@@ -1363,23 +1376,23 @@ while config.running:
                 elif is_next_level:
                     draw_this_lock = False
                     pygame.draw.rect(screen, tool.Colors.GRAY, level_button)
-                    pygame.draw.rect(screen, tool.Colors.GREEN if config.total_points >= config.level_costs[i] else tool.Colors.RED, level_button, 3)
+                    pygame.draw.rect(screen, tool.Colors.GREEN if config.total_points >= config.current_world_costs[i] else tool.Colors.RED, level_button, 3)
                     # 顯示金額
-                    display_cost = config.level_costs[i]
+                    display_cost = config.current_world_costs[i]
                     tool.show_text(
                         f"Unlock for ${tool.num_to_KMBT(display_cost)}",
-                        tool.Colors.GREEN if config.total_points >= config.level_costs[i] else tool.Colors.RED,
-                        0,
-                        60 + i * 80 + 20 - scroll_ys[3],
-                        screen_center=True,
+                        tool.Colors.GREEN if config.total_points >= config.current_world_costs[i] else tool.Colors.RED,
+                        220,
+                        70 + i * 80 + 20 - scroll_ys[3],
+                        center=True,
                         size=20,
                     )
             if draw_this_lock:
                 # 圖層較高的鎖圖案
                 if config.lock_img_loaded and is_locked:
-                    screen.blit(config.lock_img_surface, (310, 60 + i * 80 - 20 - scroll_ys[3]))
+                    screen.blit(config.lock_img_surface, (180, 60 + i * 80 - 20 - scroll_ys[3]))
                 elif is_locked:
-                    pygame.draw.rect(screen, tool.Colors.GRAY, (310, 60 + i * 80 - 20 - scroll_ys[3], 30, 30))
+                    pygame.draw.rect(screen, tool.Colors.GRAY, (180, 60 + i * 80 - 20 - scroll_ys[3], 30, 30))
             # --- 3. 判斷點擊 ---
             if clicked_pos and level_button.collidepoint(clicked_pos):
                 if not is_locked:
@@ -1389,23 +1402,18 @@ while config.running:
                     enemy_list, cannon_list, level_multiplier, level_name = config.get_level_data(i)
                     config.reset_game()
                     config.game_state = "3!2!1!"
-                elif is_next_level and config.total_points >= config.level_costs[i]:
+                elif is_next_level and config.total_points >= config.current_world_costs[i] and prev_level_record >= required_time:
                     # 解鎖邏輯
-                    config.total_points -= config.level_costs[i]
+                    config.total_points -= config.current_world_costs[i]
                     config.levels_unlocked = i  # 更新解鎖的關卡數
-                    new_text = tool.FloatingText(
-                        "-" + tool.num_to_KMBT(config.level_costs[i]),
-                        config.WIDTH - 90,
-                        20,
-                        tool.Colors.RED,
-                        speed=0.7,
-                        size=24,
-                    )
+                    new_text = tool.FloatingText("-" + tool.num_to_KMBT(config.current_world_costs[i]), config.WIDTH - 90, 20, tool.Colors.RED, speed=0.7, size=24)
                     config.floating_texts.append(new_text)
                     config.sounds["buy_success"].play()
+                    config.update_world_data(config.select_world)  # 更新世界資料，確保下一次進入關卡選單時資料是最新的
                 elif is_next_level:
                     config.sounds["buy_error"].play()
 
+        tool.show_text("Normal mode", tool.Colors.WHITE, 400, 160 - scroll_ys[3], size=20)
         pygame.draw.rect(screen, tool.Colors.BLACK2, (0, 0, config.WIDTH, 100))
         tool.show_text("Level Select", tool.Colors.WHITE, 0, 40, size=50, screen_center=True)
 
@@ -1413,16 +1421,7 @@ while config.running:
 
         pygame.draw.rect(screen, tool.Colors.BLACK2, (0, config.HEIGHT - 100, config.WIDTH, 100))
 
-        back_button = tool.text_button(
-            "Back to Menu",
-            tool.Colors.WHITE,
-            tool.Colors.ORANGE,
-            0,
-            config.HEIGHT - 80,
-            200,
-            60,
-            b_center=True,
-        )
+        back_button = tool.text_button("Back to Menu", tool.Colors.WHITE, tool.Colors.ORANGE, 0, config.HEIGHT - 80, 200, 60, b_center=True)
 
         # 更新並繪製所有飄浮文字
         for ft in config.floating_texts[:]:  # 使用 [:] 確保刪除時不會出錯
@@ -1430,7 +1429,6 @@ while config.running:
             ft.draw(screen)
             if ft.timer <= 0:  # 如果文字壽命到了
                 config.floating_texts.remove(ft)
-
     # 倒數前五秒
     elif config.game_state == "3!2!1!":
         screen.fill(tool.Colors.BLACK2)
@@ -1465,9 +1463,16 @@ while config.running:
     # 主遊戲程式
     elif config.game_state == "start_game":
         screen_text = "Escape Them! v1.0.0 - Escaping"
-        screen.fill(tool.Colors.BLACK2)
+        screen.fill(tool.Colors.two_color_wave(tool.Colors.BLACK2, tool.Colors.BLACK_3, 1))
         config.coin_rect(player_rect)
         countdowning = False
+
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p or event.key == pygame.K_ESCAPE:
+                    config.game_state = "pause"
+                if event.key == pygame.K_t and config.now_skills["p20"]:
+                    config.alto_shoot = not config.alto_shoot
 
         current_time_sec, current_time_ms = tool.sec_timer(update=True)
 
@@ -1778,13 +1783,6 @@ while config.running:
                     enemy.x = tool.num_range(0, config.WIDTH - enemy.width, enemy.x)
                     enemy.y = tool.num_range(0, config.HEIGHT - enemy.height, enemy.y)
 
-        for event in events:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_p or event.key == pygame.K_ESCAPE:
-                    config.game_state = "pause"
-                if event.key == pygame.K_o and config.now_skills["p20"]:
-                    config.alto_shoot = not config.alto_shoot
-
         # --- 玩家血量回復 ---
         # 1. 確保只有在血量未滿且玩家還活著時才計算
         if config.player_hp < config.player_max_hp and config.player_hp > 0:
@@ -1966,11 +1964,21 @@ while config.running:
         tool.show_text("Pause", tool.Colors.WHITE, 0, 80, 50, screen_center=True)
         display_points = tool.num_to_KMBT(round(config.points, 1))
         tool.show_text(f"Coins: {display_points}$", tool.Colors.WHITE, 0, 140, screen_center=True)
-        resume_button = tool.text_button("Resume", tool.Colors.WHITE, tool.Colors.BROWN, 0, 170, 180, 60, b_center=True)
-        settings_button = tool.text_button("Settings", tool.Colors.BLACK, tool.Colors.GREEN, 0, 250, 180, 60, b_center=True)
-        restart_button = tool.text_button("Restart", tool.Colors.BLACK, tool.Colors.YELLOW, 0, 330, 180, 60, b_center=True)
-        menu_button = tool.text_button("Back to Menu", tool.Colors.BLACK, tool.Colors.PURPLE, 0, 410, 180, 60, b_center=True)
-        leave_button = tool.text_button("Leave", tool.Colors.WHITE, tool.Colors.RED, 0, 490, 180, 60, b_center=True)
+        resume_button = tool.text_button(
+            "Resume", tool.Colors.WHITE, tool.Colors.two_color_change(tool.Colors.ORANGE, tool.Colors.BROWN, resume_button.collidepoint(mouse_pos)), 0, 170, 180, 60, b_center=True
+        )
+        settings_button = tool.text_button(
+            "Settings", tool.Colors.BLACK, tool.Colors.two_color_change(tool.Colors.YELLOW, tool.Colors.GREEN, settings_button.collidepoint(mouse_pos)), 0, 250, 180, 60, b_center=True
+        )
+        restart_button = tool.text_button(
+            "Restart", tool.Colors.BLACK, tool.Colors.two_color_change(tool.Colors.ORANGE, tool.Colors.YELLOW, restart_button.collidepoint(mouse_pos)), 0, 330, 180, 60, b_center=True
+        )
+        menu_button = tool.text_button(
+            "Back to Menu", tool.Colors.BLACK, tool.Colors.two_color_change(tool.Colors.BLUE3, tool.Colors.PURPLE, menu_button.collidepoint(mouse_pos)), 0, 410, 180, 60, b_center=True
+        )
+        leave_button = tool.text_button(
+            "Leave", tool.Colors.WHITE, tool.Colors.two_color_change(tool.Colors.DARK_RED, tool.Colors.RED, leave_button.collidepoint(mouse_pos)), 0, 490, 180, 60, b_center=True
+        )
 
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -2200,60 +2208,7 @@ while config.running:
                     raise config.AFKError()
             if event.type == pygame.QUIT:
                 raise config.AFKError()
-    # 2.save_game_too_old_error
-    elif config.game_state == "save_game_error":
-        screen.fill(tool.Colors.BLACK)
-        screen_text = "Escape Them! v1.0.0 - ERROR: 4215788"
-        tool.draw_rect(tool.Colors.RED, 0, 100, 550, 450, center=True)
-        pygame.draw.rect(screen, tool.Colors.BLACK2, (config.WIDTH // 2 - 270, 95, 550, 450))
-        tool.show_text(
-            "SAVE_FILE_ERROR",
-            tool.Colors.RED,
-            0,
-            150,
-            size=55,
-            screen_center=True,
-            font_type="None",
-        )
-        tool.show_text(
-            "YOUR 'save_game.json' IS TOO OLD",
-            tool.Colors.WHITE,
-            0,
-            240,
-            size=25,
-            screen_center=True,
-            font_type="None",
-        )
-        tool.show_text(
-            "Error code: 4215788",
-            tool.Colors.GRAY,
-            0,
-            280,
-            size=25,
-            screen_center=True,
-            font_type="None",
-        )
-        update_button = tool.text_button(
-            "Update your 'save_game.json'",
-            tool.Colors.WHITE,
-            tool.Colors.RED,
-            0,
-            400,
-            350,
-            60,
-            b_center=True,
-            font_type="None",
-        )
-        for event in events:
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if update_button.collidepoint(mouse_pos):
-                    is_pressing[0] = True
-            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                if update_button.collidepoint(mouse_pos) and is_pressing[0]:
-                    migrate_save_format(current_active_path)
-                    load_data(current_active_path)
-                    config.game_state = "menu"
-    # 3.config.game_state_error
+    # 2.game_state_error
     else:
         screen.fill(tool.Colors.BLACK)
         screen_text = "Escape Them! v1.0.0 - ERROR: 2487145"
@@ -2321,7 +2276,7 @@ while config.running:
     # 畫滑鼠
     if config.mouse_img_loaded:
         blit_mouse_pos = (mouse_pos[0] - 5, mouse_pos[1])
-        if pygame.mouse.get_pressed()[0]:
+        if mouse_buttons[0]:
             # 點擊時，座標稍微 +2，會有往內按的感覺
             screen.blit(config.mouse_img_surface, (blit_mouse_pos[0] + 2, blit_mouse_pos[1] + 2))
         else:

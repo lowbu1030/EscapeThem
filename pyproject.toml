@@ -1,6 +1,6 @@
 [tool.black]
 line-length = 200
-target-version = ["py312"]
+target-version = ["py314"]
 skip-string-normalization = false # 是否禁止自動將 "" 或 '' 統一成雙引號（false 表示允許 Black 處理）
 
 [tool.ruff]
