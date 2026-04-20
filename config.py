@@ -12,6 +12,15 @@ BASE_DIR = Path(__file__).parent
 SAVE_PATH = BASE_DIR / "save_game.json"
 current_active_path = SAVE_PATH
 LEVELS_PATH = BASE_DIR / "levels"
+
+
+def get_current_world_path(select_world):
+    """根據當前選擇的世界，返回對應的資料夾路徑"""
+    # select_world 可能是 1 或 2
+    world_folder = f"world_{select_world}"
+    return LEVELS_PATH / world_folder
+
+
 SOUND_PATH = BASE_DIR / "sounds"
 BGM_PATH = BASE_DIR / "BGM"
 
@@ -38,6 +47,7 @@ UPGRADE_SURVIVAL = {
         "costs": [150, 450, 820, 1050, 1840, 2510, 4560, 7000, 9680, 12570, 15000, 18000, 20540, 27000, 29400, 31200, 38700, 43500, 48800, 56000],
         "skills": [0, 1.5, 3, 4.5, 6, 7.5, 9, 10.5, 12, 13.5, 15, 16.5, 18, 19.5, 21, 22.5, 24, 25.5, 27, 28.5, 30],
         "skill_desc": "Speed +{}",  # 顯示文字格式
+        "limits": {1: 12, 2: 21},  # 每個世界的升級上限，超過後不再增加技能數值，之後把每一個升級都加上這個，並加上真正的功能。如果到達等級上限：[Locked: Reach World 2]
     },
     "upgrade_p2": {
         "title": "Coin Spawn Speed",
@@ -976,16 +986,10 @@ gm_i = 1
 game_mode = g_m[gm_i]
 
 # 解鎖關卡的價格，第一個是卡位用，第一關是０元
-level_costs = {
-    "world1": [0, 0, 500, 1000, 5000, 15000, 35000, 50000, 75000, 100000, 130000],
-    "world2": [0, 0]  # 目前還沒有關卡
-}
+level_costs = {"world1": [0, 0, 500, 1000, 5000, 15000, 35000, 50000, 75000, 100000, 130000], "world2": [0, 0]}  # 目前還沒有關卡
 
 # 下個關卡需要秒數，第一個卡位用
-level_need_record = {
-    "world1": [0, 0, 50, 60, 60, 70, 70, 80, 90, 90, 100],
-    "world2": [0, 0]  # , 50, 60, 60, 70, 70, 80, 90, 90, 100
-}
+level_need_record = {"world1": [0, 0, 50, 60, 60, 70, 70, 80, 90, 90, 100], "world2": [0, 0]}  # , 50, 60, 60, 70, 70, 80, 90, 90, 100
 # 說明：第二關需要第一關(普通模式)有超過八十秒的生存時間，以此類推
 
 
@@ -1002,7 +1006,7 @@ def update_current_world_data(select_world):
 
 
 levels_unlocked = 1  # 這是給遊戲邏輯用的數字
-all_worlds_unlocked = {"world1": 1, "world2": 1} # 這是給存檔紀錄用的字典
+all_worlds_unlocked = {"world1": 1, "world2": 1}  # 這是給存檔紀錄用的字典
 
 
 def update_world_data(select_world):
@@ -1014,10 +1018,19 @@ def update_world_data(select_world):
 
 
 select_world = 1
+worlds_unlocked = 1
 update_current_world_data(select_world)
 lv_i = 0
 current_level = all_levels[lv_i]
-
+world_cost = {
+    "world1": 0,
+    "world2": 200000,
+    # "world3": 500000
+}
+world_bgc = {
+    "world1": [tool.Colors.BLACK2, tool.Colors.BLACK_3],
+    "world2": [tool.Colors.VIOLET, tool.Colors.PURPLE],
+}
 
 # 載入圖片
 IMG_PATH = Path(__file__).parent
@@ -1114,6 +1127,7 @@ def update_upgrade_hub_layout():
 
 update_upgrade_hub_layout()
 
+
 def calculate_final_stat(effect_type, base_p, grow, level):
     # 原始計算公式
     val = base_p + (level - 1) * grow
@@ -1177,20 +1191,10 @@ def load_resets():
     update_current_world_data(select_world)
 
 
-def make_enemy_list(level):
-    json_path = LEVELS_PATH / f"level{level}.json"
-
-    # 檢查檔案是否存在
-    if not json_path.exists():
-        print(f"找不到關卡檔案: {json_path}")
-        # 直接回傳一個預設的 Enemy 物件
-        return [Enemy(show_time=-10, speed=3, slow_speed=1, color=tool.Colors.WHITE)]
-
-    with open(json_path, encoding="utf-8") as f:
-        data = json.load(f)
+def _make_enemy_list(level_data):
 
     enemy_list = []
-    for e in data["enemies"]:
+    for e in level_data:
         # 1. 處理參數 (維持你原本的預設值邏輯)
         a_range = tuple(e.get("angle_range", (10, 80)))
         e_color = tool.Colors.get_color(e["color"], tool.Colors.WHITE)
@@ -1213,7 +1217,7 @@ def make_enemy_list(level):
     return enemy_list
 
 
-def make_cannon_list(level):
+def _make_cannon_list(level_data):
 
     def make_cannon(x, y, angle, show_time, fire_rate=2000, bullet_speed=5, bom_range=100, color=tool.Colors.GRAY, move_speed=0, type="normal", bullet_type="normal", damage=10):
         return {
@@ -1237,17 +1241,8 @@ def make_cannon_list(level):
             "damage": damage,
         }
 
-    json_path = LEVELS_PATH / f"level{level}.json"
-
-    if not json_path.exists():
-        print(f"找不到檔案: {json_path}")
-        return []
-
-    with open(str(json_path), encoding="utf-8") as f:
-        data = json.load(f)
-
     cannon_list = []
-    for c in data["cannons"]:
+    for c in level_data:
         cannon_data = make_cannon(
             x=c["x"],
             y=c["y"],
@@ -1266,13 +1261,15 @@ def make_cannon_list(level):
     return cannon_list
 
 
-def get_level_data(level):
-    enemy_list = make_enemy_list(level)
-    cannon_list = make_cannon_list(level)
-    with open(LEVELS_PATH / f"level{level}.json", encoding="utf-8") as f:
+def get_level_data(level, world):
+    current_path = get_current_world_path(world)
+    json_path = current_path / f"level{level}.json"
+    with open(json_path, encoding="utf-8") as f:
         data = json.load(f)
         level_mutiply = data.get("level_multiplier", 1)
         level_name = data.get("level_name")
+    enemy_list = _make_enemy_list(data["enemies"])
+    cannon_list = _make_cannon_list(data["cannons"])
     return enemy_list, cannon_list, level_mutiply, level_name
 
 
@@ -1383,7 +1380,7 @@ def reset_game():
                 "y": random.randint(100, HEIGHT - 100),
                 "show": False,
                 "can_spawn": True,
-                "next_spawn_at": random.randint(*next_spawn_range),  # type:ignore
+                "next_spawn_at": random.randint(*next_spawn_range),  # type: ignore
                 "scale": 1.3 if name in ["Divine", "Exotic", "Mythic"] else 1.0,
             }
         )
@@ -1663,17 +1660,34 @@ initial_data = {
         "upgrade_p16": 0,
         "upgrade_p17": 0,
         "upgrade_p18": 0,
+        "upgarade_p19": 0,
+        "upgrade_p20": 0,
     },
     "records": {
-        "level1": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
-        "level2": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
-        "level3": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
-        "level4": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
-        "level5": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
-        "level6": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
-        "level7": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
-        "level8": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
-        "level9": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+        "world1": {
+            "level1": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level2": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level3": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level4": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level5": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level6": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level7": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level8": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level9": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level10": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+        },
+        "world2": {
+            "level1": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level2": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level3": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level4": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level5": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level6": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level7": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level8": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level9": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+            "level10": {"easy": 0, "normal": 0, "hard": 0, "super_hard": 0, "crazy": 0},
+        },
     },
     "player_skins": {
         "red": {"rarity": "Common", "level": 1, "exp": 50, "has_owned": True, "color": [255, 0, 0], "effect": "none", "base_power": 1, "growth": 0, "draw_weight": 70},
@@ -1816,6 +1830,7 @@ initial_data = {
     "current_skin_name": "red",
     "gm_i": 0,
     "has_buy_crazy": False,
-    "levels_unlocked": 1,
-    "save_version": 2,
+    "levels_unlocked": {"world1": 1, "world2": 1},
+    "save_game_version": 3,
+    "worlds_unlocked": 1,
 }

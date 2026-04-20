@@ -50,48 +50,56 @@ class CR:  # ColoredRect
 class Colors:
     """提供各種顏色 (依色相與色調排序)"""
 
-    # --- 暖色系 (紅、橙、黃、金) ---
-    LIGHT_RED = (255, 80, 80)
+    # 1. 基礎與深色系 (最適合當遊戲背景)
+    # 這組顏色飽和度較低或亮度較暗，不會干擾玩家看清子彈或敵人。
+
+    BLACK = (0, 0, 0)
+    BLACK2 = (30, 30, 30)  # 推薦：World 1 背景
+    BLACK_3 = (60, 60, 60)
+    DARK_GRAY = (90, 90, 90)
+    BLUE3 = (50, 0, 100)  # 推薦：神祕關卡背景
+    TYRIAN_PURPLE = (102, 2, 60)  # 推薦：Boss 關背景
+
+    # 2. 暖色調 (紅、橙、黃、金)
+    # 這組適合當「警示」、「熔岩世界」或「解鎖按鈕」。
+
     RED = (255, 0, 0)
     RED_2 = (200, 0, 0)
     DARK_RED = (160, 0, 0)
+    LIGHT_RED = (255, 80, 80)
     ORANGE = (255, 100, 0)
     ORANGE2 = (200, 50, 0)
-    YELLOW = (255, 255, 0)
+    BROWN = (200, 100, 50)  # 推薦：荒漠世界
     GOLD = (255, 215, 0)
-    BROWN = (200, 100, 50)
+    YELLOW = (255, 255, 0)
 
-    # --- 綠色系 ---
-    CHARTREUSE = (127, 255, 0)
+    # 3. 綠色調 (森林、草地、毒液)
+    DARK_GREEN = (0, 100, 0)  # 推薦：叢林背景
     OLIVE = (127, 127, 0)
     EMERALD = (80, 180, 130)
-    GREEN = (0, 255, 0)
     PARIS_GREEN = (80, 200, 120)
-    DARK_GREEN = (0, 100, 0)
+    CHARTREUSE = (127, 255, 0)
+    GREEN = (0, 255, 0)
 
-    # --- 冷色系 (藍、青、紫、粉) ---
-    CYAN = (135, 206, 235)
-    BLUE = (0, 0, 255)
+    # 4. 冷色調 (青、藍、紫、粉)
+    # 這組適合「水下世界」、「科技感」或「稀有皮膚」。
     BLUE2 = (0, 0, 170)
-    BLUE3 = (50, 0, 100)
+    BLUE = (0, 0, 255)
+    CYAN = (135, 206, 235)  # 推薦：冰雪/水下世界背景
     VIOLET = (143, 0, 255)
     PURPLE = (128, 0, 128)
-    TYRIAN_PURPLE = (102, 2, 60)
     FUCHSIA = (255, 50, 180)
-    CLARET = (191, 0, 64)
     PINK = (255, 0, 255)
+    CLARET = (191, 0, 64)
 
-    # --- 無彩色系 (白、灰、黑) ---
+    # 5. 高亮度與特殊色
+    # 適合文字、UI 邊框或發光特效。
     COSMIC_LATTE = (255, 248, 231)
     WHITE = (255, 255, 255)
     GRAY = (150, 150, 150)
-    DARK_GRAY = (90, 90, 90)
-    BLACK = (0, 0, 0)
-    BLACK2 = (30, 30, 30)
-    BLACK_3 = (60, 60, 60)
 
     # 實驗中顏色
-    TEST_COLOR =  (127, 255, 0)
+    TEST_COLOR = (127, 255, 0)
 
     @staticmethod
     def get_color(color_name: str, default=WHITE):
@@ -113,14 +121,15 @@ class Colors:
     @staticmethod
     def two_color_wave(color1, color2, speed, time_func=p.time.get_ticks):
         """根據時間在兩個顏色之間波動，\n time_func 是要用的時間函式，預設是 pygame 的 get_ticks()"""
-        import math
-        ratio = (math.sin(time_func() / 1000.0 * speed) + 1) / 2  # 產生 0 到 1 的波動
+
+        ratio = (sin(time_func() / 1000.0 * speed) + 1) / 2  # 產生 0 到 1 的波動
         return Colors.two_color_gradient(color1, color2, ratio)
 
     @staticmethod
     def two_color_change(color1, color2, condition):
         """condition 為 True 時回傳 color1, 為 False 時回傳 color2"""
         return color1 if condition else color2
+
 
 def draw_rect(color, x, y, width=100, height=50, center=False, show=True):
     """單純方塊"""
@@ -133,56 +142,79 @@ def draw_rect(color, x, y, width=100, height=50, center=False, show=True):
         return button_rect
 
 
+text_cache = {}
+
+root = pathlib.Path(__file__).parent.resolve()
+
+
 def show_text(text, text_color, x, y, size=24, center=False, screen_center=False, show=True, font_type="", alpha=255, line_gap=5):
-    t_rects = []
-    root = pathlib.Path(__file__).parent.resolve()
+    # 1. 產生唯一的快取 Key (包含 alpha 也要放進去，因為 alpha 不同圖片就不同)
+    # 如果 text 是清單，轉成字串來當 key
+    text_str = "".join(text) if isinstance(text, list) else text
+    key = f"{text_str}_{text_color}_{size}_{font_type}_{alpha}"
 
-    # 字體選擇邏輯
-    if font_type == "":
-        font = p.font.Font(str(root / "Ubuntu.ttf"), size)
-    elif font_type == "None":
-        font = p.font.SysFont(None, size)
+    # 2. 檢查快取：如果這組文字已經畫過了，直接拿出來 blit
+    if key in text_cache:
+        surfaces, relative_rects = text_cache[key]
     else:
-        font = p.font.SysFont(font_type, size)
+        # --- 以下內容只有在「第一次畫這段字」時才會執行 ---
+        surfaces = []
+        relative_rects = []
 
-    if isinstance(text, str):
-        text = [text]
-
-    current_y = y
-    for t in text:
-        # 渲染文字
-        t_surf = font.render(t, True, text_color)
-
-        # 透明度處理
-        temp_surf = p.Surface(t_surf.get_size(), p.SRCALPHA)
-        temp_surf.blit(t_surf, (0, 0))
-        temp_surf.set_alpha(alpha)
-
-        t_rect = temp_surf.get_rect()
-
-        # 🌟 修正：垂直方向統一使用 top 確保換行正常
-        t_rect.top = current_y
-
-        if center:
-            # 如果是置中模式，x 和 y 都代表中心點
-            t_rect.center = (x, current_y)
+        # 字體初始化 (這也很耗時，只有沒快取才做)
+        if font_type == "":
+            font = p.font.Font(str(root / "Ubuntu.ttf"), size)
+        elif font_type == "None":
+            font = p.font.SysFont(None, size)
         else:
-            # 否則，y 代表頂端位置
-            t_rect.top = current_y
+            font = p.font.SysFont(font_type, size)
+
+        text_list = [text] if isinstance(text, str) else text
+
+        temp_y = 0
+        for t in text_list:
+            # 渲染並處理透明度
+            t_surf = font.render(t, True, text_color)
+            final_surf = p.Surface(t_surf.get_size(), p.SRCALPHA).convert_alpha()  # 記得加 convert_alpha
+            final_surf.blit(t_surf, (0, 0))
+            if alpha < 255:
+                final_surf.set_alpha(alpha)
+
+            # 儲存 Surface
+            surfaces.append(final_surf)
+
+            # 儲存相對位置 (以 y=0 為起點，方便後續根據傳入的 y 移動)
+            t_rect = final_surf.get_rect()
+            t_rect.top = temp_y
+            relative_rects.append(t_rect)
+
+            temp_y = t_rect.bottom + line_gap
+
+        # 存入快取：把這一組 Surface 和它們的相對位置存起來
+        text_cache[key] = (surfaces, relative_rects)
+
+    # 3. 繪製邏輯 (這一部分每一幀都會跑，但現在只剩 blit，非常快)
+    first_rect = None
+    for i, surf in enumerate(surfaces):
+        # 複製一份矩形來做位置偏移計算
+        draw_rect = relative_rects[i].copy()
+
+        # 根據外部傳入的 x, y 進行偏移
+        if center:
+            draw_rect.center = (x, y + relative_rects[i].top)
+        else:
+            draw_rect.top = y + relative_rects[i].top
             if screen_center:
-                t_rect.centerx = W // 2
+                draw_rect.centerx = W // 2
             else:
-                t_rect.x = x
+                draw_rect.x = x
 
+        if i == 0:
+            first_rect = draw_rect
         if show:
-            # 注意：這裡要用 t_rect.topleft 繪製
-            s.blit(temp_surf, t_rect)
+            s.blit(surf, draw_rect)
 
-        t_rects.append(t_rect)
-        # 更新下一行的高度 (當前底部 + 行距)
-        current_y = t_rect.bottom + line_gap
-
-    return t_rects[0] if t_rects else None
+    return first_rect
 
 
 def text_button(
@@ -323,9 +355,9 @@ def show_time_min(seconds: str | float):
     輸入：秒數 \n
     輸出："分鐘：秒數"
     """
-    mins = seconds // 60  # type:ignore
+    mins = seconds // 60  # type: ignore
     sec = seconds % 60
-    return f"{int(mins)}:" + ("0" if sec < 10 else "") + f"{int(sec)}"  # type:ignore
+    return f"{int(mins)}:" + ("0" if sec < 10 else "") + f"{int(sec)}"  # type: ignore
 
 
 def num_to_KMBT(num):
