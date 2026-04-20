@@ -899,8 +899,8 @@ last_shot_time = 0  # 用來控制射速 (Cooldown)
 
 # 作弊變數
 Invincible = False
-Time_Speed = 1
-Let_Time_Go_Fast = 1
+FPS_Speed = 1
+Timer_Speed = 1
 
 
 def check_data_consistency(data_list):
@@ -909,7 +909,7 @@ def check_data_consistency(data_list):
 
 God = False
 
-if any([Invincible, Time_Speed != 1, Let_Time_Go_Fast != 1]):
+if any([Invincible, FPS_Speed != 1, Timer_Speed != 1]):
     print("--- 檢測到作弊變數已更改 ---")
     enter = input("請輸入授權碼以繼續：")
 
@@ -922,8 +922,8 @@ if any([Invincible, Time_Speed != 1, Let_Time_Go_Fast != 1]):
     else:
         print("密碼錯誤，重置為正常模式。")
         Invincible = False
-        Time_Speed = 1
-        Let_Time_Go_Fast = 1
+        FPS_Speed = 1
+        Timer_Speed = 1
         God = False
 pygame.mixer.music.set_volume(0.5)  # 靜音：0, 正常：0.5
 if God:
@@ -1187,7 +1187,7 @@ def load_resets():
         gm_points_buff = 2.7
         spawn_time_debuff = 0.4
         enemy_damage_buff = 1.5
-    mode_speed_buff *= Let_Time_Go_Fast
+    mode_speed_buff *= Timer_Speed
     update_current_world_data(select_world)
 
 

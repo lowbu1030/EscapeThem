@@ -163,14 +163,14 @@ current_time_sec = 0
 # 隱藏滑鼠（如果你有自定義滑鼠圖案）
 pygame.mouse.set_visible(False)
 
-pygame.mixer.music.play(-1)  # 這裡決定要不要播放背景音樂
+# pygame.mixer.music.play(-1)  # 這裡決定要不要播放背景音樂
 
 while config.running:
     if config.freeze_timer > 0:
         config.freeze_timer -= 1
-        clock.tick(60 * config.Time_Speed)  # 保持影格率但跳過後面的邏輯更新
+        dt = clock.tick(60 * config.FPS_Speed) / 1000.0
         continue  # 跳過這一次的移動和碰撞計算
-    clock.tick(60 * config.Time_Speed)
+    dt = clock.tick(60 * config.FPS_Speed) / 1000.0
 
     runed_time = pygame.time.get_ticks()
     # print(f"DEBUG: Current State = {config.game_state}")
@@ -1453,7 +1453,7 @@ while config.running:
                     config.lv_i = i - 1
                     enemy_list, cannon_list, level_multiplier, level_name = config.get_level_data(i, config.select_world)
                     config.reset_game()
-                    config.game_state = "3!2!1!"
+                    config.game_state = "countdown"
                 elif is_next_level and config.total_points >= config.current_world_costs[i] and prev_level_record >= required_time:
                     # 解鎖邏輯
                     config.total_points -= config.current_world_costs[i]
@@ -1542,25 +1542,25 @@ while config.running:
             if ft.timer <= 0:  # 如果文字壽命到了
                 config.floating_texts.remove(ft)
     # 倒數前五秒
-    elif config.game_state == "3!2!1!":
+    elif config.game_state == "countdown":
         screen.fill(tool.Colors.two_color_wave(config.world_bgc[current_world_key][0], config.world_bgc[current_world_key][1], 1))
 
         config.coin_rect()
-        passed_time, _ = tool.sec_timer(True)
-        countdown = 3 - (passed_time)  # 倒數 3 秒
+        passed_time, _ = tool.sec_timer(update=True, dt=dt)
+        countdown = 3 - passed_time  # 倒數 3 秒
 
         config.player_move(keys)
 
         tool.show_text(level_name, tool.Colors.WHITE, 0, 80, screen_center=True, size=40)
 
         if countdown >= 1:
-            countdown_text = f"{countdown}"
+            countdown_text = str(int(countdown))
             screen_text = f"Escape Them! v1.0.0 - {countdown}!"
         elif countdown >= 0:
             countdown_text = "GO!"
             screen_text = "Escape Them! v1.0.0 - GO!"
         else:
-            tool.sec_timer(False)
+            tool.sec_timer(update=False)
             tool.reset_timer()
             config.game_state = "start_game"
 
@@ -1585,8 +1585,8 @@ while config.running:
                     config.game_state = "pause"
                 if event.key == pygame.K_t and config.now_skills["p20"]:
                     config.alto_shoot = not config.alto_shoot
-
-        current_time_sec, current_time_ms = tool.sec_timer(update=True)
+        should_update = (config.freeze_timer <= 0)
+        current_time_sec, current_time_ms = tool.sec_timer(update=should_update, dt=dt)
 
         keys = pygame.key.get_pressed()
         player_rect.x, player_rect.y = config.player_move(keys)
@@ -2110,7 +2110,7 @@ while config.running:
                     if not countdowning:
                         config.game_state = "start_game"
                     else:
-                        config.game_state = "3!2!1!"
+                        config.game_state = "countdown"
                 if settings_button.collidepoint(mouse_pos) and is_pressing[1]:
                     config.game_state = "setting_p1"
                 if restart_button.collidepoint(mouse_pos) and is_pressing[2]:
@@ -2125,7 +2125,7 @@ while config.running:
                         config.longest_survived_time[current_world_key][config.selected_level][config.game_mode], current_time_sec
                     )
                     config.reset_game()
-                    config.game_state = "3!2!1!"
+                    config.game_state = "countdown"
                 if menu_button.collidepoint(mouse_pos) and is_pressing[3]:
                     tool.collision_time = None  # 重置，否則下次進遊戲會直接結束
                     tool.reset_timer()
@@ -2154,7 +2154,7 @@ while config.running:
                     if not countdowning:
                         config.game_state = "start_game"
                     else:
-                        config.game_state = "3!2!1!"
+                        config.game_state = "countdown"
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_c:
                     config.player_hp = config.player_max_hp

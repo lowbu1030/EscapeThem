@@ -7,10 +7,11 @@ import os
 import pathlib
 import platform as plat
 import subprocess as sub
-import time
 from math import cos, radians, sin
 
 import pygame as p
+
+import config
 
 # 初始化 Pygame (必須先初始化才能使用字體)
 p.init()
@@ -302,29 +303,30 @@ elapsed_time = 0
 paused_time = 0
 
 
-def sec_timer(update=False):
-    """只在遊玩時(update=True)才持續更新時間，否則保持暫停。"""
-    global start_time, elapsed_time, paused_time
+# 初始化
+elapsed_time_ms = 0.0
+
+
+def sec_timer(update=False, dt=0):
+    """
+    dt: 每一幀經過的真實時間 (秒)，通常由 clock.tick() 取得
+    """
+    global elapsed_time_ms
 
     if update:
-        # 如果遊戲剛開始，初始化起始時間（扣除暫停過的時間）
-        if start_time is None:
-            start_time = time.time() - paused_time
-        # 計算遊戲時間
-        elapsed_time = time.time() - start_time
-    else:
-        # 暫停時，記錄目前經過時間（不繼續累加）
-        if start_time is not None:
-            paused_time = time.time() - start_time
-        start_time = None
-    return int(elapsed_time), int(elapsed_time * 1000)
+        # 核心改動：真實時間差 * 你的作弊速度 = 虛擬的時間增量
+        # 這樣 Timer_Speed = 2 時，時間就會跑得比現實快一倍
+        elapsed_time_ms += (dt * 1000) * config.Timer_Speed
+
+    return int(elapsed_time_ms / 1000), int(elapsed_time_ms)
 
 
 def reset_timer():
-    global start_time, elapsed_time, paused_time
+    global start_time, elapsed_time_ms, paused_time
     start_time = None
-    elapsed_time = 0
+    elapsed_time_ms = 0.0
     paused_time = 0
+    text_cache.clear()
 
 
 def get_direction(angle):

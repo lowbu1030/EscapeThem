@@ -61,7 +61,10 @@
             "slow_speed": 8,
             "color": "ORANGE",
             "damage": 25,
-            "type": ["sprint", "random"],
+            "type": [
+                "sprint",
+                "random"
+            ],
             "size": 30
         },
         {
@@ -70,8 +73,85 @@
             "slow_speed": 1,
             "color": "CLARET",
             "damage": 25,
-            "type": ["chaser", "eat_coin"],
+            "type": [
+                "chaser",
+                "eat_coin"
+            ],
             "size": 25
+        },
+        {
+            "show_time": 200,
+            "speed": 3,
+            "slow_speed": 1,
+            "color": "GREEN",
+            "damage": 22
+        },
+        {
+            "show_time": 210,
+            "speed": 4,
+            "slow_speed": 1.5,
+            "color": "RED",
+            "damage": 22
+        },
+        {
+            "show_time": 210,
+            "speed": 5,
+            "slow_speed": 2,
+            "color": "BLUE",
+            "damage": 20
+        },
+        {
+            "show_time": 220,
+            "speed": 10,
+            "slow_speed": 6,
+            "color": "PINK",
+            "damage": 20
+        },
+        {
+            "show_time": 220,
+            "speed": 3,
+            "slow_speed": 2,
+            "color": "LIGHT_RED",
+            "damage": 15
+        },
+        {
+            "show_time": 230,
+            "speed": 10,
+            "slow_speed": 7,
+            "color": "OLIVE",
+            "damage": 40,
+            "type": "random",
+            "size": 50
+        },
+        {
+            "show_time": 230,
+            "speed": 6,
+            "slow_speed": 4,
+            "color": "PARIS_GREEN",
+            "damage": 20,
+            "type": "random",
+            "size": 20
+        },
+        {
+            "show_time": 240,
+            "speed": 8,
+            "slow_speed": 6,
+            "color": "ORANGE",
+            "damage": 30,
+            "type": [
+                "sprint",
+                "random",
+                "eat_coin"
+            ],
+            "size": 35
+        },
+        {
+            "show_time": 250,
+            "speed": 2,
+            "slow_speed": 1,
+            "color": "CLARET",
+            "damage": 40,
+            "size": 50
         }
     ],
     "cannons": []
