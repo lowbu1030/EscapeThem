@@ -898,7 +898,7 @@ last_shot_time = 0  # 用來控制射速 (Cooldown)
 
 
 # 作弊變數
-Invincible = False
+Invincible = True
 FPS_Speed = 1
 Timer_Speed = 1
 

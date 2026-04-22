@@ -163,7 +163,7 @@ current_time_sec = 0
 # 隱藏滑鼠（如果你有自定義滑鼠圖案）
 pygame.mouse.set_visible(False)
 
-# pygame.mixer.music.play(-1)  # 這裡決定要不要播放背景音樂
+pygame.mixer.music.play(-1)  # 這裡決定要不要播放背景音樂
 
 while config.running:
     if config.freeze_timer > 0:
@@ -1585,7 +1585,7 @@ while config.running:
                     config.game_state = "pause"
                 if event.key == pygame.K_t and config.now_skills["p20"]:
                     config.alto_shoot = not config.alto_shoot
-        should_update = (config.freeze_timer <= 0)
+        should_update = config.freeze_timer <= 0
         current_time_sec, current_time_ms = tool.sec_timer(update=should_update, dt=dt)
 
         keys = pygame.key.get_pressed()
