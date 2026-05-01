@@ -1,0 +1,88 @@
+{
+    "level_name": "Level 2 - Split and split",
+    "level_mutiplier": 3.5,
+    "enemies": [
+        {
+            "show_time": -10,
+            "speed": 3,
+            "slow_speed": 1,
+            "color": "RED",
+            "damage": 20,
+            "type": "split"
+        },
+        {
+            "show_time": -10,
+            "speed": 5,
+            "slow_speed": 3,
+            "color": "OLIVE",
+            "damage": 20,
+            "type": "split",
+            "split_enemies": 4
+        },
+        {
+            "show_time": 20,
+            "speed": 7,
+            "slow_speed": 4,
+            "color": "GREEN",
+            "damage": 20,
+            "type": "random"
+        },
+        {
+            "show_time": 45,
+            "speed": 2,
+            "slow_speed": 1,
+            "color": "BLUE",
+            "damage": 20,
+            "type": ["split", "random"],
+            "split_enemies": 5
+        },
+        {
+            "show_time": 60,
+            "speed": 2,
+            "slow_speed": 1,
+            "color": "LIGHT_RED",
+            "damage": 20,
+            "type": ["split", "random_angle"],
+            "split_enemies": 5
+        },
+        {
+            "show_time": 70,
+            "speed": 2,
+            "slow_speed": 1,
+            "color": "ORANGE",
+            "damage": 20,
+            "type": ["split", "chaser", "sprint"],
+            "split_enemies": 5
+        },
+        {
+            "show_time": 70,
+            "speed": 5,
+            "slow_speed": 3,
+            "color": "BLACK",
+            "damage": 20,
+            "type": ["split", "random"],
+            "split_enemies": 8
+        },
+        {
+            "show_time": 80,
+            "speed": 2,
+            "slow_speed": 1,
+            "color": "GRAY",
+            "damage": 30,
+            "type": "split",
+            "split_enemies": 12,
+            "size": 20
+        },
+        {
+            "show_time": 2000,
+            "speed": 5,
+            "slow_speed": 3,
+            "color": "ORANGE",
+            "damage": 18,
+            "type": "split",
+            "split_enemies": 7
+        }
+    ],
+    "cannons": [],
+    "obsticles": []
+}

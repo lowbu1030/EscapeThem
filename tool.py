@@ -1,5 +1,5 @@
 """
-版本：v0.1.0
+版本： v0.2.0
 """
 
 import math
@@ -46,6 +46,9 @@ class CR:  # ColoredRect
 
         if self.show:
             pygame.draw.rect(surface, self.color, self.rect)
+
+
+Color = tuple[int, int, int]
 
 
 class Colors:
@@ -109,25 +112,26 @@ class Colors:
             color_name = "ORANGE 2"
         if color_name.upper() == "LIGHT BLUE":
             color_name = "CYAN"
-        return getattr(Colors, color_name.upper(), default)
+        return getattr(Colors, color_name.upper().replace(" ", "_"), default)
 
     @staticmethod
-    def two_color_gradient(color1, color2, ratio):
+    def two_color_gradient(color1: Color, color2: Color, ratio: float):
         """ratio 是 color1 的比例，回傳兩個顏色的漸層色"""
+        ratio = num_range(0, 1, ratio)
         r = int(color1[0] * ratio + color2[0] * (1 - ratio))
         g = int(color1[1] * ratio + color2[1] * (1 - ratio))
         b = int(color1[2] * ratio + color2[2] * (1 - ratio))
         return (r, g, b)
 
     @staticmethod
-    def two_color_wave(color1, color2, speed, time_func=p.time.get_ticks):
+    def two_color_wave(color1: Color, color2: Color, speed: int | float, time_func=p.time.get_ticks):
         """根據時間在兩個顏色之間波動，\n time_func 是要用的時間函式，預設是 pygame 的 get_ticks()"""
 
         ratio = (sin(time_func() / 1000.0 * speed) + 1) / 2  # 產生 0 到 1 的波動
         return Colors.two_color_gradient(color1, color2, ratio)
 
     @staticmethod
-    def two_color_change(color1, color2, condition):
+    def two_color_change(color1: Color, color2: Color, condition: bool):
         """condition 為 True 時回傳 color1, 為 False 時回傳 color2"""
         return color1 if condition else color2
 
@@ -143,16 +147,119 @@ def draw_rect(color, x, y, width=100, height=50, center=False, show=True):
         return button_rect
 
 
+class Button:
+    def __init__(self, rect: p.Rect, normal_color, pressing_color, hover_color, disabled_color=Colors.DARK_GRAY, border_radius=0):
+        self.rect = rect
+        self.border_radius = border_radius
+        self.active = True
+        self.is_toggle = True
+        self.is_hover = False
+        self.is_pressed = False
+        self.is_clicked = False
+        self.is_visible = True
+        self.type = "normal"  # 可以做連點按鈕
+        self.normal_color = normal_color
+        self.hover_color = hover_color
+        self.pressing_color = pressing_color
+        self.disabled_color = disabled_color
+
+    def get_color(self):
+        if not self.active:
+            return self.disabled_color
+
+        if self.is_pressed:
+            return self.pressing_color
+
+        if self.is_hover:
+            return self.hover_color
+
+        return self.normal_color
+
+    def update(self, events, mouse_pos):
+        if not self.is_visible or not self.active:
+            self.is_hover = False
+            self.is_pressed = False
+            self.is_clicked = False
+            return
+
+        # 每幀重置（重要）
+        self.is_clicked = False
+
+        # hover
+        self.is_hover = self.rect.collidepoint(mouse_pos)
+
+        for event in events:
+            # 按下
+            if event.type == p.MOUSEBUTTONDOWN and event.button == 1:
+                if self.is_hover:
+                    self.is_pressed = True
+            # 放開
+            if event.type == p.MOUSEBUTTONUP and event.button == 1:
+                if self.is_pressed and self.is_hover:
+                    self.is_clicked = True
+
+                self.is_pressed = False
+        if self.type == "hold":
+            if self.is_pressed and self.is_hover:
+                self.is_clicked = True
+        elif self.type == "toggle":
+            if self.is_clicked:
+                self.is_toggle = not self.is_toggle
+
+    def draw(self, screen: p.Surface, alpha=255):
+        if not self.is_visible:
+            return
+        surface = p.Surface(self.rect.size, p.SRCALPHA)
+        color = self.get_color()
+        p.draw.rect(surface, (*color, alpha), surface.get_rect())
+        screen.blit(surface, self.rect.topleft)
+
+
+class TextButton(Button):
+    def __init__(
+        self,
+        text,
+        text_color,
+        normal_color,
+        pressing_color,
+        hover_color,
+        disabled_color,
+        rect,
+        font_size,
+        font_type=None,
+        # screen_center=True,
+        # center=False,
+        r_alpha=255,
+        t_alpha=255,
+    ):
+        super().__init__(rect, normal_color, pressing_color, hover_color, disabled_color)
+        self.text = text
+        self.text_color = text_color
+        self.font_size = font_size
+        self.font_type = font_type if font_type is not None else ""
+        # self.screen_center = screen_center
+        # self.center = center
+        self.r_alpha = r_alpha
+        self.t_alpha = t_alpha
+
+    def draw(self, screen):
+        super().draw(screen, self.r_alpha)
+        show_text(self.text, self.text_color, self.rect.centerx, self.rect.centery, self.font_size, alpha=self.t_alpha)
+
+    # def _draw_text(self):
+    #     pass
+
+
 text_cache = {}
 
-root = pathlib.Path(__file__).parent.resolve()
+root = pathlib.Path(__file__).parent.resolve(strict=False)
 
 
-def show_text(text, text_color, x, y, size=24, center=False, screen_center=False, show=True, font_type="", alpha=255, line_gap=5):
+def show_text(screen, text, text_color, x, y, size=24, center=False, screen_center=False, show=True, font_type="", alpha=255, line_gap=5):
     # 1. 產生唯一的快取 Key (包含 alpha 也要放進去，因為 alpha 不同圖片就不同)
     # 如果 text 是清單，轉成字串來當 key
     text_str = "".join(text) if isinstance(text, list) else text
-    key = f"{text_str}_{text_color}_{size}_{font_type}_{alpha}"
+    key = (text_str, text_color, size, font_type, alpha)
 
     # 2. 檢查快取：如果這組文字已經畫過了，直接拿出來 blit
     if key in text_cache:
@@ -213,19 +320,16 @@ def show_text(text, text_color, x, y, size=24, center=False, screen_center=False
         if i == 0:
             first_rect = draw_rect
         if show:
-            s.blit(surf, draw_rect)
+            screen.blit(surf, draw_rect)
 
     return first_rect
 
 
 def text_button(
+    screen,
     text: str,
     text_color: tuple[int, ...],
-    color: tuple,
-    x: int | float,
-    y: int | float,
-    width=100,
-    height=50,
+    button: Button,
     t_x=None,
     t_y=None,
     t_center=F,
@@ -238,25 +342,29 @@ def text_button(
     width_line=0,
 ):
     """包含文字以及方塊的物件，會回傳一個方塊，可以偵測碰撞"""
-    button_surf = p.Surface((width, height), p.SRCALPHA)
-    # 2. 決定按鈕在主畫面上的位置 (Rect)
-    if not b_center:
-        button_rect = p.Rect(x, y, width, height)
-    else:
-        button_rect = p.Rect(W // 2 - width // 2, y, width, height)
+    # btn_x, btn_y = button.rect.x, button.rect.y
+    btn_w, btn_h = button.rect.width, button.rect.height
+    button_surf = p.Surface((btn_w, btn_h), p.SRCALPHA)
 
     if show:
-        draw_color = (*color, alpha) if len(color) == 3 else color
-        p.draw.rect(button_surf, draw_color, (0, 0, width, height), border_radius=border_radius, width=width_line)
+        draw_color = (*button.current_color, alpha) if len(button.current_color) == 3 else button.current_color
+        p.draw.rect(button_surf, draw_color, (0, 0, btn_w, btn_h), border_radius=border_radius, width=width_line)
 
-        s.blit(button_surf, (button_rect.x, button_rect.y))
+        screen.blit(button_surf, (button.rect.x, button.rect.y))
 
-        text_x = t_x if t_x is not None else button_rect.centerx
-        text_y = t_y if t_y is not None else button_rect.centery
+        text_x = t_x if t_x is not None else button.rect.centerx
+        text_y = t_y if t_y is not None else button.rect.centery
 
-        show_text(text, text_color, text_x, text_y - size // 10, center=T if t_x is None else t_center, size=size, font_type=font_type, alpha=alpha)
-
-    return button_rect
+        show_text(
+            text,
+            text_color,
+            text_x,
+            text_y - size // 10,
+            center=T if t_x is None else t_center,
+            size=size,
+            font_type=font_type,
+            alpha=alpha,
+        )
 
 
 def screen_vague(vague):
@@ -390,7 +498,7 @@ class FloatingText:
         self.speed = speed
         self.center = center
 
-        root = pathlib.Path(__file__).parent.resolve()
+        root = pathlib.Path(__file__).parent.resolve(strict=False)
         self.font = p.font.Font(str(root / "Ubuntu.ttf"), size)
 
     def update(self):

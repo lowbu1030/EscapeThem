@@ -1,7 +1,7 @@
 [tool.black]
-line-length = 200
+line-length = 140
 target-version = ["py314"]
-skip-string-normalization = false # 是否禁止自動將 "" 或 '' 統一成雙引號（false 表示允許 Black 處理）
+skip-string-normalization = true # 是否禁止自動將 "" 或 '' 統一成雙引號（false 表示允許 Black 處理）
 
 [tool.ruff]
 line-length = 200
@@ -20,4 +20,10 @@ ignore = [
 "E501", # 行長交給 Black 處理，所以 Ruff 忽略
 "C901", # 函式太複雜（cyclomatic complexity 過高），通常影響重構警告
 "W191", # 使用 tab 而非空白縮排（允許使用 tab，所以忽略）
+]
+exclude = [
+    "__pycache__",
+    ".venv",
+    "build",
+    "dist",
 ]

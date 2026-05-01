@@ -213,3 +213,4 @@ save_game*
 levels/making*.json
 pyproject.toml
 Untitled-*.py
+* copy.*
