@@ -11,8 +11,6 @@ from math import cos, radians, sin
 
 import pygame as p
 
-import config
-
 # 初始化 Pygame (必須先初始化才能使用字體)
 p.init()
 p.mixer.init()
@@ -42,10 +40,8 @@ class CR:  # ColoredRect
         self.can_collide = can_collide
 
     def draw(self, surface):
-        import pygame
-
         if self.show:
-            pygame.draw.rect(surface, self.color, self.rect)
+            p.draw.rect(surface, self.color, self.rect)
 
 
 Color = tuple[int, int, int]
@@ -136,237 +132,6 @@ class Colors:
         return color1 if condition else color2
 
 
-def draw_rect(color, x, y, width=100, height=50, center=False, show=True):
-    """單純方塊"""
-    if not center:
-        button_rect = p.Rect(x, y, width, height)
-    else:
-        button_rect = p.Rect(W // 2 - width // 2, y, width, height)
-    p.draw.rect(s, color, button_rect)
-    if show:
-        return button_rect
-
-
-class Button:
-    def __init__(self, rect: p.Rect, normal_color, pressing_color, hover_color, disabled_color=Colors.DARK_GRAY, border_radius=0):
-        self.rect = rect
-        self.border_radius = border_radius
-        self.active = True
-        self.is_toggle = True
-        self.is_hover = False
-        self.is_pressed = False
-        self.is_clicked = False
-        self.is_visible = True
-        self.type = "normal"  # 可以做連點按鈕
-        self.normal_color = normal_color
-        self.hover_color = hover_color
-        self.pressing_color = pressing_color
-        self.disabled_color = disabled_color
-
-    def get_color(self):
-        if not self.active:
-            return self.disabled_color
-
-        if self.is_pressed:
-            return self.pressing_color
-
-        if self.is_hover:
-            return self.hover_color
-
-        return self.normal_color
-
-    def update(self, events, mouse_pos):
-        if not self.is_visible or not self.active:
-            self.is_hover = False
-            self.is_pressed = False
-            self.is_clicked = False
-            return
-
-        # 每幀重置（重要）
-        self.is_clicked = False
-
-        # hover
-        self.is_hover = self.rect.collidepoint(mouse_pos)
-
-        for event in events:
-            # 按下
-            if event.type == p.MOUSEBUTTONDOWN and event.button == 1:
-                if self.is_hover:
-                    self.is_pressed = True
-            # 放開
-            if event.type == p.MOUSEBUTTONUP and event.button == 1:
-                if self.is_pressed and self.is_hover:
-                    self.is_clicked = True
-
-                self.is_pressed = False
-        if self.type == "hold":
-            if self.is_pressed and self.is_hover:
-                self.is_clicked = True
-        elif self.type == "toggle":
-            if self.is_clicked:
-                self.is_toggle = not self.is_toggle
-
-    def draw(self, screen: p.Surface, alpha=255):
-        if not self.is_visible:
-            return
-        surface = p.Surface(self.rect.size, p.SRCALPHA)
-        color = self.get_color()
-        p.draw.rect(surface, (*color, alpha), surface.get_rect())
-        screen.blit(surface, self.rect.topleft)
-
-
-class TextButton(Button):
-    def __init__(
-        self,
-        text,
-        text_color,
-        normal_color,
-        pressing_color,
-        hover_color,
-        disabled_color,
-        rect,
-        font_size,
-        font_type=None,
-        # screen_center=True,
-        # center=False,
-        r_alpha=255,
-        t_alpha=255,
-    ):
-        super().__init__(rect, normal_color, pressing_color, hover_color, disabled_color)
-        self.text = text
-        self.text_color = text_color
-        self.font_size = font_size
-        self.font_type = font_type if font_type is not None else ""
-        # self.screen_center = screen_center
-        # self.center = center
-        self.r_alpha = r_alpha
-        self.t_alpha = t_alpha
-
-    def draw(self, screen):
-        super().draw(screen, self.r_alpha)
-        show_text(self.text, self.text_color, self.rect.centerx, self.rect.centery, self.font_size, alpha=self.t_alpha)
-
-    # def _draw_text(self):
-    #     pass
-
-
-text_cache = {}
-
-root = pathlib.Path(__file__).parent.resolve(strict=False)
-
-
-def show_text(screen, text, text_color, x, y, size=24, center=False, screen_center=False, show=True, font_type="", alpha=255, line_gap=5):
-    # 1. 產生唯一的快取 Key (包含 alpha 也要放進去，因為 alpha 不同圖片就不同)
-    # 如果 text 是清單，轉成字串來當 key
-    text_str = "".join(text) if isinstance(text, list) else text
-    key = (text_str, text_color, size, font_type, alpha)
-
-    # 2. 檢查快取：如果這組文字已經畫過了，直接拿出來 blit
-    if key in text_cache:
-        surfaces, relative_rects = text_cache[key]
-    else:
-        # --- 以下內容只有在「第一次畫這段字」時才會執行 ---
-        surfaces = []
-        relative_rects = []
-
-        # 字體初始化 (這也很耗時，只有沒快取才做)
-        if font_type == "":
-            font = p.font.Font(str(root / "Ubuntu.ttf"), size)
-        elif font_type == "None":
-            font = p.font.SysFont(None, size)
-        else:
-            font = p.font.SysFont(font_type, size)
-
-        text_list = [text] if isinstance(text, str) else text
-
-        temp_y = 0
-        for t in text_list:
-            # 渲染並處理透明度
-            t_surf = font.render(t, True, text_color)
-            final_surf = p.Surface(t_surf.get_size(), p.SRCALPHA).convert_alpha()  # 記得加 convert_alpha
-            final_surf.blit(t_surf, (0, 0))
-            if alpha < 255:
-                final_surf.set_alpha(alpha)
-
-            # 儲存 Surface
-            surfaces.append(final_surf)
-
-            # 儲存相對位置 (以 y=0 為起點，方便後續根據傳入的 y 移動)
-            t_rect = final_surf.get_rect()
-            t_rect.top = temp_y
-            relative_rects.append(t_rect)
-
-            temp_y = t_rect.bottom + line_gap
-
-        # 存入快取：把這一組 Surface 和它們的相對位置存起來
-        text_cache[key] = (surfaces, relative_rects)
-
-    # 3. 繪製邏輯 (這一部分每一幀都會跑，但現在只剩 blit，非常快)
-    first_rect = None
-    for i, surf in enumerate(surfaces):
-        # 複製一份矩形來做位置偏移計算
-        draw_rect = relative_rects[i].copy()
-
-        # 根據外部傳入的 x, y 進行偏移
-        if center:
-            draw_rect.center = (x, y + relative_rects[i].top)
-        else:
-            draw_rect.top = y + relative_rects[i].top
-            if screen_center:
-                draw_rect.centerx = W // 2
-            else:
-                draw_rect.x = x
-
-        if i == 0:
-            first_rect = draw_rect
-        if show:
-            screen.blit(surf, draw_rect)
-
-    return first_rect
-
-
-def text_button(
-    screen,
-    text: str,
-    text_color: tuple[int, ...],
-    button: Button,
-    t_x=None,
-    t_y=None,
-    t_center=F,
-    b_center=F,
-    size=28,
-    show=T,
-    font_type="",
-    alpha=255,
-    border_radius=0,
-    width_line=0,
-):
-    """包含文字以及方塊的物件，會回傳一個方塊，可以偵測碰撞"""
-    # btn_x, btn_y = button.rect.x, button.rect.y
-    btn_w, btn_h = button.rect.width, button.rect.height
-    button_surf = p.Surface((btn_w, btn_h), p.SRCALPHA)
-
-    if show:
-        draw_color = (*button.current_color, alpha) if len(button.current_color) == 3 else button.current_color
-        p.draw.rect(button_surf, draw_color, (0, 0, btn_w, btn_h), border_radius=border_radius, width=width_line)
-
-        screen.blit(button_surf, (button.rect.x, button.rect.y))
-
-        text_x = t_x if t_x is not None else button.rect.centerx
-        text_y = t_y if t_y is not None else button.rect.centery
-
-        show_text(
-            text,
-            text_color,
-            text_x,
-            text_y - size // 10,
-            center=T if t_x is None else t_center,
-            size=size,
-            font_type=font_type,
-            alpha=alpha,
-        )
-
-
 def screen_vague(vague):
     """要放在此函式上的物件才會被模糊"""
     snapshot = s.copy()
@@ -424,6 +189,8 @@ def sec_timer(update=False, dt=0):
     if update:
         # 核心改動：真實時間差 * 你的作弊速度 = 虛擬的時間增量
         # 這樣 Timer_Speed = 2 時，時間就會跑得比現實快一倍
+
+        import config
         elapsed_time_ms += (dt * 1000) * config.Timer_Speed
 
     return int(elapsed_time_ms / 1000), int(elapsed_time_ms)
@@ -434,7 +201,6 @@ def reset_timer():
     start_time = None
     elapsed_time_ms = 0.0
     paused_time = 0
-    text_cache.clear()
 
 
 def get_direction(angle):

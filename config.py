@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pygame
 
-import tool備用  # 載入你的工具包
+import tool  # 載入你的工具包
 
 BASE_DIR = Path(__file__).parent
 
@@ -28,7 +28,7 @@ WIDTH, HEIGHT = 700, 600
 pygame.init()
 pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-tool備用.set_screen(screen)
+tool.set_screen(screen)
 screen_rect = screen.get_rect()
 screen_text = "Escape Them!"
 pygame.display.set_caption(screen_text)
@@ -407,7 +407,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": True,
-        "color": tool備用.Colors.RED,
+        "color": tool.Colors.RED,
         "effect": "none",
         "base_power": 1,
         "growth": 0,
@@ -419,7 +419,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.WHITE,
+        "color": tool.Colors.WHITE,
         "effect": ["speed", "points_multiplier"],
         "base_power": [1.3, 1.2],
         "growth": [0.05, 0.05],
@@ -431,7 +431,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.BLACK,
+        "color": tool.Colors.BLACK,
         "effect": ["points_coin_multiplier", "max_hp"],
         "base_power": [1.2, 1.1],
         "growth": [0.05, 0.1],
@@ -443,7 +443,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.GRAY,
+        "color": tool.Colors.GRAY,
         "effect": ["invincible_time", "speed"],
         "base_power": [1.5, 1.1],
         "growth": [0.1, 0.05],
@@ -455,7 +455,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.OLIVE,
+        "color": tool.Colors.OLIVE,
         "effect": ["max_hp", "coin_multiplier"],
         "base_power": [1.3, 2.0],
         "growth": [0.08, 0.05],
@@ -468,7 +468,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.GREEN,
+        "color": tool.Colors.GREEN,
         "effect": ["max_hp", "speed"],
         "base_power": [1.2, 0.7],
         "growth": [0.05, 0.08],
@@ -480,7 +480,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.YELLOW,
+        "color": tool.Colors.YELLOW,
         "effect": ["points_multiplier", "speed"],
         "base_power": [1.7, 0.8],
         "growth": [0.1, 0.08],
@@ -492,7 +492,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.BLUE,
+        "color": tool.Colors.BLUE,
         "effect": "enemy_damage",
         "base_power": 0.7,
         "growth": -0.04,  # 傷害倍率越低越強
@@ -504,7 +504,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.PURPLE,
+        "color": tool.Colors.PURPLE,
         "effect": "speed",
         "base_power": 1.2,
         "growth": 0.1,
@@ -516,7 +516,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.VIOLET,
+        "color": tool.Colors.VIOLET,
         "effect": ["points_multiplier", "coin_multiplier"],
         "base_power": [3.0, 2.3],
         "growth": [0.1, 0.2],
@@ -529,7 +529,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.ORANGE,
+        "color": tool.Colors.ORANGE,
         "effect": "player_size",
         "base_power": 0.9,
         "growth": -0.01,  # 體型越小越強
@@ -541,7 +541,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.CYAN,
+        "color": tool.Colors.CYAN,
         "effect": ["coin_multiplier", "player_size"],
         "base_power": [1.9, 0.8],
         "growth": [0.15, -0.02],
@@ -553,7 +553,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.PINK,
+        "color": tool.Colors.PINK,
         "effect": ["speed", "points_coin_multiplier"],
         "base_power": [1.8, 0.9],
         "growth": [0.12, 0.1],
@@ -565,7 +565,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.ORANGE2,
+        "color": tool.Colors.ORANGE2,
         "effect": ["points_multiplier", "max_hp", "speed"],
         "base_power": [2.3, 0.7, 0.6],
         "growth": [0.2, 0, 0],
@@ -577,7 +577,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.CHARTREUSE,
+        "color": tool.Colors.CHARTREUSE,
         "effect": ["max_hp", "coin_multiplier", "speed"],
         "base_power": [0.8, 5.0, 1.3],
         "growth": [0, 0.12, 0.1],
@@ -590,7 +590,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.GOLD,
+        "color": tool.Colors.GOLD,
         "effect": ["coin_multiplier", "points_multiplier"],
         "base_power": [4, 1.5],
         "growth": [0.4, 0.2],
@@ -602,7 +602,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.BROWN,
+        "color": tool.Colors.BROWN,
         "effect": ["enemy_spawn_speed", "max_hp"],
         "base_power": [2, 1.2],
         "growth": [0.1, 0.25],
@@ -614,7 +614,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.DARK_GREEN,
+        "color": tool.Colors.DARK_GREEN,
         "effect": ["max_hp", "speed"],
         "base_power": [2.0, 1.2],
         "growth": [0.5, 0.15],
@@ -626,7 +626,7 @@ player_skins = {
         "level": 1,
         "exp": 0,
         "has_owned": False,
-        "color": tool備用.Colors.CLARET,
+        "color": tool.Colors.CLARET,
         "effect": ["max_hp", "points_coin_multiplier"],
         "base_power": [2.0, 3.0],
         "growth": [0.7, 0.2],
@@ -637,32 +637,32 @@ player_skins = {
 
 
 skin_text_color = {
-    "red": {"text_col": tool備用.Colors.WHITE},
-    "orange": {"text_col": tool備用.Colors.BLACK},
-    "dark orange": {"text_col": tool備用.Colors.BLACK},
-    "yellow": {"text_col": tool備用.Colors.BLACK},
-    "chartreuse": {"text_col": tool備用.Colors.BLACK},
-    "green": {"text_col": tool備用.Colors.BLACK},
-    "olive": {"text_col": tool備用.Colors.WHITE},
-    "light blue": {"text_col": tool備用.Colors.BLACK},
-    "blue": {"text_col": tool備用.Colors.WHITE},
-    "purple": {"text_col": tool備用.Colors.WHITE},
-    "violet": {"text_col": tool備用.Colors.WHITE},
-    "pink": {"text_col": tool備用.Colors.WHITE},
-    "white": {"text_col": tool備用.Colors.BLACK},
-    "gray": {"text_col": tool備用.Colors.BLACK},
-    "black": {"text_col": tool備用.Colors.WHITE},
+    "red": {"text_col": tool.Colors.WHITE},
+    "orange": {"text_col": tool.Colors.BLACK},
+    "dark orange": {"text_col": tool.Colors.BLACK},
+    "yellow": {"text_col": tool.Colors.BLACK},
+    "chartreuse": {"text_col": tool.Colors.BLACK},
+    "green": {"text_col": tool.Colors.BLACK},
+    "olive": {"text_col": tool.Colors.WHITE},
+    "light blue": {"text_col": tool.Colors.BLACK},
+    "blue": {"text_col": tool.Colors.WHITE},
+    "purple": {"text_col": tool.Colors.WHITE},
+    "violet": {"text_col": tool.Colors.WHITE},
+    "pink": {"text_col": tool.Colors.WHITE},
+    "white": {"text_col": tool.Colors.BLACK},
+    "gray": {"text_col": tool.Colors.BLACK},
+    "black": {"text_col": tool.Colors.WHITE},
     # VIP皮膚區
-    "gold": {"text_col": tool備用.Colors.BLACK},
-    "brown": {"text_col": tool備用.Colors.WHITE},
-    "dark green": {"text_col": tool備用.Colors.WHITE},
-    "claret": {"text_col": tool備用.Colors.WHITE},
+    "gold": {"text_col": tool.Colors.BLACK},
+    "brown": {"text_col": tool.Colors.WHITE},
+    "dark green": {"text_col": tool.Colors.WHITE},
+    "claret": {"text_col": tool.Colors.WHITE},
 }
 
 
 current_levels = {f"upgrade_p{i}": 0 for i in range(1, len(UPGRADE_SURVIVAL) + len(UPGRADE_COMBAT) + 1)}
 
-now_player_skin = tool備用.Colors.RED
+now_player_skin = tool.Colors.RED
 current_player_color_name = "red"
 
 
@@ -737,14 +737,14 @@ def apply_skin_effects():
             player_max_hp_buff *= final_power
         elif effect == "enemy_damage":
             skin_enemy_damage_buff *= final_power
-            skin_enemy_damage_buff = tool備用.num_range(0.1, 1.0, skin_enemy_damage_buff)
+            skin_enemy_damage_buff = tool.num_range(0.1, 1.0, skin_enemy_damage_buff)
         elif effect == "enemy_spawn_speed":
             buffer_duration_buff *= final_power
         elif effect == "invincible_time":
             invincible_time_buff *= final_power
         elif effect == "player_size":
             player_size_buff *= final_power
-            player_size_buff = tool備用.num_range(0.5, 5, player_size_buff)
+            player_size_buff = tool.num_range(0.5, 5, player_size_buff)
         # 格式
         # elif effect == "":
         #     pass
@@ -755,6 +755,7 @@ apply_skin_effects()
 buffer_duration = now_skills["p5"] * buffer_duration_buff
 
 offset_x, offset_y = 0, 0
+target_y = 0
 
 # 載入圖片
 IMG_PATH = Path(__file__).parent
@@ -916,7 +917,7 @@ class Enemy:
         self.x_dir = random.choice([-1, 1])
         self.y_dir = random.choice([-1, 1])
 
-        self.current_dx, self.current_dy = tool備用.get_direction(self.angle)
+        self.current_dx, self.current_dy = tool.get_direction(self.angle)
 
         # 狀態與計時
         self.show = False
@@ -1051,7 +1052,7 @@ class Enemy:
             if current_time_ms - self.last_change_time > self.random_time_limit:
                 self.random_time_limit = random.randint(800, 2300)
                 self.angle = random.randint(0, 360)
-                self.current_dx, self.current_dy = tool備用.get_direction(self.angle)
+                self.current_dx, self.current_dy = tool.get_direction(self.angle)
                 self.last_change_time = current_time_ms
             self.x += self.current_dx * final_speed * self.x_dir
             self.y += self.current_dy * final_speed * self.y_dir
@@ -1065,12 +1066,12 @@ class Enemy:
         # 處理 X 軸邊界
         if self.x <= 0 or self.x >= WIDTH - self.width:
             self.x_dir *= -1  # 撞到左右牆壁，水平方向反轉
-            self.x = tool備用.num_range(0, WIDTH - self.width, self.x)
+            self.x = tool.num_range(0, WIDTH - self.width, self.x)
 
         # 處理 Y 軸邊界
         if self.y <= 0 or self.y >= HEIGHT - self.height:
             self.y_dir *= -1  # 撞到上下牆壁，垂直方向反轉
-            self.y = tool備用.num_range(0, HEIGHT - self.height, self.y)
+            self.y = tool.num_range(0, HEIGHT - self.height, self.y)
         return self.x <= 0 or self.x >= WIDTH - self.width or self.y <= 0 or self.y >= HEIGHT - self.height
 
 
@@ -1188,7 +1189,7 @@ class Bullet:
         self.has_triggered_explosion = False
 
         # 預先計算方向向量
-        self.dx, self.dy = tool備用.get_direction(self.angle)
+        self.dx, self.dy = tool.get_direction(self.angle)
 
     def update(self, player_rect):
         global player_hp, last_hit_time, shake_timer, shake_range, last_cure_time
@@ -1252,14 +1253,14 @@ class Player_Bullet:
         if self.x < 0 or self.x > WIDTH or self.y < 0 or self.y > HEIGHT:
             self.active = False
 
-        return pygame.draw.circle(screen, tool備用.Colors.YELLOW, (int(self.x), int(self.y)), self.radius)
+        return pygame.draw.circle(screen, tool.Colors.YELLOW, (int(self.x), int(self.y)), self.radius)
 
     def draw(self, screen):
-        pygame.draw.circle(screen, tool備用.Colors.YELLOW, (int(self.x), int(self.y)), self.radius)
+        pygame.draw.circle(screen, tool.Colors.YELLOW, (int(self.x), int(self.y)), self.radius)
 
 
 class Obsticle:
-    def __init__(self, x, y, width, height, color=tool備用.Colors.GRAY, type="normal"):
+    def __init__(self, x, y, width, height, color=tool.Colors.GRAY, type="normal"):
         self.rect = pygame.Rect(x, y, width, height)
         self.color = color
         self.type = type
@@ -1267,7 +1268,7 @@ class Obsticle:
     def draw(self, screen, offset_x, offset_y):
         draw_rect = self.rect.move(offset_x, offset_y)
         if self.type == "lava":
-            pygame.draw.rect(screen, tool備用.Colors.RED, draw_rect)
+            pygame.draw.rect(screen, tool.Colors.RED, draw_rect)
         elif self.type != "invisible":
             pygame.draw.rect(screen, self.color, draw_rect)
 
@@ -1276,7 +1277,7 @@ class Obsticle:
 
 
 # 砲台的子彈生成函式，放在外面讓子彈生成時也能呼叫
-def make_bullet(x, y, angle, speed, bom_range, color=tool備用.Colors.GRAY, base_damage=10, type="normal"):
+def make_bullet(x, y, angle, speed, bom_range, color=tool.Colors.GRAY, base_damage=10, type="normal"):
     return Bullet(x, y, color, angle, speed, bom_range, base_damage, type)
 
 
@@ -1364,10 +1365,6 @@ def reset_scroll_ys():
     scroll_ys[:] = [0] * len(scroll_ys)
 
 
-buttons = []
-for _ in range(20):
-    buttons.append(pygame.Rect(0, 0, 0, 0))
-
 # 顯示專區
 next_spawn_range = random.randint(14, 20)
 
@@ -1426,8 +1423,8 @@ world_cost = {
     # "world3": 500000
 }
 world_bgc = {
-    "world1": [tool備用.Colors.BLACK2, tool備用.Colors.BLACK_3],
-    "world2": [tool備用.Colors.VIOLET, tool備用.Colors.PURPLE],
+    "world1": [tool.Colors.BLACK2, tool.Colors.BLACK_3],
+    "world2": [tool.Colors.VIOLET, tool.Colors.PURPLE],
 }
 
 # 載入圖片
@@ -1450,6 +1447,7 @@ last_hit_time = -10  # 上次受傷時間，預設負值確保開局能受傷
 invincible_duration = now_skills["p8"] / 1000  # 無敵時間 1秒，可升級
 has_save_survived_time = False
 draw_this_lock = False
+level_button_color = tool.Colors.YELLOW
 
 last_cure_time = 0
 current_time_sec = 0
@@ -1483,14 +1481,14 @@ def update_upgrade_hub_layout():
     current_cfg = UPGRADE_SURVIVAL if shop_page == "survival" else UPGRADE_COMBAT
 
     p_colors = [
-        tool備用.Colors.RED,
-        tool備用.Colors.ORANGE,
-        tool備用.Colors.YELLOW,
-        tool備用.Colors.GREEN,
-        tool備用.Colors.CYAN,
-        tool備用.Colors.BLUE,
-        tool備用.Colors.PURPLE,
-        tool備用.Colors.PINK,
+        tool.Colors.RED,
+        tool.Colors.ORANGE,
+        tool.Colors.YELLOW,
+        tool.Colors.GREEN,
+        tool.Colors.CYAN,
+        tool.Colors.BLUE,
+        tool.Colors.PURPLE,
+        tool.Colors.PINK,
     ]
 
     # 2. 直接迭代字典，不用管數字編號了
@@ -1502,9 +1500,9 @@ def update_upgrade_hub_layout():
         prefix = f"{cfg['title']}: Lv{lvl + 1} "
         if is_max:
             display_text = prefix + "Max Level"
-            display_color = tool備用.Colors.GRAY
+            display_color = tool.Colors.GRAY
         else:
-            display_text = prefix + f"Cost: ${tool備用.num_to_KMBT(costs[lvl])}"
+            display_text = prefix + f"Cost: ${tool.num_to_KMBT(costs[lvl])}"
             # 顏色根據當前分頁的順序跑循環
             display_color = p_colors[i % len(p_colors)]
 
@@ -1520,9 +1518,9 @@ def calculate_final_stat(effect_type, base_p, grow, level):
 
     # 根據不同效果套用不同的限制 (跟 apply_skin_effects 裡面的一樣)
     if effect_type == "enemy_damage":
-        return tool備用.num_range(0.1, 1.0, val)
+        return tool.num_range(0.1, 1.0, val)
     elif effect_type == "player_size":
-        return tool備用.num_range(0.5, 5.0, val)
+        return tool.num_range(0.5, 5.0, val)
     # 其他效果如果也有上限/下限，可以在這裡加 elif
 
     return val  # 沒有特殊限制的效果直接回傳
@@ -1541,35 +1539,35 @@ def load_resets():
 
     # 遊戲模式設定
     if game_mode == "easy":
-        level_button_color = tool備用.Colors.GREEN
+        level_button_color = tool.Colors.GREEN
         next_spawn_range = (10, 13)
         mode_speed_buff = 0.5
         gm_points_buff = 0.7
         spawn_time_debuff = 1
         enemy_damage_buff = 1
     elif game_mode == "normal":
-        level_button_color = tool備用.Colors.YELLOW
+        level_button_color = tool.Colors.YELLOW
         next_spawn_range = (14, 18)
         mode_speed_buff = 1
         gm_points_buff = 1
         spawn_time_debuff = 1
         enemy_damage_buff = 1
     elif game_mode == "hard":
-        level_button_color = tool備用.Colors.ORANGE
+        level_button_color = tool.Colors.ORANGE
         next_spawn_range = (17, 21)
         mode_speed_buff = 1.3
         gm_points_buff = 1.7
         spawn_time_debuff = 0.8
         enemy_damage_buff = 1
     elif game_mode == "super_hard":
-        level_button_color = tool備用.Colors.RED
+        level_button_color = tool.Colors.RED
         next_spawn_range = (20, 24)
         mode_speed_buff = 2
         gm_points_buff = 2.2
         spawn_time_debuff = 0.6
         enemy_damage_buff = 1
     elif game_mode == "crazy":
-        level_button_color = tool備用.Colors.PURPLE
+        level_button_color = tool.Colors.PURPLE
         next_spawn_range = (23, 27)
         mode_speed_buff = 3
         gm_points_buff = 2.7
@@ -1585,7 +1583,7 @@ def _make_enemy_list(level_data):
     for e in level_data:
         # 1. 處理參數 (維持你原本的預設值邏輯)
         a_range = tuple(e.get("angle_range", (10, 80)))
-        e_color = tool備用.Colors.get_color(e["color"], tool備用.Colors.WHITE)
+        e_color = tool.Colors.get_color(e["color"], tool.Colors.WHITE)
 
         # 2. 【關鍵改動】直接建立 Enemy 物件
         # 這裡傳入的參數要對應你 Enemy 類別 __init__ 的順序
@@ -1616,15 +1614,15 @@ def _make_cannon_list(level_data):
         fire_rate=2000,
         bullet_speed=5,
         bom_range=100,
-        color=tool備用.Colors.GRAY,
+        color=tool.Colors.GRAY,
         move_speed=0,
         type="normal",
         bullet_type="normal",
         damage=10,
     ):
         return {
-            "x": tool備用.num_range(0, WIDTH - 30, x),
-            "y": tool備用.num_range(0, HEIGHT - 30, y),
+            "x": tool.num_range(0, WIDTH - 30, x),
+            "y": tool.num_range(0, HEIGHT - 30, y),
             "angle": angle,
             "fire_rate": fire_rate,
             "bullet_speed": bullet_speed,
@@ -1652,7 +1650,7 @@ def _make_cannon_list(level_data):
             show_time=c["show_time"],
             fire_rate=c.get("fire_rate", 2000),
             bullet_speed=c.get("bullet_speed", 5),
-            color=tool備用.Colors.get_color(c["color"], tool備用.Colors.GRAY),  # 沒抓到就給灰色
+            color=tool.Colors.get_color(c["color"], tool.Colors.GRAY),  # 沒抓到就給灰色
             move_speed=c.get("move_speed", 0),
             type=c.get("type", "normal"),
             bullet_type=c.get("bullet_type", "normal"),
@@ -1673,7 +1671,7 @@ def _make_obstacle_list(level_data):
             width=o["width"],
             height=o["height"],
             type=o.get("type", "normal"),
-            color=tool備用.Colors.get_color(o["color"], tool備用.Colors.GRAY),  # 沒抓到就給灰色
+            color=tool.Colors.get_color(o["color"], tool.Colors.GRAY),  # 沒抓到就給灰色
         )
 
         obstacle_list.append(obstacle_data)
@@ -1735,8 +1733,8 @@ def reset_game():
         player_size,
     )
 
-    tool備用.reset_timer()
-    passed_time, _ = tool備用.sec_timer(True)
+    tool.reset_timer()
+    passed_time, _ = tool.sec_timer(True)
     countdown = 3 - (passed_time)  # 倒數 3 秒
 
     afk_timer = 0  # 累計閒置時間
@@ -1767,14 +1765,14 @@ def reset_game():
 
     # 1. 定義寶藏的配置表格 (稀有度, 顏色, 機率, 分數範圍)
     treasure_config = [
-        ("Common", tool備用.Colors.WHITE, int(150 // (now_skills["p11"] * 3)), (2, 5)),
-        ("Uncommon", tool備用.Colors.GREEN, int(140 // (now_skills["p11"] * 2)), (5, 9)),
-        ("Rare", tool備用.Colors.BLUE, int(80 // now_skills["p11"]), (8, 12)),
-        ("Epic", tool備用.Colors.PURPLE, int(60 * now_skills["p11"]), (11, 15)),
-        ("Legendary", tool備用.Colors.ORANGE, int(40 * now_skills["p11"]), (15, 18)),
-        ("Mythic", tool備用.Colors.RED, int(24 * now_skills["p11"] * 2), (17, 20)),
-        ("Exotic", tool備用.Colors.CYAN, int(8 * now_skills["p11"] * 2), (20, 23)),
-        ("Divine", tool備用.Colors.GOLD, int(1 * now_skills["p11"] * 3), (23, 27)),
+        ("Common", tool.Colors.WHITE, int(150 // (now_skills["p11"] * 3)), (2, 5)),
+        ("Uncommon", tool.Colors.GREEN, int(140 // (now_skills["p11"] * 2)), (5, 9)),
+        ("Rare", tool.Colors.BLUE, int(80 // now_skills["p11"]), (8, 12)),
+        ("Epic", tool.Colors.PURPLE, int(60 * now_skills["p11"]), (11, 15)),
+        ("Legendary", tool.Colors.ORANGE, int(40 * now_skills["p11"]), (15, 18)),
+        ("Mythic", tool.Colors.RED, int(24 * now_skills["p11"] * 2), (17, 20)),
+        ("Exotic", tool.Colors.CYAN, int(8 * now_skills["p11"] * 2), (20, 23)),
+        ("Divine", tool.Colors.GOLD, int(1 * now_skills["p11"] * 3), (23, 27)),
     ]
 
     # 2. 自動生成 treasures 列表
@@ -1825,7 +1823,7 @@ def reset_game():
 
 reset_game()
 
-now_flash_color = tool備用.Colors.RED
+now_flash_color = tool.Colors.RED
 
 
 # config.py 內部
@@ -1856,7 +1854,7 @@ def draw_screen_flash(color, total_time, max_alpha, flash_width):
 
         # 呼叫你的按鈕工具畫出邊框
         # 注意：這裡直接用 WIDTH, HEIGHT，因為它們也在 config 裡
-        tool備用.text_button("", tool備用.Colors.BLACK, color, 0, 0, WIDTH, HEIGHT, alpha=current_alpha, width_line=dynamic_width)
+        tool.text_button("", tool.Colors.BLACK, color, 0, 0, WIDTH, HEIGHT, alpha=current_alpha, width_line=dynamic_width)
 
         # 🌟 這裡最重要：直接修改外面的 flash_timer
         flash_timer -= 1
@@ -1917,7 +1915,7 @@ def calculate_damage(damage):
     if random.random() * 100 > now_skills["p13"]:
         # --- 閃避失敗：全額傷害 ---
         damage_multiplier = 1.0
-        text_color = tool備用.Colors.RED
+        text_color = tool.Colors.RED
         text_content = f"-{damage}hp"
         dodged = False
     else:
@@ -1928,7 +1926,7 @@ def calculate_damage(damage):
         else:
             damage_multiplier = 1.0
         dodged = True
-        text_color = tool備用.Colors.BLUE
+        text_color = tool.Colors.BLUE
         text_content = f"Dodge! -{int(damage * damage_multiplier)}hp  ({now_skills['p14']}%)"
         # print("[DEBUG]: Dodge!")
     return damage_multiplier, text_color, text_content, dodged
@@ -1940,13 +1938,14 @@ total_shake_time = 0
 
 running = True
 game_state = "menu"
+last_game_state = "menu"
 
 modes_config = [
-    ("easy", tool備用.Colors.GREEN),
-    ("normal", tool備用.Colors.YELLOW),
-    ("hard", tool備用.Colors.ORANGE),
-    ("super_hard", tool備用.Colors.RED),
-    ("crazy", tool備用.Colors.PURPLE),
+    ("easy", tool.Colors.GREEN),
+    ("normal", tool.Colors.YELLOW),
+    ("hard", tool.Colors.ORANGE),
+    ("super_hard", tool.Colors.RED),
+    ("crazy", tool.Colors.PURPLE),
 ]
 
 # 2. 設定起始位置與間隔
@@ -1962,7 +1961,7 @@ target_points = 0
 base_hp_rect = pygame.Rect(0, 0, 0, 0)
 
 enemy_list = []
-draw_button_color = tool備用.Colors.GOLD
+draw_button_color = tool.Colors.GOLD
 last_draw_color = None
 
 
@@ -1974,7 +1973,7 @@ def coin_rect(player_rect=pygame.Rect(5000, 5000, 0, 0)):  # noqa: B008
         target_points = total_points
     else:
         target_points += diff * 0.1
-    final_text = "$" + tool備用.num_to_KMBT(target_points)
+    final_text = "$" + tool.num_to_KMBT(target_points)
 
     new_alpha = 255
     coin_rect2 = pygame.Rect(WIDTH - 110, 0, 100, 100)
@@ -2004,7 +2003,8 @@ def coin_rect(player_rect=pygame.Rect(5000, 5000, 0, 0)):  # noqa: B008
     screen.blit(coin_wood_img_surface, coin_wood_rect)
 
     # 文字也要同步
-    tool備用.show_text(final_text, tool備用.Colors.WHITE, WIDTH - 60, 32, size=22, alpha=alphas[0], center=True)
+    import buttons
+    buttons.show_text(screen, final_text, tool.Colors.WHITE, WIDTH - 60, 32, size=22, alpha=alphas[0], center=True)
 
 
 COIN_IMAGES = {}
@@ -2113,7 +2113,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": True,
-            "color": tool備用.Colors.RED,
+            "color": tool.Colors.RED,
             "effect": "none",
             "base_power": 1,
             "growth": 0,
@@ -2125,7 +2125,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": False,
-            "color": tool備用.Colors.WHITE,
+            "color": tool.Colors.WHITE,
             "effect": ["speed", "points_multiplier"],
             "base_power": [1.3, 1.2],
             "growth": [0.05, 0.05],
@@ -2137,7 +2137,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": False,
-            "color": tool備用.Colors.BLACK,
+            "color": tool.Colors.BLACK,
             "effect": ["points_coin_multiplier", "max_hp"],
             "base_power": [1.2, 1.1],
             "growth": [0.05, 0.1],
@@ -2149,7 +2149,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": False,
-            "color": tool備用.Colors.GRAY,
+            "color": tool.Colors.GRAY,
             "effect": ["invincible_time", "speed"],
             "base_power": [1.5, 1.1],
             "growth": [0.1, 0.05],
@@ -2161,7 +2161,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": False,
-            "color": tool備用.Colors.OLIVE,
+            "color": tool.Colors.OLIVE,
             "effect": ["max_hp", "coin_multiplier"],
             "base_power": [1.5, 2.0],
             "growth": [0.1, 0.1],
@@ -2174,7 +2174,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": False,
-            "color": tool備用.Colors.GREEN,
+            "color": tool.Colors.GREEN,
             "effect": ["max_hp", "speed"],
             "base_power": [1.2, 0.7],
             "growth": [0.05, 0.08],
@@ -2186,7 +2186,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": False,
-            "color": tool備用.Colors.YELLOW,
+            "color": tool.Colors.YELLOW,
             "effect": ["points_multiplier", "speed"],
             "base_power": [1.7, 0.8],
             "growth": [0.1, 0.08],
@@ -2198,7 +2198,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": False,
-            "color": tool備用.Colors.BLUE,
+            "color": tool.Colors.BLUE,
             "effect": "enemy_damage",
             "base_power": 0.7,
             "growth": -0.04,  # 傷害倍率越低越強
@@ -2210,7 +2210,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": False,
-            "color": tool備用.Colors.PURPLE,
+            "color": tool.Colors.PURPLE,
             "effect": "speed",
             "base_power": 1.2,
             "growth": 0.1,
@@ -2222,7 +2222,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": False,
-            "color": tool備用.Colors.VIOLET,
+            "color": tool.Colors.VIOLET,
             "effect": ["points_multiplier", "coin_multiplier"],
             "base_power": [3.0, 2.3],
             "growth": [0.05, 0.1],
@@ -2235,7 +2235,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": False,
-            "color": tool備用.Colors.ORANGE,
+            "color": tool.Colors.ORANGE,
             "effect": "player_size",
             "base_power": 0.9,
             "growth": -0.01,  # 體型越小越強
@@ -2247,7 +2247,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": False,
-            "color": tool備用.Colors.CYAN,
+            "color": tool.Colors.CYAN,
             "effect": ["coin_multiplier", "player_size"],
             "base_power": [1.9, 0.8],
             "growth": [0.15, -0.02],
@@ -2259,7 +2259,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": False,
-            "color": tool備用.Colors.PINK,
+            "color": tool.Colors.PINK,
             "effect": ["speed", "points_coin_multiplier"],
             "base_power": [1.8, 0.9],
             "growth": [0.12, 0.1],
@@ -2271,7 +2271,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": False,
-            "color": tool備用.Colors.ORANGE2,
+            "color": tool.Colors.ORANGE2,
             "effect": ["points_multiplier", "max_hp", "speed"],
             "base_power": [2.3, 0.7, 0.6],
             "growth": [0.2, 0.1, 0.05],
@@ -2284,7 +2284,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": False,
-            "color": tool備用.Colors.GOLD,
+            "color": tool.Colors.GOLD,
             "effect": ["coin_multiplier", "points_multiplier"],
             "base_power": [4, 1.5],
             "growth": [0.5, 0.2],
@@ -2296,7 +2296,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": False,
-            "color": tool備用.Colors.BROWN,
+            "color": tool.Colors.BROWN,
             "effect": ["enemy_spawn_speed", "max_hp"],
             "base_power": [2, 1.2],
             "growth": [0.1, 0.25],
@@ -2308,7 +2308,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": False,
-            "color": tool備用.Colors.DARK_GREEN,
+            "color": tool.Colors.DARK_GREEN,
             "effect": ["max_hp", "speed"],
             "base_power": [2.0, 1.2],
             "growth": [0.5, 0.15],
@@ -2320,7 +2320,7 @@ initial_data = {
             "level": 1,
             "exp": 0,
             "has_owned": False,
-            "color": tool備用.Colors.CLARET,
+            "color": tool.Colors.CLARET,
             "effect": ["max_hp", "points_coin_multiplier"],
             "base_power": [2.0, 3.0],
             "growth": [0.7, 0.2],
