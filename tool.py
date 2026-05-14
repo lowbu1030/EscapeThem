@@ -67,6 +67,7 @@ class Colors:
     RED_2 = (200, 0, 0)
     DARK_RED = (160, 0, 0)
     LIGHT_RED = (255, 80, 80)
+    VERMILION = (255, 50, 0)
     ORANGE = (255, 100, 0)
     ORANGE2 = (200, 50, 0)
     BROWN = (200, 100, 50)  # 推薦：荒漠世界
@@ -97,6 +98,12 @@ class Colors:
     COSMIC_LATTE = (255, 248, 231)
     WHITE = (255, 255, 255)
     GRAY = (150, 150, 150)
+
+    # 萬聖節顏色
+    PUMPKIN_ORANGE = (255, 117, 24)
+    MIDNIGHT_PURPLE = (75, 0, 130) # 這跟你現在的 BLUE3 背景很搭！
+    SLIME_GREEN = (50, 205, 50)
+    BLOOD_RED = (138, 7, 7)
 
     # 實驗中顏色
     TEST_COLOR = (127, 255, 0)
@@ -249,6 +256,23 @@ def num_to_KMBT(num):
         text = f"{int(num)}"
     return text
 
+
+def update_scrolling(current_y, target_y, smoth=0.1, min_val=0, max_val=None):
+    # 1. 先確保目標值在合法範圍內
+    if max_val is not None:
+        target_y = num_range(min_val, target_y, max_val)
+
+    # 2. 計算緩動 (Lerp 邏輯)
+    if current_y != target_y and abs(target_y - current_y) > 0.1:
+        current_y += (target_y - current_y) * smoth
+    else:
+        current_y = target_y
+
+    # 3. 再次強制修正 current_y 確保不溢出 (這對邊界回彈很有用)
+    if max_val is not None:
+        current_y = num_range(min_val, current_y, max_val)
+
+    return current_y
 
 class FloatingText:
     """顯示往上漂浮的文字"""

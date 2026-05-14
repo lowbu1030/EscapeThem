@@ -637,26 +637,26 @@ player_skins = {
 
 
 skin_text_color = {
-    "red": {"text_col": tool.Colors.WHITE},
-    "orange": {"text_col": tool.Colors.BLACK},
-    "dark orange": {"text_col": tool.Colors.BLACK},
-    "yellow": {"text_col": tool.Colors.BLACK},
-    "chartreuse": {"text_col": tool.Colors.BLACK},
-    "green": {"text_col": tool.Colors.BLACK},
-    "olive": {"text_col": tool.Colors.WHITE},
-    "light blue": {"text_col": tool.Colors.BLACK},
-    "blue": {"text_col": tool.Colors.WHITE},
-    "purple": {"text_col": tool.Colors.WHITE},
-    "violet": {"text_col": tool.Colors.WHITE},
-    "pink": {"text_col": tool.Colors.WHITE},
-    "white": {"text_col": tool.Colors.BLACK},
-    "gray": {"text_col": tool.Colors.BLACK},
-    "black": {"text_col": tool.Colors.WHITE},
+    "red": tool.Colors.WHITE,
+    "orange": tool.Colors.BLACK,
+    "dark orange": tool.Colors.WHITE,
+    "yellow": tool.Colors.BLACK,
+    "chartreuse": tool.Colors.BLACK,
+    "green": tool.Colors.BLACK,
+    "olive": tool.Colors.WHITE,
+    "light blue": tool.Colors.BLACK,
+    "blue": tool.Colors.WHITE,
+    "purple": tool.Colors.WHITE,
+    "violet": tool.Colors.WHITE,
+    "pink": tool.Colors.WHITE,
+    "white": tool.Colors.BLACK,
+    "gray": tool.Colors.BLACK,
+    "black": tool.Colors.WHITE,
     # VIP皮膚區
-    "gold": {"text_col": tool.Colors.BLACK},
-    "brown": {"text_col": tool.Colors.WHITE},
-    "dark green": {"text_col": tool.Colors.WHITE},
-    "claret": {"text_col": tool.Colors.WHITE},
+    "gold": tool.Colors.BLACK,
+    "brown": tool.Colors.WHITE,
+    "dark green": tool.Colors.WHITE,
+    "claret": tool.Colors.WHITE,
 }
 
 
@@ -1952,7 +1952,7 @@ modes_config = [
 start_y = 150  # 起始 Y
 line_height = 40  # 每一行的高度
 section_gap = 20  # 難度標籤與上方內容的間隔
-one_mode_height = 90 + (len(all_levels) * 60) - 25
+one_mode_height = 90 + (len(all_levels) * 60 - 25)
 
 floating_texts = []  # 放在遊戲開始前，用來裝所有的漂浮文字
 
@@ -2003,8 +2003,8 @@ def coin_rect(player_rect=pygame.Rect(5000, 5000, 0, 0)):  # noqa: B008
     screen.blit(coin_wood_img_surface, coin_wood_rect)
 
     # 文字也要同步
-    import buttons
-    buttons.show_text(screen, final_text, tool.Colors.WHITE, WIDTH - 60, 32, size=22, alpha=alphas[0], center=True)
+    import button_obj
+    button_obj.show_text(screen, final_text, tool.Colors.WHITE, WIDTH - 60, 32, size=22, alpha=alphas[0], center=True)
 
 
 COIN_IMAGES = {}

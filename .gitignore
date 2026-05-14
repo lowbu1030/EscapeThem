@@ -209,7 +209,7 @@ __marimo__/
 # Save Files
 save_game*
 # others
-.txt
+*.txt
 levels/making*.json
 pyproject.toml
 Untitled-*.py

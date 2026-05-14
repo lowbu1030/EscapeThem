@@ -9,13 +9,25 @@
     "files.autoSave": "afterDelay",
     "python.analysis.typeCheckingMode": "off",
     "editor.tokenColorCustomizations": {
-        "[Monokai]": { // 這裡指定只在 Monokai 主題下生效
-            // "comments": "#FF0000", // 把註解改成紅色
-            // "functions": "#00FF00", // 把函式名稱改成綠色
-            // "keywords": "#0000FF", // 把關鍵字（如 if, def）改成藍色
-            "variables": "#a39ef0", // 把變數改成白色
-            // "strings": "#9ae674", // 字串顏色
-            "numbers": "#70c53b", // 數字顏色
+        "[Monokai]": {
+            "variables": "#a39ef0",
+            "numbers": "#70c53b",
+            // "comments": "#FF0000", // 註解
+            // "functions": "#00FF00", // 函式名稱
+            // "keywords": "#0000FF", // 關鍵字（如 if, def）
+            // "strings": "#9ae674", // 字串
+            "textMateRules": [
+                {
+                    "scope": [
+                        "variable.other.constant",
+                        "constant.other.caps",
+                        "variable.other.enummember"
+                    ],
+                    "settings": {
+                        "foreground": "#FFCC00" // 這裡改成你想要的常數顏色（例如亮橘黃色）
+                    }
+                }
+            ]
         }
     },
     "[python]": {

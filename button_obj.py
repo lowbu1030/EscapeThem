@@ -2,11 +2,13 @@ import pathlib
 
 import pygame
 
-import config
 from tool import Colors
 
 Color = tuple[int, int, int]
 WIDTH, HEIGHT = 700, 600
+
+
+# buttons.py
 
 
 class Button:
@@ -18,39 +20,62 @@ class Button:
         pressing_color: Color | None = None,
         hover_color: Color | None = None,
         disabled_color: Color | None = None,
-        border_radius=0,
+        border_radius=5,
+        border_width=None,
+        normal_border_color: Color = None,
+        pressing_border_color: Color | None = None,
+        hover_border_color: Color | None = None,
+        disabled_border_color: Color | None = None,
         show=True,
     ):
         self.name = name
         self.rect = rect
+        self.base_y = rect.y
         self.border_radius = border_radius
+        self.border_width = border_width
         self.active = True
         self.is_toggle = False
         self.is_hover = False
         self.is_pressed = False
         self.is_pressing = False
         self.is_clicked = False
-        self.type = "normal"  # 可以做連點按鈕
+        self.type = "normal"
 
+        # 按鈕顏色保底
         self.normal_color = normal_color
-        self.hover_color = hover_color or normal_color
-        # 如果沒設定按壓色，就先看有沒有懸停色；如果都沒有，才用原本底色
-        self.pressing_color = pressing_color or self.hover_color
-        self.disabled_color = disabled_color or Colors.GRAY
+        self.hover_color = hover_color if hover_color is not None else normal_color
+        self.pressing_color = pressing_color if pressing_color is not None else self.hover_color
+        self.disabled_color = disabled_color if disabled_color is not None else Colors.GRAY
+
+        # 按鈕邊框顏色保底
+        self.normal_border_color = normal_border_color if normal_border_color is not None else normal_color
+        self.hover_border_color = hover_border_color if hover_border_color is not None else self.normal_border_color
+        self.pressing_border_color = pressing_border_color if pressing_border_color is not None else self.hover_border_color
+        self.disabled_border_color = disabled_border_color if disabled_border_color is not None else Colors.GRAY
+
         self.is_visible = show
 
     def change_base_color(self, new_color, force=False):
         self.normal_color = new_color
-
         if force:
-            # 如果是強制模式，全部洗掉（適合 record_level_display）
             self.hover_color = new_color
             self.pressing_color = new_color
             self.disabled_color = new_color
         else:
-            # 如果是一般模式，保留原本的設計（適合 select 按鈕）
-            self.hover_color = self.hover_color or self.normal_color
-            self.pressing_color = self.pressing_color or self.hover_color
+            # 修改處
+            self.hover_color = self.hover_color if self.hover_color is not None else self.normal_color
+            self.pressing_color = self.pressing_color if self.pressing_color is not None else self.hover_color
+
+    def change_base_border_color(self, new_color, force=False):
+        self.normal_border_color = new_color
+        if force:
+            self.hover_border_color = new_color
+            self.pressing_border_color = new_color
+            self.disabled_border_color = new_color
+        else:
+            # 修改處
+            self.hover_border_color = self.hover_border_color if self.hover_border_color is not None else self.normal_border_color
+            self.pressing_border_color = self.pressing_border_color if self.pressing_border_color is not None else self.hover_border_color
 
     def get_color(self):
         if not self.active:
@@ -64,9 +89,23 @@ class Button:
 
         return self.normal_color
 
+    def get_border_color(self):
+        if not self.active:
+            return self.disabled_border_color
+
+        if self.is_pressing:
+            return self.pressing_border_color
+
+        if self.is_hover:
+            return self.hover_border_color
+
+        return self.normal_border_color
+
+    def handle_condition(self, condition: bool, value1, value2):
+        return value1 if condition else value2
+
     def update(self, events, mouse_pos):
         if not self.is_visible or not self.active:
-            self.is_hover = False
             self.is_pressed = False
             self.is_clicked = False
             return
@@ -102,7 +141,10 @@ class Button:
             return
         surface = pygame.Surface(self.rect.size, pygame.SRCALPHA)
         color = self.get_color()
+        border_color = self.get_border_color()
         pygame.draw.rect(surface, (*color, alpha), surface.get_rect(), border_radius=self.border_radius)
+        if self.border_width:
+            pygame.draw.rect(surface, (*border_color, alpha), surface.get_rect(), border_radius=self.border_radius, width=self.border_width)
         screen.blit(surface, self.rect.topleft)
 
 
@@ -128,8 +170,14 @@ class TextButton(Button):
         hover_text_color: Color | None = None,
         pressing_text_color: Color | None = None,
         disable_text_color: Color | None = None,
-        #  4. 其他
-        border_radius=0,
+        #  4. 邊框、邊框顏色
+        border_radius=5,
+        border_width=0,
+        normal_border_color: Color | None = None,
+        pressing_border_color: Color | None = None,
+        hover_border_color: Color | None = None,
+        disabled_border_color: Color | None = None,
+        #  5. 其他
         font_type: str = "",
         r_alpha: int = 255,
         t_alpha: int = 255,
@@ -138,21 +186,35 @@ class TextButton(Button):
         show=True,
     ):
         # 1. 初始化父類別按鈕背景
-        super().__init__(name, rect, button_color, pressing_color, hover_color, disabled_color, border_radius, show)
+        super().__init__(
+            name=name,
+            rect=rect,
+            normal_color=button_color,
+            pressing_color=pressing_color,
+            hover_color=hover_color,
+            disabled_color=disabled_color,
+            border_width=border_width,
+            border_radius=border_radius,
+            show=show,
+            normal_border_color=normal_border_color,
+            pressing_border_color=pressing_border_color,
+            hover_border_color=hover_border_color,
+            disabled_border_color=disabled_border_color,
+        )
 
         # 2. 文字內容與備份
         self.org_text = text
         self.current_text = text
-        self.hover_text = hover_text or text
-        self.pressing_text = pressing_text or self.hover_text
-        self.disable_text = disable_text or text
+        self.hover_text = hover_text if hover_text is not None else text
+        self.pressing_text = pressing_text if pressing_text is not None else self.hover_text
+        self.disable_text = disable_text if disable_text is not None else text
 
         # 3. 文字顏色與備份 (若無設定則沿用原色)
         self.org_text_color = text_color
         self.current_text_color = text_color
-        self.hover_text_color = hover_text_color or text_color
-        self.pressing_text_color = pressing_text_color or self.hover_text_color
-        self.disable_text_color = disable_text_color or text_color
+        self.hover_text_color = hover_text_color if hover_text_color is not None else text_color
+        self.pressing_text_color = pressing_text_color if pressing_text_color is not None else self.hover_text_color
+        self.disable_text_color = disable_text_color if disable_text_color is not None else text_color
 
         # 4. 其他屬性
         self.font_size = font_size
@@ -161,6 +223,7 @@ class TextButton(Button):
         self.t_alpha = t_alpha
         self.screen_center = screen_center
         self.text_center = text_center
+        self.save_path = None
 
     def change_base_text(self, new_text: str, force=False):
         self.org_text = new_text
@@ -170,9 +233,10 @@ class TextButton(Button):
             self.pressing_text = new_text
             self.disable_text = new_text
         else:
-            self.hover_text = self.hover_text or new_text
-            self.pressing_text = self.pressing_text or self.hover_text
-            self.disable_text = self.disable_text or new_text
+            # 修改處
+            self.hover_text = self.hover_text if self.hover_text is not None else new_text
+            self.pressing_text = self.pressing_text if self.pressing_text is not None else self.hover_text
+            self.disable_text = self.disable_text if self.disable_text is not None else new_text
 
     def change_base_text_color(self, new_color: Color, force=False):
         self.org_text_color = new_color
@@ -182,11 +246,12 @@ class TextButton(Button):
             self.pressing_text_color = new_color
             self.disable_text_color = new_color
         else:
-            self.hover_text_color = self.hover_text_color or new_color
-            self.pressing_text_color = self.pressing_text_color or self.hover_text_color
-            self.disable_text_color = self.disable_text_color or new_color
+            # 修改處
+            self.hover_text_color = self.hover_text_color if self.hover_text_color is not None else new_color
+            self.pressing_text_color = self.pressing_text_color if self.pressing_text_color is not None else self.hover_text_color
+            self.disable_text_color = self.disable_text_color if self.disable_text_color is not None else new_color
 
-    def update(self, events, mouse_pos):
+    def update(self, events, mouse_pos: tuple[int | float]):
         super().update(events, mouse_pos)
 
         # 狀態優先級：Disabled > Pressed > Hover > Normal
@@ -203,7 +268,7 @@ class TextButton(Button):
             self.current_text = self.org_text
             self.current_text_color = self.org_text_color
 
-    def draw(self, screen):
+    def draw(self, screen: pygame.Surface):
         if not self.is_visible:
             return
 
@@ -238,7 +303,7 @@ class ImageButton:
         self.is_clicked = False
         self.visible = visible
 
-    def update(self, events, mouse_pos):
+    def update(self, events, mouse_pos: tuple[int | float]):
         self.is_clicked = False  # 每幀重置，確保點擊只觸發一次
 
         # 檢查滑鼠是否懸停在圖片上
@@ -330,161 +395,3 @@ def show_text(screen, text, text_color, x, y, size=24, center=False, screen_cent
             screen.blit(surf, draw_rect)
 
     return first_rect
-
-
-all_buttons = {
-    "menu": [
-        ImageButton(
-            name="left",
-            image=config.left_img_surface,
-            pos=config.left_rect.center,
-        ),
-        ImageButton(
-            name="right",
-            image=config.right_img_surface,
-            pos=config.right_rect.center,
-        ),
-        ImageButton(name="logo", image=config.title_img_surface, pos=config.title_rect.center),
-        TextButton(
-            name="start",
-            text="START GAME",
-            rect=pygame.Rect(0, 220, 300, 70),
-            button_color=Colors.DARK_GREEN,
-            text_color=Colors.WHITE,
-            font_size=32,
-            hover_color=Colors.CYAN,
-            hover_text="READY?",
-            hover_text_color=Colors.YELLOW,
-            pressing_color=Colors.BLUE,
-            pressing_text="GO!",
-        ),
-        TextButton(
-            name="setting_p1",
-            text="SETTINGS",
-            rect=pygame.Rect(WIDTH // 2 - 150, 310, 140, 70),
-            button_color=Colors.BLUE2,
-            text_color=Colors.WHITE,
-            font_size=28,
-            hover_color=Colors.GREEN,
-            hover_text_color=Colors.BLACK,
-            screen_center=False,
-        ),
-        TextButton(
-            name="upgrades",
-            text="UPGRADES",
-            rect=pygame.Rect(WIDTH // 2 + 10, 310, 140, 70),  # 統一用 pygame.Rect
-            button_color=Colors.YELLOW,
-            text_color=Colors.BLACK,
-            font_size=28,
-            hover_color=Colors.ORANGE,
-            screen_center=False,
-        ),
-        TextButton(
-            name="help",
-            text="HELP",
-            rect=pygame.Rect(0, 400, 300, 70),
-            button_color=Colors.GRAY,
-            text_color=Colors.WHITE,
-            font_size=32,
-        ),
-        TextButton(
-            name="quit",
-            text="QUIT",
-            rect=pygame.Rect(0, 490, 300, 70),  # 修正座標避免重疊
-            button_color=Colors.RED,
-            text_color=Colors.WHITE,
-            font_size=32,
-            hover_color=Colors.DARK_RED,
-            hover_text="NNNOOOOOO!!!",
-        ),
-    ],
-    "setting_p1": [
-        # 範例
-        # TextButton(
-        #     name="???",
-        #     text="???",
-        #     rect=pygame.Rect(0, 0, 0, 0),
-        #     button_color=Colors.RED,
-        #     text_color=Colors.WHITE,
-        #     font_size=32,
-        #     hover_color=Colors.DARK_RED,
-        #     hover_text="???",
-        # ),
-        TextButton(
-            name="back",
-            text="BACK TO MENU",
-            rect=pygame.Rect(0, 520, 200, 60),
-            button_color=Colors.ORANGE,
-            text_color=Colors.WHITE,
-            font_size=24,
-            hover_color=Colors.BROWN,
-        ),
-        ImageButton(
-            name="right",
-            image=config.right_img_surface,
-            pos=config.right_rect.center,
-        ),
-        ImageButton(name="crazy_lock", image=config.lock_img_surface, pos=(90, 430)),
-        TextButton(
-            name="record_level_display",
-            text="",  # 初始文字留空，交給 sync 更新
-            rect=pygame.Rect(0, 150, 180, 50),
-            button_color=config.level_button_color,  # 或者你原本設定的 level_button_color
-            disabled_color=Colors.YELLOW,
-            text_color=Colors.BLACK,
-            screen_center=True,
-            font_size=30,
-        ),
-    ],
-}
-
-
-difficulty_settings = [
-    ("easy", Colors.GREEN),
-    ("normal", Colors.YELLOW),
-    ("hard", Colors.ORANGE),
-    ("super_hard", Colors.RED),
-    ("crazy", Colors.PURPLE),
-]
-
-
-for i, (mode, color) in enumerate(difficulty_settings):
-    # 計算 Y 座標：210, 270, 330...
-    y_pos = 210 + (i * 60)
-
-    # 處理 Crazy 難度的特殊文字
-    display_text = "select"
-
-
-    btn1 = TextButton(
-        name=f"{mode}_info",
-        text="info",
-        rect=pygame.Rect(540, y_pos, 60, 50),
-        button_color=Colors.BLUE3,
-        text_color=Colors.WHITE,
-        font_size=24,
-        hover_text_color=Colors.GRAY,
-        screen_center=False,
-    )
-    btn2 = TextButton(
-        name=f"{mode}_select",
-        text=display_text,
-        rect=pygame.Rect(70, y_pos, 130, 50),
-        button_color=color if not config.from_pause else Colors.GRAY,
-        text_color=Colors.BLACK,
-        font_size=28,
-        screen_center=False,
-    )
-    btn3 = TextButton(
-        name=f"show_{mode}",
-        text="",
-        rect=pygame.Rect(70, y_pos, 450, 50),
-        button_color=color if not config.from_pause else Colors.GRAY,
-        text_color=Colors.BLACK,
-        font_size=0,
-        screen_center=False,
-        show=(config.game_mode == mode)
-    )
-    all_buttons["setting_p1"].append(btn3)
-    all_buttons["setting_p1"].append(btn1)
-    all_buttons["setting_p1"].append(btn2)
