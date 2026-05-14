@@ -19,16 +19,13 @@ buttons = {
         ImageButton(name="logo", image=config.title_img_surface, pos=config.title_rect.center),
         TextButton(
             name="start",
-            text="START GAME",
+            text="LEVEL SELECT",
             rect=pygame.Rect(0, 220, 300, 70),
             button_color=Colors.DARK_GREEN,
             text_color=Colors.WHITE,
             font_size=32,
             hover_color=Colors.CYAN,
-            hover_text="READY?",
             hover_text_color=Colors.YELLOW,
-            pressing_color=Colors.BLUE,
-            pressing_text="GO!",
         ),
         TextButton(
             name="setting_p1",

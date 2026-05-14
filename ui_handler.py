@@ -23,6 +23,7 @@ class UIManager:
         }
         self.MODES = ["easy", "normal", "hard", "super_hard", "crazy"]
         self.setting_page = 1
+        self.MAX_SETTING_PAGE = 3
         self.skin_display_idx = 0
 
     def update_max_scroll_height(self):
@@ -193,7 +194,7 @@ class UIManager:
         self._handle_other_events(events)
 
         if config.game_state == "more_survived_time":
-            config.scroll_ys[0] = tool.update_scrolling(config.scroll_ys[0], config.target_y, smoth=0.3, max_val=config.max_scroll_y)
+            config.scroll_ys[0] = tool.update_scrolling(config.scroll_ys[0], config.target_y, smoth=0.1, max_val=config.max_scroll_y)
         if config.game_state == "setting_p2":
             config.target_y = tool.num_range(0, config.target_y, config.max_scroll_y)
             config.scroll_ys[4] = tool.update_scrolling(config.scroll_ys[4], config.target_y, smoth=0.3, max_val=config.max_scroll_y)
@@ -244,10 +245,10 @@ class UIManager:
             if obj.name == "back":
                 config.game_state = "pause" if config.from_pause else "menu"
             if obj.name == "left":
-                self.setting_page = tool.num_range(1, 4, self.setting_page - 1)
+                self.setting_page = tool.num_range(1, self.MAX_SETTING_PAGE, self.setting_page - 1)
                 config.game_state = f"setting_p{self.setting_page}"
             elif obj.name == "right":
-                self.setting_page = tool.num_range(1, 4, self.setting_page + 1)
+                self.setting_page = tool.num_range(1, self.MAX_SETTING_PAGE, self.setting_page + 1)
                 config.game_state = f"setting_p{self.setting_page}"
             if config.game_state == "setting_p1":
                 for i, mode in enumerate(self.MODES):
@@ -390,15 +391,15 @@ class UIManager:
 
                 if config.game_state.startswith("setting"):
                     if event.key in [pygame.K_LEFT, pygame.K_a]:
-                        self.setting_page = tool.num_range(1, 4, self.setting_page - 1)
+                        self.setting_page = tool.num_range(1, self.MAX_SETTING_PAGE, self.setting_page - 1)
                         config.game_state = f"setting_p{self.setting_page}"
                     if event.key in [pygame.K_RIGHT, pygame.K_d]:
-                        self.setting_page = tool.num_range(1, 4, self.setting_page + 1)
+                        self.setting_page = tool.num_range(1, self.MAX_SETTING_PAGE, self.setting_page + 1)
                         config.game_state = f"setting_p{self.setting_page}"
                     if event.key in [pygame.K_ESCAPE, pygame.K_BACKSPACE]:
                         config.game_state = "menu"
 
-                if config.game_state == "more_survived_time":
+                if config.game_state in ["more_survived_time", "choose_file"]:
                     if event.key == pygame.K_ESCAPE or event.key == pygame.K_BACKSPACE:
                         # 返回到原本的 settings 頁面
                         config.game_state = f"setting_p{self.setting_page}"

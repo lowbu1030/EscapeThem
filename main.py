@@ -194,6 +194,7 @@ while config.running:
         if config.scroll_ys[0] != config.target_y or not tool.in_range(0, config.scroll_ys[0], config.max_scroll_y):
             config.scroll_ys[0] += (config.target_y - config.scroll_ys[0]) * 0.1  # 每次移動剩下的 30%
         config.scroll_ys[0] = tool.num_range(0, config.scroll_ys[0], config.max_scroll_y)  # 強制修正回合法範圍
+        ui_manager.handle_current_state(events, mouse_pos)
         draw_y = 110
         for gm in config.modes_config:
             draw_y += 90
@@ -285,6 +286,8 @@ while config.running:
         pygame.draw.rect(screen, tool.Colors.BLUE3, (0, 0, config.WIDTH, 110))
         button_obj.show_text(screen, "Choose Save File", tool.Colors.WHITE, 0, 40, size=50, screen_center=True)
         ui_manager.handle_current_state(events, mouse_pos)
+
+    #  -------------------------------------以更新成ui_manager版--------------------------------------
 
     # 玩家升級：
     # 升級列表
@@ -1834,7 +1837,7 @@ while config.running:
             screen_center=True,
             font_type="None",
         )
-        menu_button = tool.text_button(
+        menu_button = button_obj.TextButton(
             screen,
             "Back To Menu",
             tool.Colors.WHITE,
