@@ -8,7 +8,7 @@ import sys
 
 import pygame
 
-import button_obj
+import all_objs
 import config  # 所有的全域變數與初始化都在這裡
 import data_handler
 import old_to_new
@@ -16,7 +16,7 @@ import tool  # 載入你的工具包
 import ui_handler
 
 # 1. 取得 config 中已經初始化好的物件
-screen = config.screen
+screen = config.config.screen
 clock = config.clock
 is_pressing = config.is_pressing  # 引用 config 的列表
 scroll_ys = config.scroll_ys
@@ -115,24 +115,24 @@ while config.running:
         screen.fill(tool.Colors.BLUE3)
         config.coin_rect()
 
-        button_obj.show_text(screen, "settings", tool.Colors.WHITE, 40, 70, size=24, font_type="")
+        all_objs.show_text(screen, "settings", tool.Colors.WHITE, 40, 70, size=24, font_type="")
 
-        button_obj.show_text(screen, "upgrades", tool.Colors.WHITE, config.WIDTH - 120, 70, size=24, font_type="")
+        all_objs.show_text(screen, "upgrades", tool.Colors.WHITE, config.WIDTH - 120, 70, size=24, font_type="")
 
         ui_manager.handle_current_state(events, mouse_pos)
     # 難易度與最長存活時間
     elif config.game_state == "setting_p1":
         screen.fill(tool.Colors.BLUE3)
         config.coin_rect()
-        current_world_key = f"world{config.select_world}"
-        button_obj.show_text(screen, "Difficulty And Longest Served Time", tool.Colors.WHITE, 0, 60, size=34, screen_center=True)
-        button_obj.show_text(screen, "Now Level:", tool.Colors.WHITE, 0, 110, size=30, screen_center=True)
+        config.current_world_key = f"world{config.select_world}"
+        all_objs.show_text(screen, "Difficulty And Longest Served Time", tool.Colors.WHITE, 0, 60, size=34, screen_center=True)
+        all_objs.show_text(screen, "Now Level:", tool.Colors.WHITE, 0, 110, size=30, screen_center=True)
 
         # 把背景的東西畫在這個前
         ui_manager.handle_current_state(events, mouse_pos)
 
         # 顯示最長存活時間
-        now_level_survived_time = config.longest_survived_time[current_world_key].get(config.selected_level, {})
+        now_level_survived_time = config.longest_survived_time[config.current_world_key].get(config.selected_level, {})
         easy_time = now_level_survived_time.get("easy", 0)
         normal_time = now_level_survived_time.get("normal", 0)
         hard_time = now_level_survived_time.get("hard", 0)
@@ -141,7 +141,7 @@ while config.running:
         # print(f"DEBUG: now_level_survived_time = {now_level_survived_time}")5
 
         # Easy Mode
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             f"easy mode: {tool.show_time_min(easy_time)}",
             tool.Colors.BLACK if config.game_mode == "easy" else tool.Colors.WHITE,
@@ -150,7 +150,7 @@ while config.running:
             screen_center=True,
         )
         # Normal Mode
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             f"normal mode: {tool.show_time_min(normal_time)}",
             tool.Colors.BLACK if config.game_mode == "normal" else tool.Colors.WHITE,
@@ -159,7 +159,7 @@ while config.running:
             screen_center=True,
         )
         # Hard Mode
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             f"hard mode: {tool.show_time_min(hard_time)}",
             tool.Colors.BLACK if config.game_mode == "hard" else tool.Colors.WHITE,
@@ -168,7 +168,7 @@ while config.running:
             screen_center=True,
         )
         # Super Hard Mode
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             f"super hard mode: {tool.show_time_min(super_hard_time)}",
             tool.Colors.BLACK if config.game_mode == "super_hard" else tool.Colors.WHITE,
@@ -177,7 +177,7 @@ while config.running:
             screen_center=True,
         )
         # Crazy Mode
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             f"crazy mode: {tool.show_time_min(crazy_time)}",
             tool.Colors.BLACK if config.game_mode == "crazy" else tool.Colors.WHITE,
@@ -189,7 +189,7 @@ while config.running:
     elif config.game_state == "more_survived_time":
         screen.fill(tool.Colors.BLUE3)
         config.coin_rect()
-        current_world_key = f"world{config.select_world}"
+        config.current_world_key = f"world{config.select_world}"
         config.target_y = tool.num_range(0, config.target_y, config.max_scroll_y)  # 強制修正回合法範圍
         if config.scroll_ys[0] != config.target_y or not tool.in_range(0, config.scroll_ys[0], config.max_scroll_y):
             config.scroll_ys[0] += (config.target_y - config.scroll_ys[0]) * 0.1  # 每次移動剩下的 30%
@@ -200,9 +200,9 @@ while config.running:
             draw_y += 90
             for level in config.all_levels:
                 if -10 < (draw_y - scroll_ys[0]) < config.HEIGHT + 10:
-                    button_obj.show_text(
+                    all_objs.show_text(
                         screen,
-                        f"Level {level.replace('level', '')}: {tool.show_time_min(config.longest_survived_time[current_world_key][level][gm[0]])}",
+                        f"Level {level.replace('level', '')}: {tool.show_time_min(config.longest_survived_time[config.current_world_key][level][gm[0]])}",
                         tool.Colors.WHITE,
                         0,
                         draw_y - config.scroll_ys[0],
@@ -222,14 +222,14 @@ while config.running:
         skin_list = list(config.player_skins.keys())
         ui_manager.handle_current_state(events, mouse_pos)
 
-        button_obj.show_text(screen, "Player Skins", tool.Colors.WHITE, 0, 50, screen_center=True, size=30)
+        all_objs.show_text(screen, "Player Skins", tool.Colors.WHITE, 0, 50, screen_center=True, size=30)
         # 資料、皮膚顯示、預覽按鈕
         pygame.draw.line(screen, tool.Colors.WHITE, (450, 80), (450, config.HEIGHT - 100), 5)
-        button_obj.show_text(screen, "Demo player:", tool.Colors.WHITE, 480, 60, size=30)
+        all_objs.show_text(screen, "Demo player:", tool.Colors.WHITE, 480, 60, size=30)
         show_rect = pygame.draw.rect(screen, config.now_player_skin, (560, 120, 30, 30))
         # try_button = tool.text_button(screen, "Try to play", tool.Colors.WHITE, tool.Colors.PURPLE, 480, 400, 150, 40, size=20)
         pygame.draw.line(screen, tool.Colors.WHITE, (470, 460), (650, 460), 5)
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             f"You got 1 {config.last_draw_color} skin!",
             tool.Colors.get_color(config.last_draw_color) if config.last_draw_color is not None else tool.Colors.WHITE,
@@ -243,7 +243,7 @@ while config.running:
         skin = config.player_skins[selected_name]
 
         # 1. 顯示皮膚大名
-        button_obj.show_text(screen, f"Skin: {selected_name.upper()}", tool.Colors.WHITE, 570, 170, size=26, center=True)
+        all_objs.show_text(screen, f"Skin: {selected_name.upper()}", tool.Colors.WHITE, 570, 170, size=26, center=True)
 
         # 2. 準備效果資料 (處理單一值或列表)
         effects = skin["effect"] if isinstance(skin["effect"], list) else [skin["effect"]]
@@ -260,23 +260,23 @@ while config.running:
             display_name = eff.replace("_", " ").title()
 
             # 繪製標題
-            button_obj.show_text(screen, f"• {display_name}:", tool.Colors.WHITE, 470, 210 + (i * 60), size=18)
+            all_objs.show_text(screen, f"• {display_name}:", tool.Colors.WHITE, 470, 210 + (i * 60), size=18)
 
             # 繪製數值 (保留兩位小數)
             val_text = f"{round(current_val, 2)}x"
-            button_obj.show_text(screen, val_text, tool.Colors.GREEN, 490, 235 + (i * 60), size=22)
+            all_objs.show_text(screen, val_text, tool.Colors.GREEN, 490, 235 + (i * 60), size=22)
 
             # 繪製成長率提示 (讓玩家知道升級加多少)
             if grow != 0:
                 grow_text = f"(+{grow}/lv)" if grow > 0 else f"({grow}/lv)"
-                button_obj.show_text(screen, grow_text, tool.Colors.GRAY, 570, 238 + (i * 60), size=14)
+                all_objs.show_text(screen, grow_text, tool.Colors.GRAY, 570, 238 + (i * 60), size=14)
 
     # 存檔專區
     elif config.game_state == "setting_p3":
         screen.fill(tool.Colors.BLUE3)
         config.coin_rect()
-        button_obj.show_text(screen, "System Settings", tool.Colors.WHITE, 0, 80, size=50, screen_center=True)
-        button_obj.show_text(screen, "We will save this file while you leave", tool.Colors.WHITE, 0, 140, size=24, screen_center=True)
+        all_objs.show_text(screen, "System Settings", tool.Colors.WHITE, 0, 80, size=50, screen_center=True)
+        all_objs.show_text(screen, "We will save this file while you leave", tool.Colors.WHITE, 0, 140, size=24, screen_center=True)
         ui_manager.handle_current_state(events, mouse_pos)
     # 選擇其他存檔
     elif config.game_state == "choose_file":
@@ -284,104 +284,20 @@ while config.running:
         config.coin_rect()
         pygame.draw.rect(screen, tool.Colors.BLUE3, (0, config.HEIGHT - 110, config.WIDTH, 110))  # 擋住捲動後的檔案
         pygame.draw.rect(screen, tool.Colors.BLUE3, (0, 0, config.WIDTH, 110))
-        button_obj.show_text(screen, "Choose Save File", tool.Colors.WHITE, 0, 40, size=50, screen_center=True)
+        all_objs.show_text(screen, "Choose Save File", tool.Colors.WHITE, 0, 40, size=50, screen_center=True)
         ui_manager.handle_current_state(events, mouse_pos)
-
-    #  -------------------------------------以更新成ui_manager版--------------------------------------
-
     # 玩家升級：
     # 升級列表
     elif config.game_state == "upgrade_hub":
         current_config = config.UPGRADE_SURVIVAL if config.shop_page == "survival" else config.UPGRADE_COMBAT
         screen.fill(tool.Colors.BLUE3)
-        config.update_upgrade_hub_layout()  # --- 繪製箭頭 ---
-        if config.left_img_loaded:
-            if config.l_img_show:
-                screen.blit(config.left_img_surface, config.upgrade_left_rect)
-        else:
-            pygame.draw.rect(screen, tool.Colors.RED, config.upgrade_left_rect)
-        if config.right_img_loaded:
-            if config.r_img_show:
-                screen.blit(config.right_img_surface, config.upgrade_right_rect)
-        else:
-            pygame.draw.rect(screen, tool.Colors.RED, config.upgrade_right_rect)
+        config.update_upgrade_hub_layout()
 
-        for event in events:
-            if event.type == pygame.MOUSEWHEEL:
-                scroll_ys[2] -= event.y * 40
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if config.upgrade_left_rect.collidepoint(mouse_pos):
-                    is_pressing[1] = True
-                if config.upgrade_right_rect.collidepoint(mouse_pos):
-                    is_pressing[2] = True
-                for key, rect in config.upgrade_buttons.items():
-                    if rect.collidepoint(mouse_pos):
-                        is_pressing[8] = True
-                        target_key = key
-                if back_button.collidepoint(mouse_pos):
-                    is_pressing[0] = True
-            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                if config.upgrade_left_rect.collidepoint(mouse_pos) and config.l_img_show and is_pressing[1]:
-                    config.shop_page = "survival"
-                    config.l_img_show, config.r_img_show = False, True
-                    config.update_upgrade_hub_layout()
-                    scroll_ys[2] = 0
-                if config.upgrade_right_rect.collidepoint(mouse_pos) and config.r_img_show and is_pressing[2]:
-                    config.shop_page = "combat"
-                    config.l_img_show, config.r_img_show = True, False
-                    config.update_upgrade_hub_layout()
-                    scroll_ys[2] = 0
-                if is_pressing[8]:
-                    # 再次確認放開時滑鼠還在該按鈕上
-                    if config.upgrade_buttons.get(target_key) and config.upgrade_buttons[target_key].collidepoint(mouse_pos):
-                        config.game_state = target_key  # 🌟 成功切換畫面！
-                        scroll_ys[2] = 0  # 換頁時重置捲軸
-                if back_button.collidepoint(mouse_pos) and is_pressing[0]:
-                    config.game_state = "menu"
-                    scroll_ys[2] = 0
-                reset_pressing()
-        if keys[pygame.K_w] or keys[pygame.K_UP]:
-            scroll_ys[2] -= 20
-        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
-            scroll_ys[2] += 20
-
-        # 限制捲動範圍
-        scroll_ys[2] = max(0, min(scroll_ys[2], len(config.upgrade_hub_layout) * 100 - 350))
-
-        # [簡化] 用一個迴圈搞定繪製與點擊感
-        config.upgrade_buttons.clear()
-        for i, (key, info) in enumerate(config.upgrade_hub_layout.items()):
-            y = 130 + i * 100 - scroll_ys[2]
-            if -80 < y < config.HEIGHT:
-                rect = tool.text_button(
-                    screen,
-                    info["title"],
-                    tool.Colors.BLACK,
-                    info["color"],
-                    0,
-                    y,
-                    500,
-                    80,
-                    size=26,
-                    b_center=True,
-                )
-                # 🌟 把產生的 rect 存起來，對應它的 key (例如 upgrade_p1)
-                config.upgrade_buttons[key] = rect
-
-        # 全域重置：如果滑鼠放開了，不管在哪裡都要重置 pressing
-        if not mouse_buttons[0]:
-            is_pressing[8] = False
-
-        # 固定底部的 BACK 按鈕
-        pygame.draw.rect(screen, tool.Colors.BLUE3, (0, config.HEIGHT - 80, config.WIDTH, 80))
-        back_button = tool.text_button(
-            screen, "BACK TO MENU", tool.Colors.WHITE, tool.Colors.ORANGE, 0, config.HEIGHT - 70, 260, 50, b_center=True
-        )
-        tool.text_button(screen, "Upgrade Center", tool.Colors.WHITE, tool.Colors.BLUE3, 0, 0, 500, 100, size=50, b_center=True)
-        tool.text_button(
-            screen, f"now_mode: {config.shop_page}", tool.Colors.WHITE, tool.Colors.BLUE3, 0, 90, 500, 40, size=35, b_center=True
-        )
+        ui_manager.handle_current_state(events, mouse_pos)
         config.coin_rect()
+
+    #  -------------------------------------以更新成ui_manager版--------------------------------------
+
     # ✅ 通用升級頁面 (保留你的圖片、箭頭、按鈕樣式)
     elif config.game_state in config.UPGRADE_SURVIVAL or config.game_state in config.UPGRADE_COMBAT:
         current_config = config.UPGRADE_SURVIVAL if config.shop_page == "survival" else config.UPGRADE_COMBAT
@@ -395,11 +311,12 @@ while config.running:
         costs = cfg["costs"]
 
         all_configs = {**config.UPGRADE_SURVIVAL, **config.UPGRADE_COMBAT}
-        current_p_num = int(config.game_state.replace("upgrade_p", ""))
-        total_pages = len(all_configs)
+        config.current_p_num = int(config.game_state.replace("upgrade_p", ""))
+        config.total_pages = len(all_configs)
 
         # 2. 繪製背景與標題
         screen.fill(tool.Colors.BLUE3)
+        ui_manager.handle_current_state(events, mouse_pos)
 
         # 偽代碼方向
         current_lv_color = tool.Colors.WHITE  # 預設白色
@@ -411,22 +328,22 @@ while config.running:
                 current_lv_color = tool.Colors.YELLOW
 
         # --- 標題文字 ---
-        button_obj.show_text(screen, cfg["title"], tool.Colors.WHITE, 0, 240, size=50, screen_center=True)
-        button_obj.show_text(
+        all_objs.show_text(screen, cfg["title"], tool.Colors.WHITE, 0, 50, size=50, screen_center=True)
+        all_objs.show_text(
             screen,
             f"Level: Lv.{lvl + 1}",
             current_lv_color,
             0,
-            300,
+            120,
             size=40,
             screen_center=True,
         )
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             f"Balance: {tool.num_to_KMBT(round(config.total_points, 1))}$",
             tool.Colors.WHITE,
             0,
-            350,
+            180,
             size=35,
             screen_center=True,
         )
@@ -476,147 +393,25 @@ while config.running:
 
         # 4. 最後畫在螢幕上
         # 注意：這裡直接顯示 display_text，不要再 format 一次了
-        button_obj.show_text(screen, f"Effect: {display_text}", tool.Colors.WHITE, 0, 400, size=25, screen_center=True)
+        all_objs.show_text(screen, f"Effect: {display_text}", tool.Colors.WHITE, 0, 230, size=25, screen_center=True)
         # --- 萬能數值顯示邏輯 (結束) ---
 
         if config.game_state == "upgrade_p20":
-            button_obj.show_text(
+            all_objs.show_text(
                 screen, "While you're playing, press 'T' to alto shoot!", tool.Colors.YELLOW, 0, 215, size=20, screen_center=True
             )
 
         # --- 保留你的圖片繪製邏輯 ---
         config.coin_rect()  # 繪製金幣圖示
-
-        # 顯示標題圖片 (這裡假設你希望不同頁面顯示不同圖，或者共用一張)
-        if config.title_img_loaded:
-            screen.blit(config.title_img_surface, config.title_rect)
-
-        # 3. 繪製左右箭頭 (邏輯簡化，樣式保留)
-        # 左箭頭：不是第一頁才顯示
-        if current_p_num > 1:
-            if config.left_img_loaded:
-                screen.blit(config.left_img_surface, config.left_rect)
-            else:
-                pygame.draw.rect(screen, tool.Colors.RED, config.left_rect)
-
-        # 右箭頭：不是最後一頁才顯示
-        if current_p_num < total_pages:
-            if config.right_img_loaded:
-                screen.blit(config.right_img_surface, config.right_rect)
-            else:
-                pygame.draw.rect(screen, tool.Colors.RED, config.right_rect)
-
-        # 4. 購買按鈕邏輯 (計算價格與顏色)
-        if lvl < len(costs):
-            cost = costs[lvl]  # 取得當前等級價格
-
-            # 判斷滑鼠是否懸停 & 錢夠不夠
-            if upgrade_button.collidepoint(mouse_pos):
-                if config.total_points >= cost:
-                    btn_text = f"Buy! Left ${tool.num_to_KMBT(round(config.total_points - cost, 1))}"
-                    btn_color = tool.Colors.GREEN
-                else:
-                    btn_text = f"Need: ${tool.num_to_KMBT(round(cost - config.total_points, 1))}"
-                    btn_color = tool.Colors.RED
-            else:
-                btn_text = f"Cost: ${tool.num_to_KMBT(cost)}"
-                btn_color = tool.Colors.YELLOW
-        else:
-            cost = None  # 滿級了
-            btn_text = "MAX LEVEL"
-            btn_color = tool.Colors.GRAY
-
-        # 繪製按鈕 (Back 與 Upgrade) - 位置樣式不變
-        if back_button.collidepoint(mouse_pos):
-            back_btn_t_color, back_btn_color = tool.Colors.BLACK, tool.Colors.ORANGE2
-        else:
-            back_btn_t_color, back_btn_color = tool.Colors.WHITE, tool.Colors.ORANGE
-
-        upgrade_button = tool.text_button(screen, btn_text, tool.Colors.BLACK, btn_color, 0, 430, 350, 60, b_center=True)
-        back_button = tool.text_button(
-            screen,
-            "Back to Menu",
-            back_btn_t_color,
-            back_btn_color,
-            0,
-            500,
-            200,
-            60,
-            b_center=True,
-        )
-
-        # 5. 事件處理 (點擊與切換)
-        for event in events:
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if back_button.collidepoint(mouse_pos):
-                    is_pressing[0] = True
-                if upgrade_button.collidepoint(mouse_pos):
-                    is_pressing[1] = True
-                if config.left_rect.collidepoint(mouse_pos):
-                    is_pressing[2] = True
-                if config.right_rect.collidepoint(mouse_pos):
-                    is_pressing[3] = True
-
-            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                # 返回選單
-                if is_pressing[0] and back_button.collidepoint(mouse_pos):
-                    config.game_state = "menu"
-
-                # 執行購買
-                if upgrade_button.collidepoint(mouse_pos) and cost is not None and is_pressing[1]:
-                    if config.total_points >= cost:
-                        config.total_points -= cost
-                        config.current_levels[config.game_state] += 1  # 🔥 更新等級字典
-                        lv_flash_timer = 20  # 啟動閃爍計時器
-                        data_handler.save_data()  # 儲存
-                        # print(f"Upgraded {config.game_state} to Lv.{current_levels[config.game_state] + 1}")
-                        new_text = tool.FloatingText(
-                            "-" + tool.num_to_KMBT(cost), config.WIDTH - 90, 20, tool.Colors.RED, speed=0.7, size=24
-                        )
-                        config.floating_texts.append(new_text)
-                        config.buy_channel.play(config.sounds["buy_success"])
-                        can_shoot = bool(config.now_skills["p15"])
-
-                        config.now_flash_color = tool.Colors.GOLD
-                        config.flash_timer = config.total_flash_time
-
-                        config.update_skill()
-                    else:
-                        config.buy_channel.play(config.sounds["buy_error"])
-
-                # 左切換
-                if config.left_rect.collidepoint(mouse_pos) and current_p_num > 1 and is_pressing[2]:
-                    config.game_state = f"upgrade_p{current_p_num - 1}"
-
-                # 右切換
-                if config.right_rect.collidepoint(mouse_pos) and current_p_num < total_pages and is_pressing[3]:
-                    config.game_state = f"upgrade_p{current_p_num + 1}"
-
-                reset_pressing()  # 重置按壓狀態
-            if event.type == pygame.MOUSEWHEEL:
-                if event.y < 0 and current_p_num < total_pages:
-                    config.game_state = f"upgrade_p{current_p_num + 1}"
-                elif event.y > 0 and current_p_num > 1:
-                    config.game_state = f"upgrade_p{current_p_num - 1}"
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RIGHT and current_p_num < total_pages:
-                    config.game_state = f"upgrade_p{current_p_num + 1}"
-                if event.key == pygame.K_LEFT and current_p_num > 1:
-                    config.game_state = f"upgrade_p{current_p_num - 1}"
-        # 鍵盤左右切換支援
-        if keys[pygame.K_d] and current_p_num < total_pages:
-            config.game_state = f"upgrade_p{current_p_num + 1}"
-            pygame.time.delay(150)  # 防止切換太快
-        if keys[pygame.K_a] and current_p_num > 1:
-            config.game_state = f"upgrade_p{current_p_num - 1}"
-            pygame.time.delay(150)
     # ----------------------------------------------------------------------------
     # 關卡選擇
     elif config.game_state == "level_select":
         config.from_pause = False
         config.maybe_cheat = False
-        current_world_key = f"world{config.select_world}"
-        screen.fill(tool.Colors.two_color_wave(config.world_bgc[current_world_key][0], config.world_bgc[current_world_key][1], 1))
+        config.current_world_key = f"world{config.select_world}"
+        screen.fill(
+            tool.Colors.two_color_wave(config.world_bgc[config.current_world_key][0], config.world_bgc[config.current_world_key][1], 1)
+        )
         unlock_world_key = f"world{config.select_world + 1}"
         has_next_world = unlock_world_key in config.world_cost
         is_target_world_locked = config.levels_unlocked + 1 == len(config.current_world_costs)
@@ -627,10 +422,6 @@ while config.running:
                 clicked_pos = event.pos
                 if next_world_button.collidepoint(clicked_pos):
                     is_pressing[1] = True
-                if config.left_rect.collidepoint(clicked_pos):
-                    is_pressing[2] = True
-                if config.right_rect.collidepoint(clicked_pos):
-                    is_pressing[3] = True
             if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 if next_world_button.collidepoint(mouse_pos) and is_pressing[1]:
                     # 第一層保險：確保現在是「可購買」狀態（符合關卡進度）
@@ -657,25 +448,6 @@ while config.running:
                         else:
                             # 錢不夠的處理 (例如播放錯誤音效)
                             config.sounds["buy_error"].play()
-                if config.left_rect.collidepoint(mouse_pos) and is_pressing[2]:
-                    config.select_world = max(1, config.select_world - 1)
-                    config.update_current_world_data(config.select_world)
-                    scroll_ys[3] = 0  # 切換世界時重置捲軸位置
-                if config.right_rect.collidepoint(mouse_pos) and is_pressing[3]:
-                    # 限制只能切換到已解鎖的世界
-                    config.select_world = min(config.worlds_unlocked, config.select_world + 1)
-                    config.update_current_world_data(config.select_world)
-                    scroll_ys[3] = 0  # 切換世界時重置捲軸位置
-            if event.type == pygame.MOUSEWHEEL:
-                scroll_ys[3] -= event.y * 40
-                # 假設每個按鈕高度+間距是 80 像素
-                total_content_height = (len(config.current_world_costs) + 2) * 80 + 100
-
-                # 最大捲動距離 = 總長度 減去 畫面高度 (600)
-                max_scroll = max(0, total_content_height - config.HEIGHT)
-
-                # 限制 scroll_y 在 0 到 max_scroll 之間
-                scroll_ys[3] = tool.num_range(0, max_scroll, scroll_ys[3])
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if back_button.collidepoint(mouse_pos):
                     is_pressing[0] = True
@@ -687,182 +459,132 @@ while config.running:
         for i in range(1, len(config.current_world_costs)):
             is_locked = i > config.levels_unlocked  # 這裡使用剛剛取出的數字
             is_next_level = i == config.levels_unlocked + 1
-            level_button = tool.text_button(
-                screen,
-                f"Level {i}",
-                tool.Colors.WHITE,
-                tool.Colors.BLUE if not is_locked else tool.Colors.GRAY,
-                120,
-                60 + i * 80 - scroll_ys[3],
-                200,
-                60,
-            )
-            pygame.draw.line(screen, tool.Colors.WHITE, (350, 100), (350, 500), 2)
-            pygame.draw.line(screen, tool.Colors.WHITE, (50, 130 + i * 80 - scroll_ys[3]), (600, 130 + i * 80 - scroll_ys[3]), 2)
-            prev_level_record = config.longest_survived_time[current_world_key].get(f"level{i - 1}", {}).get("normal", 0)
+            prev_level_record = config.longest_survived_time[config.current_world_key].get(f"level{i - 1}", {}).get("normal", 0)
             required_time = config.current_world_need_record[i]
-            button_obj.show_text(
+            all_objs.show_text(
                 screen,
                 f"Need time: {tool.show_time_min(required_time)}",
                 tool.Colors.two_color_change(tool.Colors.GREEN, tool.Colors.RED, prev_level_record >= required_time),
                 380,
-                80 + i * 80 - scroll_ys[3],
+                80 + i * 80 - config.scroll_ys[3],
                 size=18,
                 show=is_locked,
             )
-
-            draw_this_lock = is_locked
-            if level_button.collidepoint(mouse_pos):
-                if not is_locked:
-                    pygame.draw.rect(screen, tool.Colors.GREEN, level_button, 3)
-                elif is_next_level:
-                    draw_this_lock = False
-                    pygame.draw.rect(screen, tool.Colors.GRAY, level_button)
-                    pygame.draw.rect(
-                        screen,
-                        tool.Colors.GREEN if config.total_points >= config.current_world_costs[i] else tool.Colors.RED,
-                        level_button,
-                        3,
-                    )
-                    # 顯示金額
-                    display_cost = config.current_world_costs[i]
-                    button_obj.show_text(
-                        screen,
-                        f"Unlock for ${tool.num_to_KMBT(display_cost)}",
-                        tool.Colors.GREEN if config.total_points >= config.current_world_costs[i] else tool.Colors.RED,
-                        220,
-                        70 + i * 80 + 20 - scroll_ys[3],
-                        center=True,
-                        size=20,
-                    )
-            if draw_this_lock:
-                # 圖層較高的鎖圖案
-                if config.lock_img_loaded and is_locked:
-                    screen.blit(config.lock_img_surface, (180, 60 + i * 80 - 20 - scroll_ys[3]))
-                elif is_locked:
-                    pygame.draw.rect(screen, tool.Colors.GRAY, (180, 60 + i * 80 - 20 - scroll_ys[3], 30, 30))
             # --- 3. 判斷點擊 ---
-            if clicked_pos and level_button.collidepoint(clicked_pos):
-                if not is_locked:
-                    # 點擊成功的邏輯
-                    config.selected_level = f"level{i}"
-                    config.lv_i = i - 1
-                    enemy_list, cannon_list, obstacle_list, level_multiplier, level_name = config.get_level_data(i, config.select_world)
-                    config.reset_game()
-                    config.game_state = "countdown"
-                elif is_next_level and config.total_points >= config.current_world_costs[i] and prev_level_record >= required_time:
-                    # 解鎖邏輯
-                    config.total_points -= config.current_world_costs[i]
-                    config.levels_unlocked = i  # 更新解鎖的關卡數
-                    new_text = tool.FloatingText(
-                        "-" + tool.num_to_KMBT(config.current_world_costs[i]), config.WIDTH - 90, 20, tool.Colors.RED, speed=0.7, size=24
-                    )
-                    config.floating_texts.append(new_text)
-                    config.sounds["buy_success"].play()
-                    config.update_world_data(config.select_world)  # 更新世界資料，確保下一次進入關卡選單時資料是最新的
-                elif is_next_level:
-                    config.sounds["buy_error"].play()
-        if has_next_world and is_not_already_bought:
-            next_world_button = tool.text_button(
-                screen,
-                (
-                    [
-                        "Buy!" if config.total_points >= config.world_cost[unlock_world_key] else "Need More $",
-                        f" ({"cost" if config.total_points >= config.world_cost[unlock_world_key] else "need"}: ${tool.num_to_KMBT(config.world_cost[unlock_world_key] - config.total_points)})",
-                    ]
-                    if next_world_button.collidepoint(mouse_pos) and is_target_world_locked and is_not_already_bought
-                    else ["Next World ", f"(cost: ${tool.num_to_KMBT(config.world_cost[unlock_world_key])})"]
-                ),
-                tool.Colors.WHITE,
-                (
-                    tool.Colors.two_color_change(
-                        tool.Colors.two_color_change(
-                            tool.Colors.GREEN,
-                            tool.Colors.RED,
-                            config.total_points >= config.world_cost[unlock_world_key] and is_target_world_locked,
-                        ),
-                        tool.Colors.two_color_change(tool.Colors.CHARTREUSE, tool.Colors.GRAY, is_target_world_locked),
-                        next_world_button.collidepoint(mouse_pos),
-                    )
-                    if is_target_world_locked or is_not_already_bought
-                    else tool.Colors.GRAY
-                ),
-                120,
-                60 + len(config.current_world_costs) * 80 - scroll_ys[3],
-                200,
-                60,
-                t_y=(
-                    85 + len(config.current_world_costs) * 80 - scroll_ys[3]
-                    if next_world_button.collidepoint(mouse_pos)
-                    and is_target_world_locked
-                    and config.total_points >= config.world_cost[unlock_world_key]
-                    else 80 + len(config.current_world_costs) * 80 - scroll_ys[3]
-                ),  #
-                size=(
-                    24
-                    if next_world_button.collidepoint(mouse_pos)
-                    and is_target_world_locked
-                    and config.total_points >= config.world_cost[unlock_world_key]
-                    else 22
-                ),
-            )
-        elif not has_next_world:
-            next_world_button = tool.text_button(
-                screen,
-                ["Stay tuned", " for new worlds!"],
-                tool.Colors.WHITE,
-                tool.Colors.GRAY,
-                120,
-                60 + len(config.current_world_costs) * 80 - scroll_ys[3],
-                200,
-                60,
-                t_y=80 + len(config.current_world_costs) * 80 - scroll_ys[3],
-                size=20,
-            )
-        else:
-            next_world_button = tool.text_button(
-                screen,
-                "Has Unlocked",
-                tool.Colors.WHITE,
-                tool.Colors.GRAY,
-                120,
-                60 + len(config.current_world_costs) * 80 - scroll_ys[3],
-                200,
-                60,
-                size=26,
-            )
+            # if clicked_pos and level_button.collidepoint(clicked_pos):
+            #     if not is_locked:
+            #         # 點擊成功的邏輯
+            #         config.selected_level = f"level{i}"
+            #         config.lv_i = i - 1
+            #         enemy_list, cannon_list, obstacle_list, level_multiplier, level_name = config.get_level_data(i, config.select_world)
+            #         config.reset_game()
+            #         config.game_state = "countdown"
+            #     elif is_next_level and config.total_points >= config.current_world_costs[i] and prev_level_record >= required_time:
+            #         # 解鎖邏輯
+            #         config.total_points -= config.current_world_costs[i]
+            #         config.levels_unlocked = i  # 更新解鎖的關卡數
+            #         new_text = tool.FloatingText(
+            #             "-" + tool.num_to_KMBT(config.current_world_costs[i]), config.WIDTH - 90, 20, tool.Colors.RED, speed=0.7, size=24
+            #         )
+            #         config.floating_texts.append(new_text)
+            #         config.sounds["buy_success"].play()
+            #         config.update_world_data(config.select_world)  # 更新世界資料，確保下一次進入關卡選單時資料是最新的
+            #     elif is_next_level:
+            #         config.sounds["buy_error"].play()
+            level_name = ""  # 暫時用
+            enemy_list, cannon_list, obstacle_list, level_multiplier, level_name = config.get_level_data(1, config.select_world)
+        all_objs.show_text(screen, "Normal mode", tool.Colors.WHITE, 400, 160 - scroll_ys[3], size=20)
+        ui_manager.handle_current_state(events, mouse_pos)
 
-        button_obj.show_text(screen, "Normal mode", tool.Colors.WHITE, 400, 160 - scroll_ys[3], size=20)
-        pygame.draw.rect(
-            screen,
-            tool.Colors.two_color_wave(config.world_bgc[current_world_key][0], config.world_bgc[current_world_key][1], 1),
-            (0, 0, config.WIDTH, 100),
-        )
-        button_obj.show_text(screen, "Level Select", tool.Colors.WHITE, 0, 40, size=50, screen_center=True)
+        # if has_next_world and is_not_already_bought:
+        #     next_world_button = tool.text_button(
+        #         screen,
+        #         (
+        #             [
+        #                 "Buy!" if config.total_points >= config.world_cost[unlock_world_key] else "Need More $",
+        #                 f" ({"cost" if config.total_points >= config.world_cost[unlock_world_key] else "need"}: ${tool.num_to_KMBT(config.world_cost[unlock_world_key] - config.total_points)})",
+        #             ]
+        #             if next_world_button.collidepoint(mouse_pos) and is_target_world_locked and is_not_already_bought
+        #             else ["Next World ", f"(cost: ${tool.num_to_KMBT(config.world_cost[unlock_world_key])})"]
+        #         ),
+        #         tool.Colors.WHITE,
+        #         (
+        #             tool.Colors.two_color_change(
+        #                 tool.Colors.two_color_change(
+        #                     tool.Colors.GREEN,
+        #                     tool.Colors.RED,
+        #                     config.total_points >= config.world_cost[unlock_world_key] and is_target_world_locked,
+        #                 ),
+        #                 tool.Colors.two_color_change(tool.Colors.CHARTREUSE, tool.Colors.GRAY, is_target_world_locked),
+        #                 next_world_button.collidepoint(mouse_pos),
+        #             )
+        #             if is_target_world_locked or is_not_already_bought
+        #             else tool.Colors.GRAY
+        #         ),
+        #         120,
+        #         60 + len(config.current_world_costs) * 80 - scroll_ys[3],
+        #         200,
+        #         60,
+        #         t_y=(
+        #             85 + len(config.current_world_costs) * 80 - scroll_ys[3]
+        #             if next_world_button.collidepoint(mouse_pos)
+        #             and is_target_world_locked
+        #             and config.total_points >= config.world_cost[unlock_world_key]
+        #             else 80 + len(config.current_world_costs) * 80 - scroll_ys[3]
+        #         ),  #
+        #         size=(
+        #             24
+        #             if next_world_button.collidepoint(mouse_pos)
+        #             and is_target_world_locked
+        #             and config.total_points >= config.world_cost[unlock_world_key]
+        #             else 22
+        #         ),
+        #     )
+        # elif not has_next_world:
+        #     next_world_button = tool.text_button(
+        #         screen,
+        #         ["Stay tuned", " for new worlds!"],
+        #         tool.Colors.WHITE,
+        #         tool.Colors.GRAY,
+        #         120,
+        #         60 + len(config.current_world_costs) * 80 - scroll_ys[3],
+        #         200,
+        #         60,
+        #         t_y=80 + len(config.current_world_costs) * 80 - scroll_ys[3],
+        #         size=20,
+        #     )
+        # else:
+        #     next_world_button = tool.text_button(
+        #         screen,
+        #         "Has Unlocked",
+        #         tool.Colors.WHITE,
+        #         tool.Colors.GRAY,
+        #         120,
+        #         60 + len(config.current_world_costs) * 80 - scroll_ys[3],
+        #         200,
+        #         60,
+        #         size=26,
+        #     )
+
+        # pygame.draw.rect(
+        #     screen,
+        #     tool.Colors.two_color_wave(config.world_bgc[config.current_world_key][0], config.world_bgc[config.current_world_key][1], 1),
+        #     (0, 0, config.WIDTH, 100),
+        # )
+        # button_obj.show_text(screen, "Level Select", tool.Colors.WHITE, 0, 40, size=50, screen_center=True)
 
         config.coin_rect()
 
-        pygame.draw.rect(
-            screen,
-            tool.Colors.two_color_wave(config.world_bgc[current_world_key][0], config.world_bgc[current_world_key][1], 1),
-            (0, config.HEIGHT - 100, config.WIDTH, 100),
-        )
-
-        if config.left_img_loaded and config.select_world > 1:
-            screen.blit(config.left_img_surface, config.left_rect)
-        elif not config.left_img_loaded:
-            pygame.draw.rect(screen, tool.Colors.RED, config.left_rect)
-        if config.right_img_loaded and config.select_world < config.worlds_unlocked:
-            screen.blit(config.right_img_surface, config.right_rect)
-        elif not config.right_img_loaded:
-            pygame.draw.rect(screen, tool.Colors.RED, config.right_rect)
-
-        back_button = tool.text_button(
-            screen, "Back to Menu", tool.Colors.WHITE, tool.Colors.ORANGE, 0, config.HEIGHT - 80, 200, 60, b_center=True
-        )
+        # pygame.draw.rect(
+        #     screen,
+        #     tool.Colors.two_color_wave(config.world_bgc[config.current_world_key][0], config.world_bgc[config.current_world_key][1], 1),
+        #     (0, config.HEIGHT - 100, config.WIDTH, 100),
+        # )
     # 倒數前五秒
     elif config.game_state == "countdown":
-        screen.fill(tool.Colors.two_color_wave(config.world_bgc[current_world_key][0], config.world_bgc[current_world_key][1], 1))
+        screen.fill(
+            tool.Colors.two_color_wave(config.world_bgc[config.current_world_key][0], config.world_bgc[config.current_world_key][1], 1)
+        )
 
         config.coin_rect()
         passed_time, _ = tool.sec_timer(update=True, dt=dt)
@@ -870,7 +592,7 @@ while config.running:
 
         config.player_move(keys)
 
-        button_obj.show_text(screen, level_name, tool.Colors.WHITE, 0, 80, screen_center=True, size=40)
+        all_objs.show_text(screen, level_name, tool.Colors.WHITE, 0, 80, screen_center=True, size=40)
 
         if countdown >= 1:
             countdown_text = str(int(countdown))
@@ -885,7 +607,7 @@ while config.running:
 
         player_rect = pygame.draw.rect(screen, config.player_color, config.player_rect)
 
-        button_obj.show_text(screen, countdown_text, tool.Colors.WHITE, 0, config.HEIGHT // 2 - 150, screen_center=True, size=300)
+        all_objs.show_text(screen, countdown_text, tool.Colors.WHITE, 0, config.HEIGHT // 2 - 150, screen_center=True, size=300)
 
         for event in events:
             if event.type == pygame.KEYDOWN and (event.key == pygame.K_p or event.key == pygame.K_ESCAPE):
@@ -894,7 +616,9 @@ while config.running:
     # 主遊戲程式
     elif config.game_state == "start_game":
         screen_text = "Escape Them! v1.6.7 - Escaping"
-        screen.fill(tool.Colors.two_color_wave(config.world_bgc[current_world_key][0], config.world_bgc[current_world_key][1], 1))
+        screen.fill(
+            tool.Colors.two_color_wave(config.world_bgc[config.current_world_key][0], config.world_bgc[config.current_world_key][1], 1)
+        )
         config.coin_rect(player_rect)
         countdowning = False
 
@@ -1367,7 +1091,7 @@ while config.running:
             size=24,
             alpha=config.alphas[0],
         )
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             f"hp:{int(display_hp)}/{int(config.player_max_hp)}",
             tool.Colors.WHITE,
@@ -1380,7 +1104,7 @@ while config.running:
 
         if config.Invincible:
             # 畫個紅色的字提醒自己
-            button_obj.show_text(screen, "DEBUG: INVINCIBLE ON", tool.Colors.RED, 10, 60, size=15)
+            all_objs.show_text(screen, "DEBUG: INVINCIBLE ON", tool.Colors.RED, 10, 60, size=15)
 
         # 判斷是否在無敵時間內
         is_invincible = (current_time_sec - config.last_hit_time) < config.invincible_duration * config.invincible_time_buff
@@ -1410,20 +1134,20 @@ while config.running:
         safe_x = tool.num_range(15, config.WIDTH - 15, player_rect.centerx)
 
         # 繪製第一行 (箭頭或 "You")
-        button_obj.show_text(screen, text_order[0], tool.Colors.WHITE, safe_x, base_y, size=16, center=True)
+        all_objs.show_text(screen, text_order[0], tool.Colors.WHITE, safe_x, base_y, size=16, center=True)
         # 繪製第二行 (箭頭或 "You")，間距固定 15 像素
-        button_obj.show_text(screen, text_order[1], tool.Colors.WHITE, player_rect.centerx, base_y + 15, size=16, center=True)
+        all_objs.show_text(screen, text_order[1], tool.Colors.WHITE, player_rect.centerx, base_y + 15, size=16, center=True)
         # 分數
         config.points = (current_time_sec * config.points_multiplier + config.treasure_points) * config.gm_points_buff * config.now_skills[
             "p3"
         ] * level_multiplier + config.shoot_point
         if config.selected_level == "level 3" and config.game_mode == "crazy":
             config.points *= 0.5
-        time_text = button_obj.show_text(
+        time_text = all_objs.show_text(
             screen, f"Time: {tool.show_time_min(current_time_sec)}", tool.Colors.WHITE, 10, 10, size=24, alpha=config.alphas[1]
         )
         display_points = tool.num_to_KMBT(round(config.points, 1))
-        points_text = button_obj.show_text(screen, f"Coins: ${display_points}$", tool.Colors.WHITE, 10, 40, size=24, alpha=config.alphas[1])
+        points_text = all_objs.show_text(screen, f"Coins: ${display_points}$", tool.Colors.WHITE, 10, 40, size=24, alpha=config.alphas[1])
 
         config.alphas[1] = 255
         if player_rect.colliderect(time_text) or player_rect.colliderect(points_text):
@@ -1441,7 +1165,9 @@ while config.running:
                     break
         if config.player_hp <= 0:
             config.game_state = "game_over"
-            last_color = tool.Colors.two_color_wave(config.world_bgc[current_world_key][0], config.world_bgc[current_world_key][1], 1)
+            last_color = tool.Colors.two_color_wave(
+                config.world_bgc[config.current_world_key][0], config.world_bgc[config.current_world_key][1], 1
+            )
 
             for i in range(2):
                 config.alphas[i] = 255
@@ -1457,7 +1183,7 @@ while config.running:
             tool.sec_timer(update=False)
         # 在畫面上印出座標
         # tool.py_text(f"Pos: {player_rect.x}, {player_rect.y}", tool.Colors.WHITE, 50, 550, size=20)
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             f"Spawn time: {tool.show_time_min(config.now_treasure['next_spawn_at'])}, Show: {config.now_treasure['show']}",
             tool.Colors.GOLD,
@@ -1465,7 +1191,7 @@ while config.running:
             config.HEIGHT - 20,
             size=15,
         )
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             f"Alto shoot: {'ON' if config.alto_shoot else 'OFF'}",
             tool.Colors.GOLD,
@@ -1476,7 +1202,9 @@ while config.running:
         )
     # 遊戲暫停
     elif config.game_state == "pause":
-        screen.fill(tool.Colors.two_color_wave(config.world_bgc[current_world_key][0], config.world_bgc[current_world_key][1], 1))
+        screen.fill(
+            tool.Colors.two_color_wave(config.world_bgc[config.current_world_key][0], config.world_bgc[config.current_world_key][1], 1)
+        )
         config.coin_rect()
         target_vol = 0.5
         tool.sec_timer(False)
@@ -1499,9 +1227,9 @@ while config.running:
             pygame.draw.rect(screen, config.now_treasure["color"], t_rect)
         pygame.draw.rect(screen, config.player_color, player_rect)
         tool.screen_vague(10)
-        button_obj.show_text(screen, "Pause", tool.Colors.WHITE, 0, 80, 50, screen_center=True)
+        all_objs.show_text(screen, "Pause", tool.Colors.WHITE, 0, 80, 50, screen_center=True)
         display_points = tool.num_to_KMBT(round(config.points, 1))
-        button_obj.show_text(screen, f"Coins: {display_points}$", tool.Colors.WHITE, 0, 140, screen_center=True)
+        all_objs.show_text(screen, f"Coins: {display_points}$", tool.Colors.WHITE, 0, 140, screen_center=True)
         resume_button = tool.text_button(
             screen,
             "Resume",
@@ -1557,7 +1285,7 @@ while config.running:
             60,
             b_center=True,
         )
-        current_world_key = f"world{config.select_world}"
+        config.current_world_key = f"world{config.select_world}"
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if resume_button.collidepoint(mouse_pos):
@@ -1586,8 +1314,8 @@ while config.running:
                         config.total_points += config.points
                     for i in range(2):
                         config.alphas[i] = 255
-                    config.longest_survived_time[current_world_key][config.selected_level][config.game_mode] = max(
-                        config.longest_survived_time[current_world_key][config.selected_level][config.game_mode], current_time_sec
+                    config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode] = max(
+                        config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode], current_time_sec
                     )
                     config.reset_game()
                     config.game_state = "countdown"
@@ -1600,8 +1328,8 @@ while config.running:
                         config.total_points += config.points
                     for i in range(2):
                         config.alphas[i] = 255
-                    config.longest_survived_time[current_world_key][config.selected_level][config.game_mode] = max(
-                        config.longest_survived_time[current_world_key][config.selected_level][config.game_mode], current_time_sec
+                    config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode] = max(
+                        config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode], current_time_sec
                     )
                     config.reset_game()
                     config.game_state = "menu"
@@ -1609,8 +1337,8 @@ while config.running:
                     config.player_hp = config.player_max_hp
                     if not config.Invincible:
                         config.total_points += config.points
-                    config.longest_survived_time[current_world_key][config.selected_level][config.game_mode] = max(
-                        config.longest_survived_time[current_world_key][config.selected_level][config.game_mode], current_time_sec
+                    config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode] = max(
+                        config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode], current_time_sec
                     )
                     config.reset_game()
                     config.running = False
@@ -1654,7 +1382,7 @@ while config.running:
         pygame.draw.rect(screen, config.player_color, config.player_rect)
         passed_time = runed_time - tool.collision_time if tool.collision_time is not None else 0
         countdown = 10 - (passed_time // 1000)  # 倒數 10 秒
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             f"You survive for {tool.show_time_min(current_time_sec)}",
             tool.Colors.WHITE,
@@ -1664,7 +1392,7 @@ while config.running:
             screen_center=True,
         )
         gm_text = config.game_mode.replace("_", " ")
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             f"in {gm_text} mode.",
             tool.Colors.WHITE,
@@ -1674,7 +1402,7 @@ while config.running:
             screen_center=True,
         )
         end_text = "Unbelievable!" if current_time_sec >= (50 / config.gm_points_buff) else "Better luck next time!"
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             end_text,
             tool.Colors.WHITE,
@@ -1684,8 +1412,8 @@ while config.running:
             screen_center=True,
         )
         display_points = tool.num_to_KMBT(round(config.points, 1))
-        button_obj.show_text(screen, f"points:{display_points}$", tool.Colors.WHITE, 0, 300, screen_center=True)
-        button_obj.show_text(
+        all_objs.show_text(screen, f"points:{display_points}$", tool.Colors.WHITE, 0, 300, screen_center=True)
+        all_objs.show_text(
             screen,
             f"Back to Menu in {countdown} sec",
             tool.Colors.WHITE,
@@ -1710,8 +1438,8 @@ while config.running:
                 "+" + tool.num_to_KMBT(config.points), config.WIDTH - 90, 20, tool.Colors.GREEN, size=24, time=150, speed=0.5
             )
             config.floating_texts.append(new_text)
-            config.longest_survived_time[current_world_key][config.selected_level][config.game_mode] = max(
-                config.longest_survived_time[current_world_key][config.selected_level][config.game_mode], current_time_sec
+            config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode] = max(
+                config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode], current_time_sec
             )
             config.has_save_survived_time = True
         if passed_time >= 10000:  # 過了 10000 毫秒 (10秒)
@@ -1749,7 +1477,7 @@ while config.running:
         pygame.draw.rect(screen, tool.Colors.BLACK2, (config.WIDTH // 2 - 245, 95, 500, 400))
         # 在顯示標題前，隨機切換顏色
         flash_color = tool.Colors.RED if runed_time % 500 < 250 else tool.Colors.GRAY
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             "CRITICAL ERROR",
             tool.Colors.RED,
@@ -1759,7 +1487,7 @@ while config.running:
             screen_center=True,
             font_type="None",
         )
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             "AFK_DETECTION_TIMEOUT",
             tool.Colors.WHITE,
@@ -1769,7 +1497,7 @@ while config.running:
             screen_center=True,
             font_type="None",
         )
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             "Error code: 1011451",
             tool.Colors.GRAY,
@@ -1807,7 +1535,7 @@ while config.running:
         screen_text = "Escape Them! v1.6.7 - ERROR: 2487145"
         pygame.draw.rect(screen, tool.Colors.RED, (0, 100, 550, 450))
         pygame.draw.rect(screen, tool.Colors.BLACK2, (config.WIDTH // 2 - 270, 95, 550, 450))
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             "SOMTHING WENT WRONG",
             tool.Colors.RED,
@@ -1817,7 +1545,7 @@ while config.running:
             screen_center=True,
             font_type="None",
         )
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             "GAME_STATE_NOT_CORRECT",
             tool.Colors.WHITE,
@@ -1827,7 +1555,7 @@ while config.running:
             screen_center=True,
             font_type="None",
         )
-        button_obj.show_text(
+        all_objs.show_text(
             screen,
             "Error code: 2487145",
             tool.Colors.GRAY,
@@ -1837,7 +1565,7 @@ while config.running:
             screen_center=True,
             font_type="None",
         )
-        menu_button = button_obj.TextButton(
+        menu_button = all_objs.TextButton(
             screen,
             "Back To Menu",
             tool.Colors.WHITE,

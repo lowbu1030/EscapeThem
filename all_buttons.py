@@ -1,7 +1,7 @@
 import pygame
 
 import config
-from button_obj import ImageButton, TextButton  # Button, 之後用到再加
+from all_objs import Button, ImageButton, Line, TextButton
 from tool import Colors
 
 buttons = {
@@ -104,13 +104,10 @@ buttons = {
             font_size=34,
             screen_center=True,
         ),
-        TextButton(
+        Button(
             name="none_1",
-            text="",
             rect=pygame.Rect(0, config.HEIGHT - 80, config.WIDTH, 80),
-            button_color=Colors.BLUE3,
-            text_color=Colors.WHITE,
-            font_size=0,
+            normal_color=Colors.BLUE3,
         ),
         TextButton(
             name="back",
@@ -177,7 +174,7 @@ buttons = {
                 screen_center=False,
             )
             for name in config.player_skins.keys()
-        ],
+        ][::-1],
     ],
     "setting_p3": [
         TextButton(
@@ -228,6 +225,121 @@ buttons = {
             text_color=Colors.WHITE,
             font_size=24,
             hover_color=Colors.BROWN,
+        )
+    ],
+    "upgrade_hub": [
+        TextButton(
+            name="title",
+            text="Upgrade Center",
+            rect=pygame.Rect(0, 0, 500, 100),
+            button_color=Colors.BLUE3,
+            text_color=Colors.WHITE,
+            font_size=50,
+            screen_center=True,
+            border_radius=0,
+        ),
+        TextButton(
+            name="now_mode",
+            text=f"now_mode: {config.shop_page}",
+            rect=pygame.Rect(0, 90, 500, 40),
+            button_color=Colors.BLUE3,
+            text_color=Colors.WHITE,
+            font_size=35,
+            screen_center=True,
+            border_radius=0,
+        ),
+        Button(
+            name="mask1",
+            rect=pygame.Rect(0, config.HEIGHT - 120, config.WIDTH, 120),
+            normal_color=Colors.BLUE3,
+        ),
+        TextButton(
+            name="back_upg_hub",
+            text="BACK TO MENU",
+            rect=pygame.Rect(0, 510, 300, 60),
+            button_color=Colors.ORANGE,
+            text_color=Colors.WHITE,
+            font_size=24,
+            hover_color=Colors.BROWN,
+        ),
+        ImageButton(
+            name="left",
+            image=config.left_img_surface,
+            pos=config.upgrade_left_rect.center,
+            visible=config.l_img_show and config.left_img_loaded,
+        ),
+        ImageButton(
+            name="right",
+            image=config.right_img_surface,
+            pos=config.upgrade_right_rect.center,
+            visible=config.r_img_show and config.right_img_loaded,
+        ),
+    ],
+    "upgrade_p": [
+        TextButton(
+            name="upgrade",
+            text="",  # 因應不同升級項目，文字會由 sync 更新
+            rect=pygame.Rect(0, 300, 350, 60),
+            button_color=Colors.YELLOW,
+            text_color=Colors.BLACK,
+            font_size=24,
+            screen_center=True,
+            border_width=2,
+            normal_border_color=Colors.BLACK,
+            hover_color=Colors.GREEN,  # 由錢判斷顏色(在ui_handler裡)，所以 hover_color 就先給一個預設值，反正會被覆蓋掉
+            pressing_color=Colors.PARIS_GREEN,  # 同上，先給預設值
+        ),
+        TextButton(
+            name="back_upg",
+            text="BACK TO UPGRADE HUB",
+            rect=pygame.Rect(0, 510, 300, 60),
+            button_color=Colors.ORANGE,
+            text_color=Colors.WHITE,
+            font_size=24,
+            hover_color=Colors.BROWN,
+        ),
+    ],
+    "level_select": [
+        Button(
+            name="mask1",
+            rect=pygame.Rect(0, config.HEIGHT - 100, config.WIDTH, 100),
+            normal_color=Colors.GRAY,
+            color_wave=[config.world_bgc[config.current_world_key][0], config.world_bgc[config.current_world_key][1], 1],
+        ),
+        TextButton(
+            name="back",
+            text="BACK TO MENU",
+            rect=pygame.Rect(0, 520, 300, 60),
+            button_color=Colors.ORANGE,
+            text_color=Colors.WHITE,
+            font_size=24,
+            hover_color=Colors.BROWN,
+        ),
+        TextButton(
+            name="title",
+            text="Level Select",
+            rect=pygame.Rect(0, 0, config.WIDTH, 100),
+            button_color=Colors.BLUE3,
+            text_color=Colors.WHITE,
+            font_size=50,
+            color_wave=[config.world_bgc[config.current_world_key][0], config.world_bgc[config.current_world_key][1], 1],
+        ),
+        ImageButton(
+            name="left",
+            image=config.left_img_surface,
+            pos=config.left_rect.center,
+        ),
+        ImageButton(
+            name="right",
+            image=config.right_img_surface,
+            pos=config.right_rect.center,
+        ),
+        Line(
+            name="line1",
+            start_pos=(350, 100),
+            end_pos=(350, 500),
+            width=2,
+            normal_color=Colors.WHITE
         )
     ],
 }
