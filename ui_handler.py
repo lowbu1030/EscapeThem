@@ -1,4 +1,5 @@
 import json
+import math
 import random
 
 import pygame
@@ -53,31 +54,54 @@ class UIManager:
         wave_color = tool.Colors.two_color_wave(obj.color_wave[0], obj.color_wave[1], obj.color_wave[2])
         obj.change_base_color(wave_color, force=True)
 
+    def clean_up_current_level_run(self):
+        """專門負責玩家中途重來或離開關卡時的結算、重置與清理"""
+        tool.collision_time = None
+        tool.reset_timer()
+        config.player_hp = config.player_max_hp
+
+        if not config.Invincible:
+            config.total_points += config.points
+
+        for i in range(2):
+            config.alphas[i] = 255
+
+        # 紀錄最高生存時間
+        config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode] = max(
+            config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode], config.current_time_sec
+        )
+
+        # 徹底清空關卡資料
+        config.reset_game()
+
     def _sync_ui_state(self, obj: all_buttons.Button | all_buttons.TextButton | all_buttons.ImageButton | all_buttons.Line):
         if hasattr(obj, "color_wave") and obj.color_wave is not None:
             self._handle_color_wave(obj)
+
+        if config.game_state.startswith("setting_p"):
+            if obj.name == "back":
+                obj.change_base_text("Back to Pause" if config.from_pause else "Back to Menu")
 
         if config.game_state == "setting_p1":
 
             # 處理 Crazy 難度的特殊文字
             if obj.name == "crazy_select":
                 obj.current_text = obj.handle_condition(config.has_buy_crazy, "select", config.crazy_btn_text)
-                obj.active = config.has_buy_crazy
+                obj.active = not config.from_pause
                 if config.has_buy_crazy:
                     # 已購買：固定顯示 select 並啟用
                     obj.change_base_text("select")
                     obj.active = True
+                    obj.draw_lock = False  # 隱形鎖頭
                 else:
-                    # 未購買：根據懸停狀態顯示價格或鎖定文字，並禁用
+                    # 未購買：根據懸停狀態顯示價格或鎖定文字
                     new_text = obj.handle_condition(obj.is_hover, "$10000", config.crazy_btn_text)
+                    obj.draw_lock = not obj.is_hover
                     obj.change_base_text(new_text)
-                    obj.active = False
+                    if config.total_points >= 10000:
+                        obj.hover_color = tool.Colors.GREEN
+                        obj.pressing_color = tool.Colors.PARIS_GREEN
 
-            elif obj.name == "crazy_lock":
-                crazy_btn = next((b for b in all_buttons.buttons[config.game_state] if b.name == "crazy_select"), None)
-                is_hovering_crazy = crazy_btn.is_hover if crazy_btn else False
-
-                obj.is_visible = not config.has_buy_crazy and config.lock_img_loaded and not is_hovering_crazy
             elif obj.name == "record_level_display":
                 # 將 config 中的 level1 轉換為 Lv. 1
                 display_text = config.selected_level.replace("level", "Lv. ")
@@ -260,7 +284,7 @@ class UIManager:
             if obj.name == "left":
                 obj.is_visible = config.select_world != 1
             if obj.name == "right":
-                obj.is_visible = config.select_world < config.MAX_WORLD
+                obj.is_visible = config.select_world < config.worlds_unlocked
             if obj.name.startswith("level_"):
                 idx = int(obj.name.split("_")[1])
                 is_locked = idx > config.levels_unlocked
@@ -301,6 +325,63 @@ class UIManager:
                 obj.end_pos[1] = obj.base_end_y - config.scroll_ys[3]
             if obj.name in ["title", "mask1"]:
                 obj.color_wave = [config.world_bgc[config.current_world_key][0], config.world_bgc[config.current_world_key][1], 1]
+            if obj.name == "next_world":
+                unlock_world_key = f"world{config.select_world + 1}"
+                unlock_world = config.select_world + 1
+                has_next_world = unlock_world_key in config.world_cost
+
+                # 1. 基礎功能防行與捲軸位置同步
+                obj.base_y = 60 + len(config.current_world_costs) * 80
+                obj.rect.y = obj.base_y - config.scroll_ys[3]
+
+                # 狀態 A：如果根本沒有下一個世界（全破了）
+                if not has_next_world:
+                    obj.change_base_text(["Stay tuned", " for new worlds!"])
+                    obj.change_base_color(tool.Colors.GRAY)
+                    obj.active = False
+                    return
+
+                # 抓取目前這個新世界的解鎖狀況與價錢
+                is_target_world_locked = unlock_world > config.worlds_unlocked
+                world_cost = config.world_cost[unlock_world_key]
+                money_enough = config.total_points >= world_cost
+
+                # 狀態 B：如果下一個世界其實早就買過了
+                if not is_target_world_locked:
+                    obj.change_base_text("Has Unlocked")
+                    obj.change_base_color(tool.Colors.GRAY)
+                    obj.active = False
+
+                # 狀態 C：🌟 還沒買！發動動態炸裂商店按鈕邏輯！
+                else:
+                    obj.active = True
+
+                    if obj.is_hover:
+                        # 當滑鼠移上去（Collidepoint 邏輯已經被 obj.is_hover 處理好了！）
+                        obj.hover_color = obj.handle_condition(config.total_points >= world_cost, tool.Colors.GREEN, tool.Colors.RED)
+                        obj.font_size = 24  # 放大字體
+
+                        # 根據錢夠不夠，抽換 hover 家族顏色與多行文字
+                        if money_enough:
+                            obj.change_base_text(["Buy!", f"(cost: ${tool.num_to_KMBT(world_cost)})"])
+                        else:
+                            need_money = world_cost - config.total_points
+                            obj.change_base_text(["Need More $", f"(need: ${tool.num_to_KMBT(need_money)})"])
+                    else:
+                        # 當滑鼠離開時，還原成原本的亮綠色與預設多行字
+                        obj.change_base_color(tool.Colors.CHARTREUSE)
+                        obj.hover_color = obj.handle_condition(config.total_points >= world_cost, tool.Colors.GREEN, tool.Colors.RED)
+                        obj.font_size = 22  # 還原字體大小
+                        obj.change_base_text(["Next World ", f"(cost: ${tool.num_to_KMBT(world_cost)})"])
+
+        if config.game_state == "playing":
+            if obj.name == "hp_bar":
+                display_hp = max(math.ceil(config.player_hp), 0)
+                hp_ratio = display_hp / config.player_max_hp
+                obj.rect.width = 100 * hp_ratio
+                obj.change_base_color((*tool.Colors.RED, config.alphas[0]))
+            if obj.name == "hp_bar_bg":
+                obj.change_base_color((*tool.Colors.DARK_RED, config.alphas[0]))
 
     def handle_current_state(self, events, mouse_pos):
         self._handle_other_events(events)
@@ -389,16 +470,40 @@ class UIManager:
                 config.game_state = f"setting_p{self.setting_page}"
             if config.game_state == "setting_p1":
                 for i, mode in enumerate(self.MODES):
+                    # 1. 處理 Info 點擊 (這部分你寫得很棒，有 return)
                     if obj.name == f"{mode}_info":
                         config.game_state = "more_survived_time"
-                        # 根據 index (i) 計算目標高度
                         config.target_y = i * (config.one_mode_height) + 25
                         self.update_max_scroll_height()
                         return
-                    elif obj.name == f"{mode}_select" or obj.name == f"show_{mode}":
+
+                    # 2. 處理 難度選擇 點擊
+                    if obj.name == f"{mode}_select" or obj.name == f"show_{mode}":
+
+                        # 🌟 特殊防禦：如果是點到 crazy，先檢查購買門檻
+                        if mode == "crazy":
+                            if not config.has_buy_crazy:
+                                if config.total_points >= 10000:
+                                    config.has_buy_crazy = True
+                                    config.total_points -= 10000
+                                    config.buy_channel.play(config.sounds["buy_success"])
+                                    # 💡 注意：這裡「不要」return！讓程式繼續往下走，
+                                    # 這樣買完的當下才能順便把難度直接切換到 crazy！
+                                else:
+                                    config.buy_channel.play(config.sounds["buy_error"])
+                                    config.floating_texts.append(
+                                        tool.FloatingText(
+                                            "Not enough points!", 0, config.HEIGHT - 50, tool.Colors.RED, center=True, time=300, size=50
+                                        )
+                                    )
+                                    return  # 錢不夠才需要 return 攔截
+
+                        # 🌟 大眾邏輯：不論是普通難度，還是剛扣完錢的 crazy，通通在這裡完成切換！
                         config.game_mode = mode
                         config.level_button_color = self.DIFFICULTY_MAP[mode]
-                        # print(f"[DEBUG]: from 'ui_handler.py:  {config.level_button_color}")
+
+                        # 🌟 終極防禦：切換完畢後，一定要「立刻 return」！
+                        # 阻止 for 迴圈繼續跑下一圈，按鈕就不會發生靈異失效了！
                         return
             if config.game_state == "setting_p2":
                 if obj.name == "draw_skin":
@@ -461,10 +566,10 @@ class UIManager:
                     if config.player_skins[skin_name]["has_owned"]:
                         config.current_player_color_name = skin_name
                         config.now_player_skin = config.player_skins[skin_name]["color"]
-                        obj.border_color = tool.Colors.WHITE
+                        obj.normal_border_color = tool.Colors.WHITE
                         # print(f"[DEBUG]: from 'ui_handler.py:  {config.now_player_skin}")
                     else:
-                        obj.border_color = tool.Colors.BLACK
+                        obj.normal_border_color = tool.Colors.BLACK
                         config.floating_texts.append(
                             tool.FloatingText(
                                 "You don't own this skin!", 0, config.HEIGHT - 50, tool.Colors.RED, center=True, time=300, size=50
@@ -476,7 +581,7 @@ class UIManager:
                 if obj.name == "open_new_game":
                     try:
                         with open("save_game.json", "w", encoding="utf-8") as f:
-                            json.dump(config.initial_data, f, indent=4)
+                            json.dump(data_handler.initial_data, f, indent=4)
 
                         # 成功寫入後才執行讀取與重置
                         data_handler.load_data()
@@ -599,6 +704,102 @@ class UIManager:
                 config.update_current_world_data(config.select_world)
                 config.scroll_ys[3] = 0  # 切換世界時重置捲軸位置
                 self.handle_change_game_state()
+            if obj.name.startswith("level_"):
+                idx = int(obj.name.split("_")[1])
+                if idx <= config.levels_unlocked:
+                    config.selected_level = f"level{idx}"
+                    config.lv_i = idx - 1
+                    data = all_objs.get_level_data(idx, config.select_world)
+                    config.current_setup = {
+                        "enemies": data[0],
+                        "cannons": data[1],
+                        "obstacles": data[2],
+                        "multiplier": data[3],
+                        "name": data[4],
+                    }
+                    config.game_state = "countdown"
+                    config.reset_game()
+                    config.update_skill()
+                elif obj.is_next_level:
+                    # 👉 狀況 B：是還可以挑戰的「下一關」，點擊觸發「商店解鎖邏輯」
+                    cost = config.current_world_costs[idx]
+
+                    if config.total_points >= cost:
+                        # 錢夠，扣錢並正式宣告解鎖！
+                        config.total_points -= cost
+                        config.levels_unlocked = idx  # 關卡解鎖進度正式推進
+
+                        # 生成扣錢的漂浮噴字（直接引用你原本設計的 FloatingText）
+                        new_text = tool.FloatingText(
+                            "-" + tool.num_to_KMBT(cost), config.WIDTH - 90, 20, tool.Colors.RED, speed=0.7, size=24
+                        )
+                        config.floating_texts.append(new_text)
+
+                        # 播放成功的金幣音效
+                        config.sounds["buy_success"].play()
+
+                        # 儲存與重整世界資料，確保畫面原地刷新
+                        config.update_world_data(config.select_world)
+                    else:
+                        # 錢不夠，無情噴出錯誤音效
+                        config.sounds["buy_error"].play()
+            if obj.name == "next_world":
+                unlock_world_key = f"world{config.select_world + 1}"
+                cost = config.world_cost[unlock_world_key]
+                if config.total_points >= cost:
+                    config.total_points -= cost
+                    config.worlds_unlocked = config.select_world + 1  # 世界解鎖進度正式推進
+
+                    new_text = tool.FloatingText("-" + tool.num_to_KMBT(cost), config.WIDTH - 90, 20, tool.Colors.RED, speed=0.7, size=24)
+                    config.floating_texts.append(new_text)
+
+                    config.sounds["buy_success"].play()
+                    config.update_current_world_data(config.select_world)
+                else:
+                    config.sounds["buy_error"].play()
+
+        elif config.game_state == "pause":
+            if obj.name == "resume":
+                if not config.countdowning:
+                    config.game_state = "playing"
+                else:
+                    config.game_state = "countdown"
+            if obj.name == "settings":
+                config.from_pause = True
+                config.game_state = f"setting_p{self.setting_page}"
+            if obj.name == "restart":
+                self.clean_up_current_level_run()
+                config.game_state = "countdown"
+            if obj.name == "menu":
+                self.clean_up_current_level_run()
+                config.from_pause = False
+                config.game_state = "menu"
+            if obj.name == "quit":
+                config.running = False
+
+        elif config.game_state == "game_over":
+            if obj.name == "back":
+                config.game_state = "menu"
+                tool.collision_time = None
+                tool.reset_timer()
+                for ft in config.floating_texts[:]:
+                    ft.reset()
+
+        elif config.game_state == "afk_kick":
+            if obj.name == "kick":
+                raise config.AFKError()
+
+        else:
+            if obj.name == "back":
+                config.player_hp = config.player_max_hp
+                if not config.Invincible:
+                    config.total_points += config.points
+                config.longest_survived_time[config.selected_level][config.game_mode] = max(
+                    config.longest_survived_time[config.selected_level][config.game_mode], config.current_time_sec
+                )
+                data_handler.save_data()
+                config.reset_game()
+                config.game_state = "menu"
 
     def _handle_other_events(self, events):
         # 處理單次按下的快速鍵
@@ -637,6 +838,48 @@ class UIManager:
                         config.game_state = f"upgrade_p{config.current_p_num + 1}"
                         config.current_p_num = tool.num_range(1, total_pages, config.current_p_num + 1)
 
+                if config.game_state == "level_select":
+                    if event.key in [pygame.K_LEFT, pygame.K_a]:
+                        config.select_world = max(1, config.select_world - 1)
+                        config.update_current_world_data(config.select_world)
+                        config.scroll_ys[3] = 0  # 切換世界時重置捲軸位置
+                        self.handle_change_game_state()
+                    if event.key in [pygame.K_RIGHT, pygame.K_d]:
+                        config.select_world = min(config.worlds_unlocked, config.select_world + 1)
+                        config.update_current_world_data(config.select_world)
+                        config.scroll_ys[3] = 0  # 切換世界時重置捲軸位置
+                        self.handle_change_game_state()
+
+                if config.game_state == "pause":
+                    if event.key == pygame.K_ESCAPE:
+                        if not config.countdowning:
+                            config.game_state = "playing"
+                        else:
+                            config.game_state = "countdown"
+                    if event.key == pygame.K_r:
+                        self.clean_up_current_level_run()
+                        config.game_state = "countdown"
+                    if event.key == pygame.K_c:
+                        config.player_hp = config.player_max_hp
+                        if not config.Invincible:
+                            config.total_points += config.points
+                        config.longest_survived_time[config.selected_level][config.game_mode] = max(
+                            config.longest_survived_time[config.selected_level][config.game_mode], config.current_time_sec
+                        )
+                        config.running = False
+
+                if config.game_state == "game_over":
+                    if event.key == pygame.K_ESCAPE or event.key == pygame.K_BACKSPACE:
+                        config.game_state = "menu"
+                        tool.collision_time = None
+                        tool.reset_timer()
+                        for ft in config.floating_texts[:]:
+                            ft.reset()
+
+                if config.game_state == "afk_kick":
+                    if event.key == pygame.K_ESCAPE or event.key == pygame.K_BACKSPACE:
+                        raise config.AFKError()
+
             if event.type == pygame.MOUSEWHEEL:
                 if config.game_state == "setting_p1":
                     config.lv_i += 1 if event.y < 0 else -1
@@ -657,6 +900,10 @@ class UIManager:
                         config.game_state = f"upgrade_p{config.current_p_num - 1}"
                 if config.game_state == "level_select":
                     config.target_y -= event.y * 30
+
+            if event.type == pygame.QUIT:
+                if config.game_state == "afk_kick":
+                    raise config.AFKError()
 
         # 處理長按或單次按下的方向鍵
         keys = pygame.key.get_pressed()

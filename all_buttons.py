@@ -82,7 +82,6 @@ buttons = {
             image=config.right_img_surface,
             pos=config.right_rect.center,
         ),
-        ImageButton(name="crazy_lock", image=config.lock_img_surface, pos=(90, 430)),
         TextButton(
             name="record_level_display",
             text="",  # 初始文字留空，交給 sync 更新
@@ -117,11 +116,6 @@ buttons = {
             text_color=Colors.WHITE,
             font_size=24,
             hover_color=Colors.BROWN,
-        ),
-        ImageButton(
-            name="right",
-            image=config.right_img_surface,
-            pos=config.right_rect.center,
         ),
     ],
     "setting_p2": [
@@ -300,6 +294,16 @@ buttons = {
         ),
     ],
     "level_select": [
+        # 讓它乾乾淨淨地誕生，座標算好，名字叫 "next_world"
+        TextButton(
+            name="next_world",
+            text=["Next World", "(cost: $--)"],  # 預設文字
+            button_color=Colors.CHARTREUSE,
+            text_color=Colors.WHITE,
+            rect=pygame.Rect(120, 60 + len(config.current_world_costs) * 80, 200, 60),
+            font_size=22,
+            screen_center=False,
+        ),
         Button(
             name="mask1",
             rect=pygame.Rect(0, config.HEIGHT - 100, config.WIDTH, 100),
@@ -334,12 +338,100 @@ buttons = {
             image=config.right_img_surface,
             pos=config.right_rect.center,
         ),
-        Line(
-            name="line1",
-            start_pos=(350, 100),
-            end_pos=(350, 500),
-            width=2,
-            normal_color=Colors.WHITE
+        Line(name="line1", start_pos=(350, 100), end_pos=(350, 500), width=2, normal_color=Colors.WHITE),
+    ],
+    "playing": [
+        Button(
+            name="hp_bar_bg",
+            rect=pygame.Rect(config.WIDTH - 110, 70, 100, 23),
+            normal_color=(*Colors.DARK_RED, config.alphas[0]),
+        ),
+        Button(
+            name="hp_bar",
+            rect=pygame.Rect(config.WIDTH - 110, 70, 100, 23),  # 和血條重疊，當作血條的背景
+            normal_color=(*Colors.RED, config.alphas[0]),
+        ),
+    ],
+    "pause": [
+        TextButton(
+            name="resume",
+            text="Resume",
+            button_color=Colors.BROWN,
+            text_color=Colors.WHITE,
+            hover_color=Colors.ORANGE,
+            rect=pygame.Rect(0, 170, 180, 60),
+            font_size=28,
+        ),
+        TextButton(
+            name="settings",
+            text="Settings",
+            button_color=Colors.GREEN,
+            text_color=Colors.WHITE,
+            hover_color=Colors.YELLOW,
+            hover_text_color=Colors.BLACK,
+            rect=pygame.Rect(0, 250, 180, 60),
+            font_size=28,
+        ),
+        TextButton(
+            name="restart",
+            text="Restart",
+            button_color=Colors.YELLOW,
+            text_color=Colors.BLACK,
+            hover_color=Colors.ORANGE,
+            rect=pygame.Rect(0, 330, 180, 60),
+            font_size=28,
+        ),
+        TextButton(
+            name="menu",
+            text="Back to Menu",
+            button_color=Colors.PURPLE,
+            text_color=Colors.BLACK,
+            hover_color=Colors.BLUE3,
+            rect=pygame.Rect(0, 410, 180, 60),
+            font_size=28,
+        ),
+        TextButton(
+            name="leave",
+            text="Quit",
+            button_color=Colors.RED,
+            text_color=Colors.WHITE,
+            hover_color=Colors.DARK_RED,
+            rect=pygame.Rect(0, 490, 180, 60),
+            font_size=28,
+        ),
+    ],
+    "game_over": [
+        TextButton(
+            name="back",
+            text="Back to Menu",
+            button_color=Colors.ORANGE,
+            text_color=Colors.WHITE,
+            hover_color=Colors.BROWN,
+            rect=pygame.Rect(0, 490, 300, 80),
+            font_size=28,
+        )
+    ],
+    "afk_kick": [
+        TextButton(
+            name="kick",
+            text="TERMINATE PROCESS",
+            button_color=Colors.RED,
+            text_color=Colors.WHITE,
+            hover_color=Colors.DARK_RED,
+            rect=pygame.Rect(0, 400, 350, 60),
+            font_size=28,
+            font_type="None",
+        )
+    ],
+    "game_state_error": [
+        TextButton(
+            name="back",
+            text="Back To Menu",
+            button_color=Colors.RED,
+            text_color=Colors.WHITE,
+            hover_color=Colors.DARK_RED,
+            rect=pygame.Rect(0, 400, 350, 60),
+            font_size=28,
         )
     ],
 }

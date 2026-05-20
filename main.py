@@ -16,7 +16,7 @@ import tool  # 載入你的工具包
 import ui_handler
 
 # 1. 取得 config 中已經初始化好的物件
-screen = config.config.screen
+screen = config.screen
 clock = config.clock
 is_pressing = config.is_pressing  # 引用 config 的列表
 scroll_ys = config.scroll_ys
@@ -78,7 +78,7 @@ def get_current_mouse_state():
     return pygame.mouse.get_pos(False), pygame.mouse.get_pressed()
 
 
-current_time_sec = 0
+config.current_time_sec = 0
 
 # 隱藏滑鼠
 pygame.mouse.set_visible(False)
@@ -270,7 +270,6 @@ while config.running:
             if grow != 0:
                 grow_text = f"(+{grow}/lv)" if grow > 0 else f"({grow}/lv)"
                 all_objs.show_text(screen, grow_text, tool.Colors.GRAY, 570, 238 + (i * 60), size=14)
-
     # 存檔專區
     elif config.game_state == "setting_p3":
         screen.fill(tool.Colors.BLUE3)
@@ -295,9 +294,6 @@ while config.running:
 
         ui_manager.handle_current_state(events, mouse_pos)
         config.coin_rect()
-
-    #  -------------------------------------以更新成ui_manager版--------------------------------------
-
     # ✅ 通用升級頁面 (保留你的圖片、箭頭、按鈕樣式)
     elif config.game_state in config.UPGRADE_SURVIVAL or config.game_state in config.UPGRADE_COMBAT:
         current_config = config.UPGRADE_SURVIVAL if config.shop_page == "survival" else config.UPGRADE_COMBAT
@@ -404,6 +400,7 @@ while config.running:
         # --- 保留你的圖片繪製邏輯 ---
         config.coin_rect()  # 繪製金幣圖示
     # ----------------------------------------------------------------------------
+
     # 關卡選擇
     elif config.game_state == "level_select":
         config.from_pause = False
@@ -470,29 +467,8 @@ while config.running:
                 size=18,
                 show=is_locked,
             )
-            # --- 3. 判斷點擊 ---
-            # if clicked_pos and level_button.collidepoint(clicked_pos):
-            #     if not is_locked:
-            #         # 點擊成功的邏輯
-            #         config.selected_level = f"level{i}"
-            #         config.lv_i = i - 1
-            #         enemy_list, cannon_list, obstacle_list, level_multiplier, level_name = config.get_level_data(i, config.select_world)
-            #         config.reset_game()
-            #         config.game_state = "countdown"
-            #     elif is_next_level and config.total_points >= config.current_world_costs[i] and prev_level_record >= required_time:
-            #         # 解鎖邏輯
-            #         config.total_points -= config.current_world_costs[i]
-            #         config.levels_unlocked = i  # 更新解鎖的關卡數
-            #         new_text = tool.FloatingText(
-            #             "-" + tool.num_to_KMBT(config.current_world_costs[i]), config.WIDTH - 90, 20, tool.Colors.RED, speed=0.7, size=24
-            #         )
-            #         config.floating_texts.append(new_text)
-            #         config.sounds["buy_success"].play()
-            #         config.update_world_data(config.select_world)  # 更新世界資料，確保下一次進入關卡選單時資料是最新的
-            #     elif is_next_level:
-            #         config.sounds["buy_error"].play()
             level_name = ""  # 暫時用
-            enemy_list, cannon_list, obstacle_list, level_multiplier, level_name = config.get_level_data(1, config.select_world)
+            # enemy_list, cannon_list, obstacle_list, level_multiplier, level_name = config.get_level_data(1, config.select_world)
         all_objs.show_text(screen, "Normal mode", tool.Colors.WHITE, 400, 160 - scroll_ys[3], size=20)
         ui_manager.handle_current_state(events, mouse_pos)
 
@@ -566,20 +542,7 @@ while config.running:
         #         size=26,
         #     )
 
-        # pygame.draw.rect(
-        #     screen,
-        #     tool.Colors.two_color_wave(config.world_bgc[config.current_world_key][0], config.world_bgc[config.current_world_key][1], 1),
-        #     (0, 0, config.WIDTH, 100),
-        # )
-        # button_obj.show_text(screen, "Level Select", tool.Colors.WHITE, 0, 40, size=50, screen_center=True)
-
         config.coin_rect()
-
-        # pygame.draw.rect(
-        #     screen,
-        #     tool.Colors.two_color_wave(config.world_bgc[config.current_world_key][0], config.world_bgc[config.current_world_key][1], 1),
-        #     (0, config.HEIGHT - 100, config.WIDTH, 100),
-        # )
     # 倒數前五秒
     elif config.game_state == "countdown":
         screen.fill(
@@ -603,7 +566,7 @@ while config.running:
         else:
             tool.sec_timer(update=False)
             tool.reset_timer()
-            config.game_state = "start_game"
+            config.game_state = "playing"
 
         player_rect = pygame.draw.rect(screen, config.player_color, config.player_rect)
 
@@ -611,16 +574,15 @@ while config.running:
 
         for event in events:
             if event.type == pygame.KEYDOWN and (event.key == pygame.K_p or event.key == pygame.K_ESCAPE):
-                countdowning = True
+                config.countdowning = True
                 config.game_state = "pause"
     # 主遊戲程式
-    elif config.game_state == "start_game":
+    elif config.game_state == "playing":
         screen_text = "Escape Them! v1.6.7 - Escaping"
         screen.fill(
             tool.Colors.two_color_wave(config.world_bgc[config.current_world_key][0], config.world_bgc[config.current_world_key][1], 1)
         )
-        config.coin_rect(player_rect)
-        countdowning = False
+        config.countdowning = False
 
         for event in events:
             if event.type == pygame.KEYDOWN:
@@ -629,7 +591,7 @@ while config.running:
                 if event.key == pygame.K_t and config.now_skills["p20"]:
                     config.alto_shoot = not config.alto_shoot
         should_update = config.freeze_timer <= 0
-        current_time_sec, current_time_ms = tool.sec_timer(update=should_update, dt=dt)
+        config.current_time_sec, current_time_ms = tool.sec_timer(update=should_update, dt=dt)
 
         keys = pygame.key.get_pressed()
         player_rect.x, player_rect.y = config.player_move(keys)
@@ -642,7 +604,7 @@ while config.running:
                 angle = math.atan2(dy, dx)
 
                 # 產生新子彈
-                new_bullet = config.Player_Bullet(config.player_rect.centerx, config.player_rect.centery, angle)
+                new_bullet = all_objs.Player_Bullet(config.player_rect.centerx, config.player_rect.centery, angle)
                 config.player_bullets.append(new_bullet)
                 config.last_shot_time = runed_time
 
@@ -652,7 +614,7 @@ while config.running:
                 config.player_bullets.remove(p_bullet)
             else:
                 p_bullet.draw(screen)
-            for enemy in enemy_list:  # 假設你的敵人清單叫 enemy_list
+            for enemy in config.current_setup.get("enemies", []):  # 假設你的敵人清單叫 enemy_list
                 e_rect = pygame.Rect(enemy.x, enemy.y, enemy.width, enemy.height)
 
                 if all([pb_rect.colliderect(e_rect), enemy.show, "chaser" not in enemy.types, enemy.mode == "attack"]):
@@ -674,7 +636,7 @@ while config.running:
 
         # 怪物特殊處理(包含怪物分裂)
         new_enemies = []
-        for enemy in enemy_list[:]:
+        for enemy in config.current_setup.get("enemies", [])[:]:
             if enemy.should_split and not enemy.is_split_enemy:
                 if enemy.split_enemys > 1:
                     step = config.total_spread / (enemy.split_enemys - 1)
@@ -688,7 +650,7 @@ while config.running:
 
                     # 建立小怪實體
                     child = config.Enemy(
-                        show_time=current_time_sec,  # 讓它立刻出現
+                        show_time=config.current_time_sec,  # 讓它立刻出現
                         speed=enemy.normal_speed * 1.2,  # 小怪動快一點點增加難度
                         slow_speed=enemy.slow_speed,
                         color=enemy.color,
@@ -715,24 +677,24 @@ while config.running:
                 enemy.should_split = False
                 continue  # 下一位
             if enemy.is_dead:
-                enemy_list.remove(enemy)
-        enemy_list.extend(new_enemies)
+                config.current_setup["enemies"].remove(enemy)
+        config.current_setup["enemies"].extend(new_enemies)
 
         # 怪物碰撞
         config.buffer_duration = config.now_skills["p5"] * config.buffer_duration_buff
-        for enemy in enemy_list:
+        for enemy in config.current_setup.get("enemies", []):
 
             # 處理死亡移除
             if enemy.is_dead:
-                enemy_list.remove(enemy)
+                config.current_setup["enemies"].remove(enemy)
                 continue
-            e_rect = enemy.update(current_time_ms, current_time_sec, config.player_rect, mouse_pos, config.now_treasure, screen)
+            e_rect = enemy.update(current_time_ms, config.current_time_sec, config.player_rect, mouse_pos, config.now_treasure, screen)
 
             if enemy.show and e_rect is not None:
                 if (
                     enemy.mode == "attack"
                     and config.player_rect.colliderect(e_rect)
-                    and current_time_sec - config.last_hit_time > config.invincible_duration
+                    and config.current_time_sec - config.last_hit_time > config.invincible_duration
                 ):
                     damage_taken = int(enemy.damage * config.enemy_damage_buff * config.skin_enemy_damage_buff)
                     damage_multiplier, text_color, text_content, dodged = config.calculate_damage(damage_taken)
@@ -752,7 +714,7 @@ while config.running:
                     config.player_hp -= max(1, final_damage)
 
                     # 更新時間與音效
-                    config.last_hit_time = current_time_sec
+                    config.last_hit_time = config.current_time_sec
                     config.sounds["hurt"].play()
 
                     # 顯示漂浮文字 (帶入剛才判斷好的內容)
@@ -764,14 +726,14 @@ while config.running:
 
                 pygame.draw.rect(screen, enemy.color, e_rect)
         # 大砲邏輯
-        for cannon in cannon_list:
+        for cannon in config.current_setup.get("cannons", []):
             spawn_start_time = int(cannon["show_time"] * config.spawn_time_debuff)
 
             attack_start_time = spawn_start_time + config.buffer_duration
-            if current_time_sec >= attack_start_time:
+            if config.current_time_sec >= attack_start_time:
                 cannon["mode"] = "attack"
                 cannon["show"] = True
-            elif current_time_sec >= spawn_start_time:
+            elif config.current_time_sec >= spawn_start_time:
                 cannon["mode"] = "spawning"
                 cannon["show"] = True
             else:
@@ -840,7 +802,7 @@ while config.running:
                     bullet_x = c_rect.centerx - 12
                     bullet_y = c_rect.centery - 12
                     config.bullet_list.append(
-                        config.make_bullet(
+                        all_objs.make_bullet(
                             bullet_x,
                             bullet_y,
                             cannon["angle"],
@@ -875,7 +837,7 @@ while config.running:
                         trigger_damage = True
 
                 # 4. 執行扣血與特效 (如果觸發成功且不在無敵時間)
-                if trigger_damage and current_time_sec - config.last_hit_time > config.invincible_duration:
+                if trigger_damage and config.current_time_sec - config.last_hit_time > config.invincible_duration:
                     # 計算傷害 (根據你的公式)
                     damage_taken = int(bullet.damage * config.enemy_damage_buff * config.skin_enemy_damage_buff)
                     damage_multiplier, text_color, text_content, dodged = config.calculate_damage(damage_taken)
@@ -900,7 +862,7 @@ while config.running:
 
                     # 🌟 重要：標記這顆子彈已經傷過人了，這一顆就不會再觸發
                     bullet.has_dealt_bom_damage = True
-                    config.last_hit_time = current_time_sec
+                    config.last_hit_time = config.current_time_sec
 
             # 5. 繪製子彈 (不管是飛行中還是爆炸中)
             bullet.draw(screen, config.offset_x, config.offset_y)
@@ -910,7 +872,7 @@ while config.running:
 
         # 寶藏出現邏輯
         # 只有在「現在沒顯示」且「冷卻時間到了」才執行
-        if not config.now_treasure["show"] and current_time_sec >= config.now_treasure["next_spawn_at"]:
+        if not config.now_treasure["show"] and config.current_time_sec >= config.now_treasure["next_spawn_at"]:
             # [步驟 A] 抽籤：決定這次出現的稀有度
             rolled_rarity = random.choice(config.coin_chance)
 
@@ -979,7 +941,9 @@ while config.running:
 
                 config.treasure_points += base_val
 
-                display_val = f"{round(base_val * config.gm_points_buff * config.now_skills['p3'] * level_multiplier, 1):g}"
+                display_val = (
+                    f"{round(base_val * config.gm_points_buff * config.now_skills['p3'] * config.current_setup['multiplier'], 1):g}"
+                )
 
                 coin_text = tool.FloatingText(f"+${display_val}", player_rect.x, player_rect.y, tool.Colors.GOLD)
                 config.floating_texts.append(coin_text)
@@ -988,15 +952,15 @@ while config.running:
                 config.now_treasure["show"] = False
                 cooldown = random.randint(*config.next_spawn_range)  # type: ignore
                 reduction = config.now_skills["p2"]
-                config.now_treasure["next_spawn_at"] = current_time_sec + max(2, int(cooldown - reduction))
-            for enemy in enemy_list:
+                config.now_treasure["next_spawn_at"] = config.current_time_sec + max(2, int(cooldown - reduction))
+            for enemy in config.current_setup.get("enemies", []):
                 if "eat_coin" in enemy.types and enemy.mode == "attack" and enemy.show:
                     cooldown = random.randint(*config.next_spawn_range)  # type: ignore
                     reduction = config.now_skills["p2"]
                     e_rect = pygame.Rect(enemy.x, enemy.y, enemy.width, enemy.height)
                     if e_rect.colliderect(t_rect):
                         config.now_treasure["show"] = False
-                        config.now_treasure["next_spawn_at"] = current_time_sec + max(1, int(cooldown - reduction))
+                        config.now_treasure["next_spawn_at"] = config.current_time_sec + max(1, int(cooldown - reduction))
                         config.trying_to_touch_player = False
                         config.sounds["steal"].play()
                     enemy.x = tool.num_range(0, config.WIDTH - enemy.width, enemy.x)
@@ -1006,7 +970,7 @@ while config.running:
         # 1. 確保只有在血量未滿且玩家還活著時才計算
         if config.player_hp < config.player_max_hp and config.player_hp > 0:
             # 2. 改用 >= 判斷，確保每隔指定秒數觸發一次
-            if current_time_sec - config.last_cure_time >= config.now_skills["p7"]["time"]:
+            if config.current_time_sec - config.last_cure_time >= config.now_skills["p7"]["time"]:
                 config.player_hp += config.now_skills["p7"]["hp"]
 
                 # 3. 修正：為了讓計時更準確，last_cure_time 應該加上冷卻時間，而不是直接等於當前時間
@@ -1034,7 +998,7 @@ while config.running:
         else:
             # 如果血量滿了，持續更新 last_cure_time 讓計時器「對齊」當前時間
             # 這樣受傷的一瞬間才會重新開始計時，而不是受傷後馬上秒回
-            config.last_cure_time = current_time_sec
+            config.last_cure_time = config.current_time_sec
 
         # 心跳音效
         hp_percent = config.player_hp / config.player_max_hp
@@ -1058,7 +1022,7 @@ while config.running:
         # --- AFK 偵測邏輯 ---
         # 檢查玩家當前位置是否與上一幀相同
         player_pos = (player_rect.x, player_rect.y)
-        if enemy_list[2].show:
+        if config.current_setup.get("enemies", []):
             if player_pos == config.last_player_pos:
                 # 位置沒變，累計時間（1 / FPS）
                 config.afk_timer += 1 / 60
@@ -1071,26 +1035,29 @@ while config.running:
                 config.reset_game()
                 config.game_state = "afk_kick"
 
+        ui_manager.handle_current_state(events, mouse_pos)
+        config.coin_rect(player_rect)
+
         # 更新畫面、繪製物件
-        base_hp_rect = tool.text_button(
-            screen, "", tool.Colors.WHITE, tool.Colors.DARK_RED, config.WIDTH - 110, 70, 100, 23, t_y=82, size=15, alpha=config.alphas[0]
-        )
+        # base_hp_rect = tool.text_button(
+        #     screen, "", tool.Colors.WHITE, tool.Colors.DARK_RED, config.WIDTH - 110, 70, 100, 23, t_y=82, size=15, alpha=config.alphas[0]
+        # )
         # 血條
         display_hp = math.ceil(config.player_hp)
         if display_hp < 0:
             display_hp = 0  # 防止負數
-        hp_rect = tool.text_button(
-            screen,
-            "",
-            tool.Colors.WHITE,
-            tool.Colors.RED,
-            config.WIDTH - 110,
-            70,
-            int((display_hp / config.player_max_hp) * 100),
-            23,
-            size=24,
-            alpha=config.alphas[0],
-        )
+        # hp_rect = tool.text_button(
+        #     screen,
+        #     "",
+        #     tool.Colors.WHITE,
+        #     tool.Colors.RED,
+        #     config.WIDTH - 110,
+        #     70,
+        #     int((display_hp / config.player_max_hp) * 100),
+        #     23,
+        #     size=24,
+        #     alpha=config.alphas[0],
+        # )
         all_objs.show_text(
             screen,
             f"hp:{int(display_hp)}/{int(config.player_max_hp)}",
@@ -1107,7 +1074,7 @@ while config.running:
             all_objs.show_text(screen, "DEBUG: INVINCIBLE ON", tool.Colors.RED, 10, 60, size=15)
 
         # 判斷是否在無敵時間內
-        is_invincible = (current_time_sec - config.last_hit_time) < config.invincible_duration * config.invincible_time_buff
+        is_invincible = (config.current_time_sec - config.last_hit_time) < config.invincible_duration * config.invincible_time_buff
 
         p_rect = pygame.Rect(player_rect.x - config.offset_x, player_rect.y - config.offset_y, player_rect.width, player_rect.height)
         # -- 繪製玩家 --
@@ -1138,13 +1105,13 @@ while config.running:
         # 繪製第二行 (箭頭或 "You")，間距固定 15 像素
         all_objs.show_text(screen, text_order[1], tool.Colors.WHITE, player_rect.centerx, base_y + 15, size=16, center=True)
         # 分數
-        config.points = (current_time_sec * config.points_multiplier + config.treasure_points) * config.gm_points_buff * config.now_skills[
+        config.points = (config.current_time_sec * config.points_multiplier + config.treasure_points) * config.gm_points_buff * config.now_skills[
             "p3"
-        ] * level_multiplier + config.shoot_point
+        ] * config.current_setup.get("multiplier", 1) + config.shoot_point
         if config.selected_level == "level 3" and config.game_mode == "crazy":
             config.points *= 0.5
         time_text = all_objs.show_text(
-            screen, f"Time: {tool.show_time_min(current_time_sec)}", tool.Colors.WHITE, 10, 10, size=24, alpha=config.alphas[1]
+            screen, f"Time: {tool.show_time_min(config.current_time_sec)}", tool.Colors.WHITE, 10, 10, size=24, alpha=config.alphas[1]
         )
         display_points = tool.num_to_KMBT(round(config.points, 1))
         points_text = all_objs.show_text(screen, f"Coins: ${display_points}$", tool.Colors.WHITE, 10, 40, size=24, alpha=config.alphas[1])
@@ -1154,7 +1121,7 @@ while config.running:
             config.alphas[1] = 100
 
         if config.alphas[1] == 255:
-            for enemy in enemy_list:
+            for enemy in config.current_setup.get("enemies", []):
                 if not getattr(enemy, "show", True):
                     continue  # 沒出現的不算
                 e_rect = pygame.Rect(enemy.x, enemy.y, enemy.width, enemy.height)
@@ -1210,11 +1177,11 @@ while config.running:
         tool.sec_timer(False)
         config.maybe_cheat = True
         config.from_pause = True
-        for enemy in enemy_list:
-            if enemy.show and not countdowning:
+        for enemy in config.current_setup.get("enemies", []):
+            if enemy.show and not config.countdowning:
                 pygame.draw.rect(screen, enemy.color, (enemy.x, enemy.y, enemy.width, enemy.height))
-        for cannon in cannon_list:
-            if cannon["show"] and not countdowning:
+        for cannon in config.current_setup.get("cannons", []):
+            if cannon["show"] and not config.countdowning:
                 pygame.draw.rect(
                     screen,
                     cannon["color"],
@@ -1222,7 +1189,7 @@ while config.running:
                 )
         for bullet in config.bullet_list:
             bullet.draw(screen, config.offset_x, config.offset_y)
-        if config.now_treasure["show"] and not countdowning:
+        if config.now_treasure["show"] and not config.countdowning:
             t_rect = pygame.Rect(config.now_treasure["x"], config.now_treasure["y"], 20, 20)
             pygame.draw.rect(screen, config.now_treasure["color"], t_rect)
         pygame.draw.rect(screen, config.player_color, player_rect)
@@ -1230,134 +1197,8 @@ while config.running:
         all_objs.show_text(screen, "Pause", tool.Colors.WHITE, 0, 80, 50, screen_center=True)
         display_points = tool.num_to_KMBT(round(config.points, 1))
         all_objs.show_text(screen, f"Coins: {display_points}$", tool.Colors.WHITE, 0, 140, screen_center=True)
-        resume_button = tool.text_button(
-            screen,
-            "Resume",
-            tool.Colors.WHITE,
-            tool.Colors.two_color_change(tool.Colors.ORANGE, tool.Colors.BROWN, resume_button.collidepoint(mouse_pos)),
-            0,
-            170,
-            180,
-            60,
-            b_center=True,
-        )
-        settings_button = tool.text_button(
-            screen,
-            "Settings",
-            tool.Colors.BLACK,
-            tool.Colors.two_color_change(tool.Colors.YELLOW, tool.Colors.GREEN, settings_button.collidepoint(mouse_pos)),
-            0,
-            250,
-            180,
-            60,
-            b_center=True,
-        )
-        restart_button = tool.text_button(
-            screen,
-            "Restart",
-            tool.Colors.BLACK,
-            tool.Colors.two_color_change(tool.Colors.ORANGE, tool.Colors.YELLOW, restart_button.collidepoint(mouse_pos)),
-            0,
-            330,
-            180,
-            60,
-            b_center=True,
-        )
-        menu_button = tool.text_button(
-            screen,
-            "Back to Menu",
-            tool.Colors.BLACK,
-            tool.Colors.two_color_change(tool.Colors.BLUE3, tool.Colors.PURPLE, menu_button.collidepoint(mouse_pos)),
-            0,
-            410,
-            180,
-            60,
-            b_center=True,
-        )
-        leave_button = tool.text_button(
-            screen,
-            "Leave",
-            tool.Colors.WHITE,
-            tool.Colors.two_color_change(tool.Colors.DARK_RED, tool.Colors.RED, leave_button.collidepoint(mouse_pos)),
-            0,
-            490,
-            180,
-            60,
-            b_center=True,
-        )
-        config.current_world_key = f"world{config.select_world}"
-        for event in events:
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if resume_button.collidepoint(mouse_pos):
-                    is_pressing[0] = True
-                if settings_button.collidepoint(mouse_pos):
-                    is_pressing[1] = True
-                if restart_button.collidepoint(mouse_pos):
-                    is_pressing[2] = True
-                if menu_button.collidepoint(mouse_pos):
-                    is_pressing[3] = True
-                if leave_button.collidepoint(mouse_pos):
-                    is_pressing[4] = True
-            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                if resume_button.collidepoint(mouse_pos) and is_pressing[0]:
-                    if not countdowning:
-                        config.game_state = "start_game"
-                    else:
-                        config.game_state = "countdown"
-                if settings_button.collidepoint(mouse_pos) and is_pressing[1]:
-                    config.game_state = "setting_p1"
-                if restart_button.collidepoint(mouse_pos) and is_pressing[2]:
-                    tool.collision_time = None  # 重置，否則下次進遊戲會直接結束
-                    tool.reset_timer()
-                    config.player_hp = config.player_max_hp
-                    if not config.Invincible:
-                        config.total_points += config.points
-                    for i in range(2):
-                        config.alphas[i] = 255
-                    config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode] = max(
-                        config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode], current_time_sec
-                    )
-                    config.reset_game()
-                    config.game_state = "countdown"
-                if menu_button.collidepoint(mouse_pos) and is_pressing[3]:
-                    config.from_pause = False
-                    tool.collision_time = None  # 重置，否則下次進遊戲會直接結束
-                    tool.reset_timer()
-                    config.player_hp = config.player_max_hp
-                    if not config.Invincible:
-                        config.total_points += config.points
-                    for i in range(2):
-                        config.alphas[i] = 255
-                    config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode] = max(
-                        config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode], current_time_sec
-                    )
-                    config.reset_game()
-                    config.game_state = "menu"
-                if leave_button.collidepoint(mouse_pos) and is_pressing[4]:
-                    config.player_hp = config.player_max_hp
-                    if not config.Invincible:
-                        config.total_points += config.points
-                    config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode] = max(
-                        config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode], current_time_sec
-                    )
-                    config.reset_game()
-                    config.running = False
-                reset_pressing()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_p or event.key == pygame.K_ESCAPE or event.key == pygame.K_SPACE:
-                    if not countdowning:
-                        config.game_state = "start_game"
-                    else:
-                        config.game_state = "countdown"
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_c:
-                    config.player_hp = config.player_max_hp
-                    if not config.Invincible:
-                        config.total_points += config.points
-                    config.longest_survived_time[config.selected_level][config.game_mode] = max(
-                        config.longest_survived_time[config.selected_level][config.game_mode], current_time_sec
-                    )
-                    running = False
+        ui_manager.handle_current_state(events, mouse_pos)
+    #  -------------------------------------↑已更新成ui_manager版↑--------------------------------------
     # 死亡
     elif config.game_state == "game_over":
         screen.fill(last_color)
@@ -1367,11 +1208,11 @@ while config.running:
         target_vol = 0.5
         maybe_cheat = False
         from_pause = False
-        for enemy in enemy_list:
+        for enemy in config.current_setup.get("enemies", []):
             if enemy.show:
                 enemy_rect = pygame.draw.rect(screen, enemy.color, (enemy.x, enemy.y, enemy.width, enemy.height))
-        for cannon in cannon_list:
-            if cannon["show"] and not countdowning:
+        for cannon in config.current_setup.get("cannons", []):
+            if cannon["show"] and not config.countdowning:
                 pygame.draw.rect(
                     screen,
                     cannon["color"],
@@ -1384,7 +1225,7 @@ while config.running:
         countdown = 10 - (passed_time // 1000)  # 倒數 10 秒
         all_objs.show_text(
             screen,
-            f"You survive for {tool.show_time_min(current_time_sec)}",
+            f"You survive for {tool.show_time_min(config.current_time_sec)}",
             tool.Colors.WHITE,
             0,
             100,
@@ -1401,7 +1242,7 @@ while config.running:
             size=48,
             screen_center=True,
         )
-        end_text = "Unbelievable!" if current_time_sec >= (50 / config.gm_points_buff) else "Better luck next time!"
+        end_text = "Unbelievable!" if config.current_time_sec >= (50 / config.gm_points_buff) else "Better luck next time!"
         all_objs.show_text(
             screen,
             end_text,
@@ -1422,24 +1263,14 @@ while config.running:
             size=40,
             screen_center=True,
         )
-        back_button = tool.text_button(
-            screen,
-            "Back to Menu",
-            tool.Colors.WHITE,
-            tool.Colors.ORANGE,
-            0,
-            490,
-            150,
-            size=24,
-            b_center=True,
-        )
+        ui_manager.handle_current_state(events, mouse_pos)
         if not config.has_save_survived_time and not config.Invincible:
             new_text = tool.FloatingText(
                 "+" + tool.num_to_KMBT(config.points), config.WIDTH - 90, 20, tool.Colors.GREEN, size=24, time=150, speed=0.5
             )
             config.floating_texts.append(new_text)
             config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode] = max(
-                config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode], current_time_sec
+                config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode], config.current_time_sec
             )
             config.has_save_survived_time = True
         if passed_time >= 10000:  # 過了 10000 毫秒 (10秒)
@@ -1452,16 +1283,6 @@ while config.running:
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    config.game_state = "menu"
-                    tool.collision_time = None
-                    tool.reset_timer()
-                    for ft in config.floating_texts[:]:
-                        ft.reset()
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if back_button.collidepoint(mouse_pos):
-                    is_pressing[0] = True
-            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                if back_button.collidepoint(mouse_pos) and is_pressing[0]:
                     config.game_state = "menu"
                     tool.collision_time = None
                     tool.reset_timer()
@@ -1507,28 +1328,7 @@ while config.running:
             screen_center=True,
             font_type="None",
         )
-
-        # 返回主選單按鈕 - 改成亮紅色背景增加緊張感
-        close_button = tool.text_button(
-            screen,
-            "TERMINATE PROCESS",
-            tool.Colors.WHITE,
-            tool.Colors.RED,
-            0,
-            400,
-            350,
-            60,
-            b_center=True,
-            font_type="None",
-        )
-
-        for event in events:
-            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                if close_button.collidepoint(mouse_pos):
-                    # 點下去那一刻，程式直接崩潰跳出
-                    raise config.AFKError()
-            if event.type == pygame.QUIT:
-                raise config.AFKError()
+        ui_manager.handle_current_state(events, mouse_pos)
     # 2.game_state_error
     else:
         screen.fill(tool.Colors.BLACK)
@@ -1565,34 +1365,6 @@ while config.running:
             screen_center=True,
             font_type="None",
         )
-        menu_button = all_objs.TextButton(
-            screen,
-            "Back To Menu",
-            tool.Colors.WHITE,
-            tool.Colors.RED,
-            0,
-            400,
-            350,
-            60,
-            b_center=True,
-            font_type="None",
-        )
-        for event in events:
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if menu_button.collidepoint(mouse_pos):
-                    is_pressing[0] = True
-            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                if menu_button.collidepoint(mouse_pos) and is_pressing[0]:
-                    config.player_hp = config.player_max_hp
-                    if not config.Invincible:
-                        config.total_points += config.points
-                    config.longest_survived_time[config.selected_level][config.game_mode] = max(
-                        config.longest_survived_time[config.selected_level][config.game_mode], current_time_sec
-                    )
-                    data_handler.save_data()
-                    config.reset_game()
-                    config.game_state = "menu"
-                reset_pressing()
 
     for event in events:
         if event.type == pygame.QUIT:
@@ -1614,7 +1386,7 @@ while config.running:
         if ft.timer <= 0:  # 如果文字壽命到了
             config.floating_texts.remove(ft)
 
-    if config.game_state != "start_game":
+    if config.game_state != "playing":
         config.heart_channel.stop()
     config.current_vol += (config.target_vol - config.current_vol) * 0.005
     pygame.mixer.music.set_volume(config.current_vol)  # 靜音：0, 開聲音：current_vol
