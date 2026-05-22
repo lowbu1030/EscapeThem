@@ -9,6 +9,7 @@ import sys
 import pygame
 
 import all_objs
+import asset_manager
 import config  # 所有的全域變數與初始化都在這裡
 import data_handler
 import old_to_new
@@ -22,6 +23,8 @@ is_pressing = config.is_pressing  # 引用 config 的列表
 scroll_ys = config.scroll_ys
 
 ui_manager = ui_handler.UIManager(screen)
+asset_manager.init_game_sounds()
+asset_manager.init_BGMs()
 
 # 確保工具包使用的 screen 是同一個
 tool.set_screen(screen)
@@ -83,7 +86,7 @@ config.current_time_sec = 0
 # 隱藏滑鼠
 pygame.mouse.set_visible(False)
 
-# pygame.mixer.music.play(-1)  # 這裡決定要不要播放背景音樂
+# pygame.mixer.music.play(-`1)  # 這裡決定要不要播放背景音樂
 
 while config.running:
     config.last_game_state = config.game_state
@@ -113,7 +116,7 @@ while config.running:
     # 主畫面
     if config.game_state == "menu":
         screen.fill(tool.Colors.BLUE3)
-        config.coin_rect()
+        ui_handler.coin_rect()
 
         all_objs.show_text(screen, "settings", tool.Colors.WHITE, 40, 70, size=24, font_type="")
 
@@ -123,7 +126,7 @@ while config.running:
     # 難易度與最長存活時間
     elif config.game_state == "setting_p1":
         screen.fill(tool.Colors.BLUE3)
-        config.coin_rect()
+        ui_handler.coin_rect()
         config.current_world_key = f"world{config.select_world}"
         all_objs.show_text(screen, "Difficulty And Longest Served Time", tool.Colors.WHITE, 0, 60, size=34, screen_center=True)
         all_objs.show_text(screen, "Now Level:", tool.Colors.WHITE, 0, 110, size=30, screen_center=True)
@@ -188,7 +191,7 @@ while config.running:
     # 每關最長存活時間
     elif config.game_state == "more_survived_time":
         screen.fill(tool.Colors.BLUE3)
-        config.coin_rect()
+        ui_handler.coin_rect()
         config.current_world_key = f"world{config.select_world}"
         config.target_y = tool.num_range(0, config.target_y, config.max_scroll_y)  # 強制修正回合法範圍
         if config.scroll_ys[0] != config.target_y or not tool.in_range(0, config.scroll_ys[0], config.max_scroll_y):
@@ -214,7 +217,7 @@ while config.running:
     # 玩家皮膚購買與更換
     elif config.game_state == "setting_p2":
         screen.fill(tool.Colors.BLUE3)
-        config.coin_rect()
+        ui_handler.coin_rect()
         start_x = 100  # 左邊起始位置
         start_y = 180  # 列表上方起始位置 (空出標題跟金幣的位置)
         row_gap = 80  # 每排之間的垂直距離
@@ -273,14 +276,14 @@ while config.running:
     # 存檔專區
     elif config.game_state == "setting_p3":
         screen.fill(tool.Colors.BLUE3)
-        config.coin_rect()
+        ui_handler.coin_rect()
         all_objs.show_text(screen, "System Settings", tool.Colors.WHITE, 0, 80, size=50, screen_center=True)
         all_objs.show_text(screen, "We will save this file while you leave", tool.Colors.WHITE, 0, 140, size=24, screen_center=True)
         ui_manager.handle_current_state(events, mouse_pos)
     # 選擇其他存檔
     elif config.game_state == "choose_file":
         screen.fill(tool.Colors.BLUE3)
-        config.coin_rect()
+        ui_handler.coin_rect()
         pygame.draw.rect(screen, tool.Colors.BLUE3, (0, config.HEIGHT - 110, config.WIDTH, 110))  # 擋住捲動後的檔案
         pygame.draw.rect(screen, tool.Colors.BLUE3, (0, 0, config.WIDTH, 110))
         all_objs.show_text(screen, "Choose Save File", tool.Colors.WHITE, 0, 40, size=50, screen_center=True)
@@ -293,7 +296,7 @@ while config.running:
         config.update_upgrade_hub_layout()
 
         ui_manager.handle_current_state(events, mouse_pos)
-        config.coin_rect()
+        ui_handler.coin_rect()
     # ✅ 通用升級頁面 (保留你的圖片、箭頭、按鈕樣式)
     elif config.game_state in config.UPGRADE_SURVIVAL or config.game_state in config.UPGRADE_COMBAT:
         current_config = config.UPGRADE_SURVIVAL if config.shop_page == "survival" else config.UPGRADE_COMBAT
@@ -398,7 +401,7 @@ while config.running:
             )
 
         # --- 保留你的圖片繪製邏輯 ---
-        config.coin_rect()  # 繪製金幣圖示
+        ui_handler.coin_rect()  # 繪製金幣圖示
     # ----------------------------------------------------------------------------
 
     # 關卡選擇
@@ -430,7 +433,7 @@ while config.running:
                         if config.total_points >= cost:
                             # 1. 扣錢
                             config.total_points -= cost
-                            config.sounds["buy_success"].play()
+                            asset_manager.sounds["buy_success"].play()
 
                             # 2. 更新進度 (假設新世界解鎖後，解鎖關卡數要重置或累加)
                             # 這裡看你的設計，如果是世界跳轉，通常會解鎖下一大關
@@ -444,7 +447,7 @@ while config.running:
                             game_state = "menu"
                         else:
                             # 錢不夠的處理 (例如播放錯誤音效)
-                            config.sounds["buy_error"].play()
+                            asset_manager.sounds["buy_error"].play()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if back_button.collidepoint(mouse_pos):
                     is_pressing[0] = True
@@ -471,85 +474,14 @@ while config.running:
             # enemy_list, cannon_list, obstacle_list, level_multiplier, level_name = config.get_level_data(1, config.select_world)
         all_objs.show_text(screen, "Normal mode", tool.Colors.WHITE, 400, 160 - scroll_ys[3], size=20)
         ui_manager.handle_current_state(events, mouse_pos)
-
-        # if has_next_world and is_not_already_bought:
-        #     next_world_button = tool.text_button(
-        #         screen,
-        #         (
-        #             [
-        #                 "Buy!" if config.total_points >= config.world_cost[unlock_world_key] else "Need More $",
-        #                 f" ({"cost" if config.total_points >= config.world_cost[unlock_world_key] else "need"}: ${tool.num_to_KMBT(config.world_cost[unlock_world_key] - config.total_points)})",
-        #             ]
-        #             if next_world_button.collidepoint(mouse_pos) and is_target_world_locked and is_not_already_bought
-        #             else ["Next World ", f"(cost: ${tool.num_to_KMBT(config.world_cost[unlock_world_key])})"]
-        #         ),
-        #         tool.Colors.WHITE,
-        #         (
-        #             tool.Colors.two_color_change(
-        #                 tool.Colors.two_color_change(
-        #                     tool.Colors.GREEN,
-        #                     tool.Colors.RED,
-        #                     config.total_points >= config.world_cost[unlock_world_key] and is_target_world_locked,
-        #                 ),
-        #                 tool.Colors.two_color_change(tool.Colors.CHARTREUSE, tool.Colors.GRAY, is_target_world_locked),
-        #                 next_world_button.collidepoint(mouse_pos),
-        #             )
-        #             if is_target_world_locked or is_not_already_bought
-        #             else tool.Colors.GRAY
-        #         ),
-        #         120,
-        #         60 + len(config.current_world_costs) * 80 - scroll_ys[3],
-        #         200,
-        #         60,
-        #         t_y=(
-        #             85 + len(config.current_world_costs) * 80 - scroll_ys[3]
-        #             if next_world_button.collidepoint(mouse_pos)
-        #             and is_target_world_locked
-        #             and config.total_points >= config.world_cost[unlock_world_key]
-        #             else 80 + len(config.current_world_costs) * 80 - scroll_ys[3]
-        #         ),  #
-        #         size=(
-        #             24
-        #             if next_world_button.collidepoint(mouse_pos)
-        #             and is_target_world_locked
-        #             and config.total_points >= config.world_cost[unlock_world_key]
-        #             else 22
-        #         ),
-        #     )
-        # elif not has_next_world:
-        #     next_world_button = tool.text_button(
-        #         screen,
-        #         ["Stay tuned", " for new worlds!"],
-        #         tool.Colors.WHITE,
-        #         tool.Colors.GRAY,
-        #         120,
-        #         60 + len(config.current_world_costs) * 80 - scroll_ys[3],
-        #         200,
-        #         60,
-        #         t_y=80 + len(config.current_world_costs) * 80 - scroll_ys[3],
-        #         size=20,
-        #     )
-        # else:
-        #     next_world_button = tool.text_button(
-        #         screen,
-        #         "Has Unlocked",
-        #         tool.Colors.WHITE,
-        #         tool.Colors.GRAY,
-        #         120,
-        #         60 + len(config.current_world_costs) * 80 - scroll_ys[3],
-        #         200,
-        #         60,
-        #         size=26,
-        #     )
-
-        config.coin_rect()
+        ui_handler.coin_rect()
     # 倒數前五秒
     elif config.game_state == "countdown":
         screen.fill(
             tool.Colors.two_color_wave(config.world_bgc[config.current_world_key][0], config.world_bgc[config.current_world_key][1], 1)
         )
 
-        config.coin_rect()
+        ui_handler.coin_rect()
         passed_time, _ = tool.sec_timer(update=True, dt=dt)
         countdown = 3 - passed_time  # 倒數 3 秒
 
@@ -639,17 +571,17 @@ while config.running:
         for enemy in config.current_setup.get("enemies", [])[:]:
             if enemy.should_split and not enemy.is_split_enemy:
                 if enemy.split_enemys > 1:
-                    step = config.total_spread / (enemy.split_enemys - 1)
+                    step = all_objs.total_spread / (enemy.split_enemys - 1)
                 else:
                     step = 0
                 # 產生很多隻隻小怪
                 for i in range(enemy.split_enemys):
                     # 讓小怪的角度稍微偏轉，看起來像彈開
-                    offset = (i * step) - (config.total_spread / 2)
+                    offset = (i * step) - (all_objs.total_spread / 2)
                     new_angle = (enemy.angle + offset) % 360
 
                     # 建立小怪實體
-                    child = config.Enemy(
+                    child = all_objs.Enemy(
                         show_time=config.current_time_sec,  # 讓它立刻出現
                         speed=enemy.normal_speed * 1.2,  # 小怪動快一點點增加難度
                         slow_speed=enemy.slow_speed,
@@ -715,7 +647,7 @@ while config.running:
 
                     # 更新時間與音效
                     config.last_hit_time = config.current_time_sec
-                    config.sounds["hurt"].play()
+                    asset_manager.sounds["hurt"].play()
 
                     # 顯示漂浮文字 (帶入剛才判斷好的內容)
                     config.floating_texts.append(
@@ -813,7 +745,7 @@ while config.running:
                             type=cannon["bullet_type"],  # 🌟 補上子彈類型
                         )
                     )
-                    config.shoot_channel.play(config.sounds["shoot"])
+                    asset_manager.shoot_channel.play(asset_manager.sounds["shoot"])
                     cannon["last_fire_time"] = current_time_ms
         # 子彈更新與繪製
         for bullet in config.bullet_list[:]:
@@ -853,7 +785,7 @@ while config.running:
                     config.freeze_timer = max(2, damage_taken // 1.5)
                     config.now_flash_color = tool.Colors.RED if not dodged else tool.Colors.YELLOW
 
-                    config.sounds["hurt"].play()
+                    asset_manager.sounds["hurt"].play()
 
                     # 產生漂浮文字
                     config.floating_texts.append(
@@ -927,14 +859,14 @@ while config.running:
                 config.trying_to_touch_player = False  # 碰到玩家後重置，下一次出現才會再吸引
                 # 播放音效
                 if now_treasure_rarity in ["exotic", "divine"]:
-                    config.sounds["epic_coin"].play()
+                    asset_manager.sounds["epic_coin"].play()
                     config.shake_range = 10
                     config.shake_timer = 20
                     config.total_shake_time = 20
                     config.now_flash_color = tool.Colors.BLUE
                     config.flash_timer = config.total_flash_time
                 else:
-                    config.sounds["coin"].play()
+                    asset_manager.sounds["coin"].play()
                 # 1. 計算分數
                 min_p, max_p = (add * config.coin_multiplier * config.now_skills["p12"] for add in config.now_treasure["add_points"])
                 base_val = random.uniform(min_p, max_p)
@@ -962,7 +894,7 @@ while config.running:
                         config.now_treasure["show"] = False
                         config.now_treasure["next_spawn_at"] = config.current_time_sec + max(1, int(cooldown - reduction))
                         config.trying_to_touch_player = False
-                        config.sounds["steal"].play()
+                        asset_manager.sounds["steal"].play()
                     enemy.x = tool.num_range(0, config.WIDTH - enemy.width, enemy.x)
                     enemy.y = tool.num_range(0, config.HEIGHT - enemy.height, enemy.y)
 
@@ -1003,21 +935,21 @@ while config.running:
         # 心跳音效
         hp_percent = config.player_hp / config.player_max_hp
         if hp_percent <= 0.2:
-            target_sound = config.sounds["fast_heart_beat"]
+            target_sound = asset_manager.sounds["fast_heart_beat"]
             target_vol = 0.05
         elif hp_percent <= 0.5:
-            target_sound = config.sounds["slow_heart_beat"]
+            target_sound = asset_manager.sounds["slow_heart_beat"]
             target_vol = 0.3
         else:
             target_sound = None
             target_vol = 0.5
-        if target_sound != config.current_heart:
+        if target_sound != asset_manager.current_heart:
             if target_sound:
-                config.heart_channel.play(target_sound, loops=-1)
+                asset_manager.heart_channel.play(target_sound, loops=-1)
             else:
-                config.heart_channel.stop()
+                asset_manager.heart_channel.stop()
 
-            config.current_heart = target_sound
+            asset_manager.current_heart = target_sound
 
         # --- AFK 偵測邏輯 ---
         # 檢查玩家當前位置是否與上一幀相同
@@ -1036,28 +968,9 @@ while config.running:
                 config.game_state = "afk_kick"
 
         ui_manager.handle_current_state(events, mouse_pos)
-        config.coin_rect(player_rect)
-
-        # 更新畫面、繪製物件
-        # base_hp_rect = tool.text_button(
-        #     screen, "", tool.Colors.WHITE, tool.Colors.DARK_RED, config.WIDTH - 110, 70, 100, 23, t_y=82, size=15, alpha=config.alphas[0]
-        # )
+        ui_handler.coin_rect(player_rect)
         # 血條
-        display_hp = math.ceil(config.player_hp)
-        if display_hp < 0:
-            display_hp = 0  # 防止負數
-        # hp_rect = tool.text_button(
-        #     screen,
-        #     "",
-        #     tool.Colors.WHITE,
-        #     tool.Colors.RED,
-        #     config.WIDTH - 110,
-        #     70,
-        #     int((display_hp / config.player_max_hp) * 100),
-        #     23,
-        #     size=24,
-        #     alpha=config.alphas[0],
-        # )
+        display_hp = max(math.ceil(config.player_hp), 0)
         all_objs.show_text(
             screen,
             f"hp:{int(display_hp)}/{int(config.player_max_hp)}",
@@ -1105,9 +1018,9 @@ while config.running:
         # 繪製第二行 (箭頭或 "You")，間距固定 15 像素
         all_objs.show_text(screen, text_order[1], tool.Colors.WHITE, player_rect.centerx, base_y + 15, size=16, center=True)
         # 分數
-        config.points = (config.current_time_sec * config.points_multiplier + config.treasure_points) * config.gm_points_buff * config.now_skills[
-            "p3"
-        ] * config.current_setup.get("multiplier", 1) + config.shoot_point
+        config.points = (
+            config.current_time_sec * config.points_multiplier + config.treasure_points
+        ) * config.gm_points_buff * config.now_skills["p3"] * config.current_setup.get("multiplier", 1) + config.shoot_point
         if config.selected_level == "level 3" and config.game_mode == "crazy":
             config.points *= 0.5
         time_text = all_objs.show_text(
@@ -1172,7 +1085,7 @@ while config.running:
         screen.fill(
             tool.Colors.two_color_wave(config.world_bgc[config.current_world_key][0], config.world_bgc[config.current_world_key][1], 1)
         )
-        config.coin_rect()
+        ui_handler.coin_rect()
         target_vol = 0.5
         tool.sec_timer(False)
         config.maybe_cheat = True
@@ -1202,7 +1115,7 @@ while config.running:
     # 死亡
     elif config.game_state == "game_over":
         screen.fill(last_color)
-        config.coin_rect()
+        ui_handler.coin_rect()
         for i in range(3):
             config.alphas[i] = 255
         target_vol = 0.5
@@ -1373,13 +1286,13 @@ while config.running:
     # 畫面閃爍
     config.draw_screen_flash(config.now_flash_color, config.total_flash_time, config.max_alpha, 20)
     # 畫滑鼠
-    if config.mouse_img_loaded:
+    if asset_manager.mouse_img_loaded:
         blit_mouse_pos = (mouse_pos[0] - 1, mouse_pos[1])
         if mouse_buttons[0]:
             # 點擊時，座標稍微 +3，會有往內按的感覺
-            screen.blit(config.mouse_img_surface, (blit_mouse_pos[0] + 3, blit_mouse_pos[1] + 3))
+            screen.blit(asset_manager.mouse_img_surface, (blit_mouse_pos[0] + 3, blit_mouse_pos[1] + 3))
         else:
-            screen.blit(config.mouse_img_surface, blit_mouse_pos)
+            screen.blit(asset_manager.mouse_img_surface, blit_mouse_pos)
     for ft in config.floating_texts[:]:  # 使用 [:] 確保刪除時不會出錯
         ft.update()
         ft.draw(screen)
@@ -1387,9 +1300,9 @@ while config.running:
             config.floating_texts.remove(ft)
 
     if config.game_state != "playing":
-        config.heart_channel.stop()
-    config.current_vol += (config.target_vol - config.current_vol) * 0.005
-    pygame.mixer.music.set_volume(config.current_vol)  # 靜音：0, 開聲音：current_vol
+        asset_manager.heart_channel.stop()
+    asset_manager.current_vol += (asset_manager.target_vol - asset_manager.current_vol) * 0.005
+    pygame.mixer.music.set_volume(asset_manager.current_vol)
     pygame.display.set_caption(screen_text)
     pygame.display.flip()
     if config.last_game_state != config.game_state:

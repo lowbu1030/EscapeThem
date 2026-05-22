@@ -1,5 +1,6 @@
 import pygame
 
+import asset_manager
 import config
 from all_objs import Button, ImageButton, Line, TextButton
 from tool import Colors
@@ -8,15 +9,15 @@ buttons = {
     "menu": [
         ImageButton(
             name="left",
-            image=config.left_img_surface,
-            pos=config.left_rect.center,
+            image=asset_manager.left_img_surface,
+            pos=asset_manager.left_rect.center,
         ),
         ImageButton(
             name="right",
-            image=config.right_img_surface,
-            pos=config.right_rect.center,
+            image=asset_manager.right_img_surface,
+            pos=asset_manager.right_rect.center,
         ),
-        ImageButton(name="logo", image=config.title_img_surface, pos=config.title_rect.center),
+        ImageButton(name="logo", image=asset_manager.title_img_surface, pos=asset_manager.title_rect.center),
         TextButton(
             name="start",
             text="LEVEL SELECT",
@@ -79,8 +80,8 @@ buttons = {
         ),
         ImageButton(
             name="right",
-            image=config.right_img_surface,
-            pos=config.right_rect.center,
+            image=asset_manager.right_img_surface,
+            pos=asset_manager.right_rect.center,
         ),
         TextButton(
             name="record_level_display",
@@ -121,13 +122,13 @@ buttons = {
     "setting_p2": [
         ImageButton(
             name="left",
-            image=config.left_img_surface,
-            pos=config.left_rect.center,
+            image=asset_manager.left_img_surface,
+            pos=asset_manager.left_rect.center,
         ),
         ImageButton(
             name="right",
-            image=config.right_img_surface,
-            pos=config.right_rect.center,
+            image=asset_manager.right_img_surface,
+            pos=asset_manager.right_rect.center,
         ),
         TextButton(
             name="draw_skin",
@@ -206,8 +207,8 @@ buttons = {
         ),
         ImageButton(
             name="left",
-            image=config.left_img_surface,
-            pos=config.left_rect.center,
+            image=asset_manager.left_img_surface,
+            pos=asset_manager.left_rect.center,
         ),
     ],
     "choose_file": [
@@ -258,15 +259,15 @@ buttons = {
         ),
         ImageButton(
             name="left",
-            image=config.left_img_surface,
-            pos=config.upgrade_left_rect.center,
+            image=asset_manager.left_img_surface,
+            pos=asset_manager.left_rect.center,
             visible=config.l_img_show and config.left_img_loaded,
         ),
         ImageButton(
             name="right",
-            image=config.right_img_surface,
-            pos=config.upgrade_right_rect.center,
-            visible=config.r_img_show and config.right_img_loaded,
+            image=asset_manager.right_img_surface,
+            pos=asset_manager.right_rect.center,
+            visible=config.r_img_show and asset_manager.right_img_loaded,
         ),
     ],
     "upgrade_p": [
@@ -330,13 +331,13 @@ buttons = {
         ),
         ImageButton(
             name="left",
-            image=config.left_img_surface,
-            pos=config.left_rect.center,
+            image=asset_manager.left_img_surface,
+            pos=asset_manager.left_rect.center,
         ),
         ImageButton(
             name="right",
-            image=config.right_img_surface,
-            pos=config.right_rect.center,
+            image=asset_manager.right_img_surface,
+            pos=asset_manager.right_rect.center,
         ),
         Line(name="line1", start_pos=(350, 100), end_pos=(350, 500), width=2, normal_color=Colors.WHITE),
     ],

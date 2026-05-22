@@ -180,7 +180,7 @@
             "y": 0,
             "angle": 180,
             "fire_rate": 1500,
-            "bullet_speed": 5,
+            "bullet_speed": 3,
             "color": "GRAY",
             "type": "track"
         },
@@ -190,7 +190,7 @@
             "y": 700,
             "angle": 180,
             "fire_rate": 2000,
-            "bullet_speed": 5,
+            "bullet_speed": 3,
             "color": "RED",
             "type": "track"
         },
@@ -200,7 +200,7 @@
             "y": 0,
             "angle": 180,
             "fire_rate": 1200,
-            "bullet_speed": 5,
+            "bullet_speed": 3,
             "color": "BLACK",
             "type": "track"
         },
@@ -221,7 +221,7 @@
             "y": 700,
             "angle": 180,
             "fire_rate": 1000,
-            "bullet_speed": 5,
+            "bullet_speed": 3,
             "color": "WHITE",
             "type": "track"
         }

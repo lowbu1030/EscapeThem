@@ -11,6 +11,8 @@ BASE_DIR = Path(__file__).parent
 SAVE_PATH = BASE_DIR / "save_game.json"
 current_active_path = SAVE_PATH
 LEVELS_PATH = BASE_DIR / "levels"
+SOUND_PATH = BASE_DIR / "sounds"
+BGM_PATH = BASE_DIR / "BGM"
 
 
 def get_current_world_path(select_world):
@@ -19,9 +21,6 @@ def get_current_world_path(select_world):
     world_folder = f"world_{select_world}"
     return LEVELS_PATH / world_folder
 
-
-SOUND_PATH = BASE_DIR / "sounds"
-BGM_PATH = BASE_DIR / "BGM"
 
 WIDTH, HEIGHT = 700, 600
 pygame.init()
@@ -757,123 +756,6 @@ buffer_duration = now_skills["p5"] * buffer_duration_buff
 offset_x, offset_y = 0, 0
 target_y = 0
 
-# 載入圖片
-IMG_PATH = Path(__file__).parent
-# 左箭頭
-try:
-    # 載入圖片
-    left_img_surface = pygame.image.load(str(IMG_PATH) + "/images/Left_Arrow.png").convert_alpha()
-    # 縮放大小（如果原圖太大）
-    left_img_size = 50
-    left_img_surface = pygame.transform.scale(left_img_surface, (left_img_size, left_img_size))
-
-    # 獲取 Rect 並設定位置
-    left_rect = left_img_surface.get_rect()
-    upgrade_left_rect = left_rect.copy()
-    left_rect.center = (80, 120)
-    upgrade_left_rect.center = (70, 110)
-    left_img_loaded = True
-except Exception as e:
-    print(f"無法載入右箭頭: {e}")
-    left_img_loaded = False
-    # 備案：如果圖掉載入失敗，給它一個虛擬的 Rect 避免 blit 噴錯
-    left_rect = pygame.Rect(170, 520, 40, 40)
-# 右箭頭
-try:
-    # 載入圖片
-    right_img_surface = pygame.image.load(str(IMG_PATH) + "/images/Right_Arrow.png").convert_alpha()
-    # 縮放大小（如果原圖太大）
-    right_img_size = 50
-    right_img_surface = pygame.transform.scale(right_img_surface, (right_img_size, right_img_size))
-
-    # 獲取 Rect 並設定位置
-    right_rect = right_img_surface.get_rect()
-    upgrade_right_rect = right_rect.copy()
-    right_rect.center = (WIDTH - 80, 120)  # (WIDTH - 120, 520)
-    upgrade_right_rect.center = (WIDTH - 70, 110)
-    right_img_loaded = True
-except Exception as e:
-    print(f"無法載入右箭頭: {e}")
-    right_img_loaded = False
-    # 備案：如果圖掉載入失敗，給它一個虛擬的 Rect 避免 blit 噴錯
-    right_rect = pygame.Rect(530, 520, 40, 40)
-# --- 鎖的圖片載入 ---
-try:
-    lock_img_surface = pygame.image.load(str(IMG_PATH) + "/images/Lock.png").convert_alpha()
-    lock_img_surface = pygame.transform.scale(lock_img_surface, (90, 90))
-    lock_rect = lock_img_surface.get_rect()
-    lock_img_loaded = True
-except FileNotFoundError as e:
-    lock_img_loaded = False
-    print(f"無法載入鎖圖案{e}")
-# --- 標題圖片載入 ---
-title_rect = pygame.Rect(WIDTH // 2 - 200, 120, 400, 180)
-try:
-    title_img_surface = pygame.image.load(str(IMG_PATH) + "/images/Escape_Them.png").convert_alpha()
-    title_img_surface = pygame.transform.scale(title_img_surface, (400, 180))
-    title_img_loaded = True
-
-    title_rect = title_img_surface.get_rect()
-    title_rect.center = (WIDTH // 2, 120)
-except FileNotFoundError as e:
-    title_img_loaded = False
-    title_rect.center = pygame.Rect(WIDTH // 2, 200, 400, 150)
-    print(f"無法載入標題圖片{e}")
-# 錢幣用圖片
-try:
-    coin_wood_img_surface = pygame.image.load(str(IMG_PATH) + "/images/coin_img.png").convert_alpha()
-    coin_wood_img_surface = pygame.transform.scale(coin_wood_img_surface, (100, 40))
-    coin_wood_img_loaded = True
-
-    coin_wood_rect = coin_wood_img_surface.get_rect()
-    coin_wood_rect = (WIDTH - 110, 15)
-except FileNotFoundError as e:
-    coin_wood_img_loaded = False
-    coin_wood_rect = pygame.Rect(WIDTH - 110, 15, 100, 40)
-    print(f"無法載入錢幣用木板圖片{e}")
-# 滑鼠
-try:
-    orig_mouse_img_surface = pygame.image.load(str(IMG_PATH) + "/images/mouse.png").convert_alpha()
-    orig_mouse_img_surface = pygame.transform.scale(orig_mouse_img_surface, (36, 45))
-    mouse_img_surface = orig_mouse_img_surface
-    mouse_img_loaded = True
-
-    mouse_rect = orig_mouse_img_surface.get_rect()
-    mouse_rect = (0, 0)
-except FileNotFoundError as e:
-    mouse_img_loaded = False
-    mouse_rect = pygame.Rect(0, 0, 0, 0)
-    print(f"無法載入錢幣用木板圖片{e}")
-    print("滑鼠圖片炸掉啦！")
-
-# 音效專區
-sounds = {
-    # "click": pygame.mixer.Sound(str(SOUND_PATH / "click.wav")),
-    # 升級頁面音效
-    "buy_error": pygame.mixer.Sound(str(SOUND_PATH / "buy_error.wav")),
-    "buy_success": pygame.mixer.Sound(str(SOUND_PATH / "buy_success.wav")),
-    # 遊玩時音效
-    "coin": pygame.mixer.Sound(str(SOUND_PATH / "coin.wav")),
-    "epic_coin": pygame.mixer.Sound(str(SOUND_PATH / "epic_coin.wav")),
-    "shoot": pygame.mixer.Sound(str(SOUND_PATH / "shoot.wav")),
-    "hurt": pygame.mixer.Sound(str(SOUND_PATH / "hurt.wav")),
-    "slow_heart_beat": pygame.mixer.Sound(str(SOUND_PATH / "slow_heart_beat.wav")),
-    "fast_heart_beat": pygame.mixer.Sound(str(SOUND_PATH / "fast_heart_beat.wav")),
-    "steal": pygame.mixer.Sound(str(SOUND_PATH / "steal.wav")),
-}
-sounds["coin"].set_volume(0.5)
-sounds["shoot"].set_volume(0.2)
-sounds["fast_heart_beat"].set_volume(1.0)
-sounds["slow_heart_beat"].set_volume(1.0)
-sounds["steal"].set_volume(1.0)
-
-shoot_channel = pygame.mixer.Channel(1)
-heart_channel = pygame.mixer.Channel(2)
-buy_channel = pygame.mixer.Channel(3)
-current_heart = None
-current_vol = 0.5
-target_vol = 0.5
-
 
 bullet_list = []  # 全局子彈列表，當砲台開火時會往裡面添加子彈
 now_bom_range = 1
@@ -882,41 +764,10 @@ now_bom_range = 1
 player_bullets = []
 last_shot_time = 0  # 用來控制射速 (Cooldown)
 
-
-# 作弊變數
+God = False
 Invincible = False
 FPS_Speed = 1
 Timer_Speed = 1
-
-
-def check_data_consistency(data_list):
-    return sum((int(n) ^ (i + 1)) << 1 for i, n in enumerate(data_list))
-
-
-God = False
-
-if any([Invincible, FPS_Speed != 1, Timer_Speed != 1]):
-    print("--- 檢測到作弊變數已更改 ---")
-    enter = input("請輸入授權碼以繼續：")
-
-    # 將輸入轉為 ASCII 列表
-    enter_list = [ord(ch) for ch in enter]
-    eln = check_data_consistency(enter_list)
-    if eln == 6370:
-        print("密碼正確，上帝模式啟動！")
-        God = True  # 背景音樂
-    else:
-        print("密碼錯誤，重置為正常模式。")
-        Invincible = False
-        FPS_Speed = 1
-        Timer_Speed = 1
-        God = False
-pygame.mixer.music.set_volume(0.5)  # 靜音：0, 正常：0.5
-if God:
-    pygame.mixer.music.load(str(BGM_PATH / "God.mp3"))
-else:
-    pygame.mixer.music.load(str(BGM_PATH / "Game_bgm 3.mp3"))
-
 
 save_files = list(BASE_DIR.glob("save_game*.json"))
 selected_save_name = None
@@ -1459,48 +1310,7 @@ enemy_list = []
 draw_button_color = tool.Colors.GOLD
 last_draw_color = None
 
-
-def coin_rect(player_rect=pygame.Rect(5000, 5000, 0, 0)):  # noqa: B008
-    global total_points, target_points, WIDTH, alphas, coin_rect2
-    diff = total_points - target_points
-
-    if abs(diff) < 0.1:
-        target_points = total_points
-    else:
-        target_points += diff * 0.1
-    final_text = "$" + tool.num_to_KMBT(target_points)
-
-    new_alpha = 255
-    coin_rect2 = pygame.Rect(WIDTH - 110, 0, 100, 100)
-
-    if player_rect.colliderect(coin_rect2):
-        new_alpha = 100
-
-    if new_alpha == 255:
-        for enemy in enemy_list:
-            if not getattr(enemy, "show", True):
-                continue  # 沒出現的不算
-            e_rect = pygame.Rect(enemy.x, enemy.y, enemy.width, enemy.height)
-
-            # 怪物碰到右上 OR 碰到左上，兩個一起變透明
-            if e_rect.colliderect(coin_rect2):
-                new_alpha = 100
-                break
-
-    if game_state == "3!2!1!":
-        new_alpha = 255
-
-    # --- 4. 同步套用到所有相關圖片 ---
-    alphas[0] = new_alpha if game_state == "start_game" else 255
-
-    # 讓金幣框變透明
-    coin_wood_img_surface.set_alpha(alphas[0])
-    screen.blit(coin_wood_img_surface, coin_wood_rect)
-
-    # 文字也要同步
-    import all_objs
-
-    all_objs.show_text(screen, final_text, tool.Colors.WHITE, WIDTH - 60, 32, size=22, alpha=alphas[0], center=True)
+coin_rect2 = pygame.Rect(WIDTH - 110, 0, 100, 100)
 
 
 COIN_IMAGES = {}

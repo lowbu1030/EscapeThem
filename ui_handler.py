@@ -6,6 +6,7 @@ import pygame
 
 import all_buttons
 import all_objs
+import asset_manager
 import config
 import data_handler
 import tool
@@ -86,11 +87,11 @@ class UIManager:
 
             # 處理 Crazy 難度的特殊文字
             if obj.name == "crazy_select":
-                obj.current_text = obj.handle_condition(config.has_buy_crazy, "select", config.crazy_btn_text)
+                obj.current_text = obj.handle_condition(config.has_buy_crazy, "Select", config.crazy_btn_text)
                 obj.active = not config.from_pause
                 if config.has_buy_crazy:
                     # 已購買：固定顯示 select 並啟用
-                    obj.change_base_text("select")
+                    obj.change_base_text("Select")
                     obj.active = True
                     obj.draw_lock = False  # 隱形鎖頭
                 else:
@@ -102,7 +103,7 @@ class UIManager:
                         obj.hover_color = tool.Colors.GREEN
                         obj.pressing_color = tool.Colors.PARIS_GREEN
 
-            elif obj.name == "record_level_display":
+            if obj.name == "record_level_display":
                 # 將 config 中的 level1 轉換為 Lv. 1
                 display_text = config.selected_level.replace("level", "Lv. ")
                 obj.change_base_text(display_text)
@@ -112,10 +113,21 @@ class UIManager:
                 obj.change_base_color(target_color, force=True)
                 # print(f"[DEBUG]: from 'ui_handler.py':  {obj.normal_color}")
 
-            elif obj.name.endswith("_select"):
+            if obj.name.endswith("_select"):
+                mode_name = obj.name.split("_select")[0]
+                if config.from_pause:
+                    # 🌟 核心修正：如果我是從暫停切過來的，根據你的設計，把特定的按鈕外觀染成灰色！
+                    obj.change_base_color(tool.Colors.GRAY)
+                else:
+                    # 如果是正常從主選單進來的，恢復它原本斑斕的難度彩色
+                    obj.change_base_color(self.DIFFICULTY_MAP.get(mode_name, tool.Colors.WHITE))
+                if config.game_mode == mode_name:
+                    obj.change_base_text("Selected")
+                else:
+                    obj.change_base_text("Select")
                 obj.active = not config.from_pause
 
-            elif obj.name.startswith("show_"):
+            if obj.name.startswith("show_"):
                 mode = obj.name[5:]
                 # 找到對應的 select 按鈕
                 select_btn = next((b for b in all_buttons.buttons["setting_p1"] if b.name == f"{mode}_select"), None)
@@ -129,7 +141,7 @@ class UIManager:
                 # 顯示與顏色更新
                 obj.is_visible = mode == config.game_mode
                 # 同步顏色，確保在 from_pause 等狀態下顏色一致
-                target_color = self.DIFFICULTY_MAP.get(mode, tool.Colors.GRAY)
+                target_color = tool.Colors.GRAY if config.from_pause else self.DIFFICULTY_MAP.get(mode, tool.Colors.GRAY)
                 obj.change_base_color(target_color, force=True)
 
         if config.game_state == "more_survived_time":
@@ -173,7 +185,7 @@ class UIManager:
                 skin_data = config.player_skins.get(skin_name)
 
                 # 2. 檢查是否在當前世界可見 (過濾邏輯)
-                if not skin_data or config.select_world < skin_data.get("can_get_world", 1):
+                if not skin_data or config.worlds_unlocked < skin_data.get("can_get_world", 1):
                     obj.is_visible = False
                     return  # 直接跳過，不累加 skin_display_idx，避免空格
 
@@ -449,12 +461,14 @@ class UIManager:
                 config.game_state = "level_select"
             elif obj.name in ["setting_p1", "left"]:
                 config.game_state = "setting_p1"
+                self.setting_page = 1
             elif obj.name in ["upgrades", "right"]:
                 config.game_state = "upgrade_hub"
             elif obj.name == "quit":
                 config.running = False
             elif obj.name == "left":
                 config.game_state = "setting_p1"
+                self.setting_page = 1
             elif obj.name == "right":
                 config.game_state = "upgrade_hub"
 
@@ -486,11 +500,11 @@ class UIManager:
                                 if config.total_points >= 10000:
                                     config.has_buy_crazy = True
                                     config.total_points -= 10000
-                                    config.buy_channel.play(config.sounds["buy_success"])
+                                    asset_manager.buy_channel.play(asset_manager.sounds["buy_success"])
                                     # 💡 注意：這裡「不要」return！讓程式繼續往下走，
                                     # 這樣買完的當下才能順便把難度直接切換到 crazy！
                                 else:
-                                    config.buy_channel.play(config.sounds["buy_error"])
+                                    asset_manager.buy_channel.play(asset_manager.sounds["buy_error"])
                                     config.floating_texts.append(
                                         tool.FloatingText(
                                             "Not enough points!", 0, config.HEIGHT - 50, tool.Colors.RED, center=True, time=300, size=50
@@ -499,7 +513,8 @@ class UIManager:
                                     return  # 錢不夠才需要 return 攔截
 
                         # 🌟 大眾邏輯：不論是普通難度，還是剛扣完錢的 crazy，通通在這裡完成切換！
-                        config.game_mode = mode
+                        config.gm_i = i
+                        config.game_mode = config.g_m[config.gm_i]
                         config.level_button_color = self.DIFFICULTY_MAP[mode]
 
                         # 🌟 終極防禦：切換完畢後，一定要「立刻 return」！
@@ -514,7 +529,7 @@ class UIManager:
                         skin_names = []
                         weights = []
                         for name, data in config.player_skins.items():
-                            if config.select_world >= data["can_get_world"]:
+                            if config.worlds_unlocked >= data["can_get_world"]:
                                 skin_names.append(name)
                                 weights.append(data["draw_weight"])
                         # 2. 抽獎
@@ -555,9 +570,9 @@ class UIManager:
                                 )
                             config.last_draw_color = picked_name
                         data_handler.save_data()
-                        config.buy_channel.play(config.sounds["buy_success"])
+                        asset_manager.buy_channel.play(asset_manager.sounds["buy_success"])
                     else:
-                        config.buy_channel.play(config.sounds["buy_error"])
+                        asset_manager.buy_channel.play(asset_manager.sounds["buy_error"])
                         config.floating_texts.append(
                             tool.FloatingText("Not enough points!", 0, config.HEIGHT - 50, tool.Colors.RED, center=True, time=300, size=50)
                         )
@@ -651,8 +666,6 @@ class UIManager:
 
                 lvl = config.current_levels[config.game_state]
                 costs = cfg["costs"]
-
-                print("1. 點擊了升級按鈕！")
                 if lvl < len(costs):
                     cost = costs[lvl]
 
@@ -671,7 +684,7 @@ class UIManager:
                         config.floating_texts.append(new_text)
 
                         # 音效與金閃閃特效
-                        config.buy_channel.play(config.sounds["buy_success"])
+                        asset_manager.buy_channel.play(asset_manager.sounds["buy_success"])
                         config.now_flash_color = tool.Colors.GOLD
                         config.flash_timer = config.total_flash_time
 
@@ -683,7 +696,7 @@ class UIManager:
 
                     else:
                         # 錢不夠，播放錯誤音效
-                        config.buy_channel.play(config.sounds["buy_error"])
+                        asset_manager.buy_channel.play(asset_manager.sounds["buy_error"])
                 else:
                     # 滿等還硬點，噴出滿等提示
                     new_text = tool.FloatingText("MAX LEVEL!", 250, config.HEIGHT - 200, tool.Colors.RED, speed=0.7, size=24)
@@ -736,13 +749,13 @@ class UIManager:
                         config.floating_texts.append(new_text)
 
                         # 播放成功的金幣音效
-                        config.sounds["buy_success"].play()
+                        asset_manager.sounds["buy_success"].play()
 
                         # 儲存與重整世界資料，確保畫面原地刷新
                         config.update_world_data(config.select_world)
                     else:
                         # 錢不夠，無情噴出錯誤音效
-                        config.sounds["buy_error"].play()
+                        asset_manager.sounds["buy_error"].play()
             if obj.name == "next_world":
                 unlock_world_key = f"world{config.select_world + 1}"
                 cost = config.world_cost[unlock_world_key]
@@ -753,10 +766,10 @@ class UIManager:
                     new_text = tool.FloatingText("-" + tool.num_to_KMBT(cost), config.WIDTH - 90, 20, tool.Colors.RED, speed=0.7, size=24)
                     config.floating_texts.append(new_text)
 
-                    config.sounds["buy_success"].play()
+                    asset_manager.sounds["buy_success"].play()
                     config.update_current_world_data(config.select_world)
                 else:
-                    config.sounds["buy_error"].play()
+                    asset_manager.sounds["buy_error"].play()
 
         elif config.game_state == "pause":
             if obj.name == "resume":
@@ -775,6 +788,13 @@ class UIManager:
                 config.from_pause = False
                 config.game_state = "menu"
             if obj.name == "quit":
+                config.player_hp = config.player_max_hp
+                if not config.Invincible:
+                    config.total_points += config.points
+                config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode] = max(
+                    config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode], config.current_time_sec
+                )
+                config.reset_game()
                 config.running = False
 
         elif config.game_state == "game_over":
@@ -794,8 +814,8 @@ class UIManager:
                 config.player_hp = config.player_max_hp
                 if not config.Invincible:
                     config.total_points += config.points
-                config.longest_survived_time[config.selected_level][config.game_mode] = max(
-                    config.longest_survived_time[config.selected_level][config.game_mode], config.current_time_sec
+                config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode] = max(
+                    config.longest_survived_time[config.current_world_key][config.selected_level][config.game_mode], config.current_time_sec
                 )
                 data_handler.save_data()
                 config.reset_game()
@@ -832,11 +852,11 @@ class UIManager:
                     if event.key == pygame.K_ESCAPE or event.key == pygame.K_BACKSPACE:
                         config.game_state = "upgrade_hub"
                     if event.key in [pygame.K_LEFT, pygame.K_a]:
-                        config.game_state = f"upgrade_p{config.current_p_num - 1}"
                         config.current_p_num = tool.num_range(1, total_pages, config.current_p_num - 1)
+                        config.game_state = f"upgrade_p{config.current_p_num}"
                     if event.key in [pygame.K_RIGHT, pygame.K_d]:
-                        config.game_state = f"upgrade_p{config.current_p_num + 1}"
                         config.current_p_num = tool.num_range(1, total_pages, config.current_p_num + 1)
+                        config.game_state = f"upgrade_p{config.current_p_num}"
 
                 if config.game_state == "level_select":
                     if event.key in [pygame.K_LEFT, pygame.K_a]:
@@ -910,6 +930,7 @@ class UIManager:
         if config.game_state == "menu":
             if keys[pygame.K_LEFT] or keys[pygame.K_a]:
                 config.game_state = "setting_p1"
+                self.setting_page = 1
             elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
                 config.game_state = "upgrade_hub"
         if config.game_state == "upgrade_hub":
@@ -917,6 +938,12 @@ class UIManager:
                 config.target_y -= 10
             elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
                 config.target_y += 10
+
+        if config.game_state == "setting_p2":
+            if keys[pygame.K_UP] or keys[pygame.K_w]:
+                config.target_y -= 8
+            if keys[pygame.K_DOWN] or keys[pygame.K_s]:
+                config.target_y += 8
 
     def handle_change_game_state(self):
         config.target_y = 0
@@ -1039,3 +1066,46 @@ class UIManager:
                     normal_color=tool.Colors.WHITE,
                 )
                 all_buttons.buttons["level_select"].insert(0, btn)
+
+
+
+def coin_rect(player_rect=pygame.Rect(5000, 5000, 0, 0)):  # noqa: B008
+    diff = config.total_points - config.target_points
+
+    if abs(diff) < 0.1:
+        config.target_points = config.total_points
+    else:
+        config.target_points += diff * 0.1
+    final_text = "$" + tool.num_to_KMBT(config.target_points)
+
+    new_alpha = 255
+    config.coin_rect2 = pygame.Rect(config.WIDTH - 110, 0, 100, 100)
+
+    if player_rect.colliderect(config.coin_rect2):
+        new_alpha = 100
+
+    if new_alpha == 255:
+        for enemy in config.enemy_list:
+            if not getattr(enemy, "show", True):
+                continue  # 沒出現的不算
+            e_rect = pygame.Rect(enemy.x, enemy.y, enemy.width, enemy.height)
+
+            # 怪物碰到右上 OR 碰到左上，兩個一起變透明
+            if e_rect.colliderect(config.coin_rect2):
+                new_alpha = 100
+                break
+
+    if config.game_state == "3!2!1!":
+        new_alpha = 255
+
+    # --- 4. 同步套用到所有相關圖片 ---
+    config.alphas[0] = new_alpha if config.game_state == "start_game" else 255
+
+    # 讓金幣框變透明
+    asset_manager.coin_wood_img_surface.set_alpha(config.alphas[0])
+    config.screen.blit(asset_manager.coin_wood_img_surface, asset_manager.coin_wood_rect)
+
+    # 文字也要同步
+    import all_objs
+
+    all_objs.show_text(config.screen, final_text, tool.Colors.WHITE, config.WIDTH - 60, 32, size=22, alpha=config.alphas[0], center=True)

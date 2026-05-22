@@ -5,6 +5,7 @@ import random
 
 import pygame
 
+import asset_manager
 import config
 import tool
 
@@ -377,9 +378,9 @@ class TextButton(Button):
             center=True,
         )
         if self.draw_lock:
-            config.lock_rect.center = self.rect.center
+            asset_manager.lock_rect.center = self.rect.center
             # 直接在按鈕的座標附近 blit 鎖頭圖案，它就會完美跟著按鈕一起移動、滾動！
-            screen.blit(config.lock_img_surface, config.lock_rect)
+            screen.blit(asset_manager.lock_img_surface, asset_manager.lock_rect)
 
 
 class ImageButton:
