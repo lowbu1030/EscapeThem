@@ -86,7 +86,7 @@ config.current_time_sec = 0
 # 隱藏滑鼠
 pygame.mouse.set_visible(False)
 
-# pygame.mixer.music.play(-`1)  # 這裡決定要不要播放背景音樂
+pygame.mixer.music.play(-1)  # 這裡決定要不要播放背景音樂
 
 while config.running:
     config.last_game_state = config.game_state
