@@ -28,6 +28,7 @@ class UIManager:
         self.MAX_SETTING_PAGE = 3
         self.skin_display_idx = 0
         self.any_clicked = False  # 有沒有按鈕被點擊（用來控制點擊後的行為只觸發一次）
+        self.upgrade_total_pages = len({**config.UPGRADE_SURVIVAL, **config.UPGRADE_COMBAT})
 
     def clear_all_btn_clicked(self):
         """清除當前頁面所有按鈕的 is_clicked 狀態，確保點擊事件只觸發一次"""
@@ -74,6 +75,7 @@ class UIManager:
 
         # 徹底清空關卡資料
         config.reset_game()
+        config.player_bullets.clear()
 
     def _sync_ui_state(self, obj: all_buttons.Button | all_buttons.TextButton | all_buttons.ImageButton | all_buttons.Line):
         if hasattr(obj, "color_wave") and obj.color_wave is not None:
@@ -240,7 +242,6 @@ class UIManager:
         if config.game_state == "choose_file":
             if obj.name.startswith("save_"):
                 obj.rect.y = obj.base_y - config.scroll_ys[1]
-                obj.is_visible = 80 < obj.rect.y < 450
 
         if config.game_state == "upgrade_hub":
             if obj.name.startswith("upgrade_p"):
@@ -269,28 +270,37 @@ class UIManager:
                 costs = cfg["costs"]
 
                 # 2. 💡 狀態動態判定：分成「未滿等」與「滿等」兩大路線
-                if lvl < len(costs):
+                if lvl < cfg["limits"][config.select_world]:
                     cost = costs[lvl]
 
                     if obj.is_hover:
                         if config.total_points >= cost:
                             # 錢夠，顯示購買後的剩餘金額
                             obj.change_base_text(f"Buy! Left ${tool.num_to_KMBT(round(config.total_points - cost, 1))}")
+                            obj.normal_color = tool.Colors.YELLOW
                             obj.hover_color = tool.Colors.GREEN
+                            obj.pressing_color = tool.Colors.PARIS_GREEN
                         else:
                             # 錢不夠，警告還差多少錢
                             obj.change_base_text(f"Need: ${tool.num_to_KMBT(round(cost - config.total_points, 1))}")
                             obj.hover_color = tool.Colors.RED
+                            obj.pressing_color = tool.Colors.RED
                     else:
                         # 滑鼠沒移上去時，顯示正常的成本價格
+                        obj.normal_color = tool.Colors.YELLOW
                         obj.change_base_text(f"Cost: ${tool.num_to_KMBT(cost)}")
                 else:
                     # 3. 💡 滿等特殊處理
-                    obj.change_base_text("MAX LEVEL")
-                    obj.change_base_color(tool.Colors.GRAY)
-                    obj.hover_color = tool.Colors.GRAY
-                    obj.pressing_color = tool.Colors.GRAY
-                    obj.current_text_color = tool.Colors.GRAY
+                    if lvl >= cfg["limits"][config.select_world] and config.select_world < len(config.all_worlds_unlocked):
+                        obj.change_base_text(f"Locked: Reach World {config.select_world + 1}")
+                    else:
+                        obj.change_base_text("MAX LEVEL")
+                    obj.change_base_color(tool.Colors.GRAY, force=True)
+
+            if obj.name == "left":
+                obj.is_visible = config.current_p_num > 1
+            if obj.name == "right":
+                obj.is_visible = config.current_p_num < self.upgrade_total_pages
 
         if config.game_state == "level_select":
             if obj.name == "left":
@@ -319,8 +329,8 @@ class UIManager:
                     obj.change_base_text(f"Unlock for ${tool.num_to_KMBT(cost)}")
                     obj.font_size = 18
                     obj.change_base_color(tool.Colors.GRAY)  # 填滿灰色背景
-                    obj.hover_border_color = tool.Colors.GREEN if money_enough else tool.Colors.RED
-                    obj.hover_text_color = tool.Colors.GREEN if money_enough else tool.Colors.RED
+                    obj.hover_border_color = (tool.Colors.GREEN if config.select_world == 1 else tool.Colors.DARK_GREEN) if money_enough else tool.Colors.RED
+                    obj.hover_text_color = (tool.Colors.GREEN if config.select_world == 1 else tool.Colors.DARK_GREEN) if money_enough else tool.Colors.RED
                 # elif obj.is_next_level:
                 #     obj.border_width = 0
                 else:
@@ -666,7 +676,7 @@ class UIManager:
 
                 lvl = config.current_levels[config.game_state]
                 costs = cfg["costs"]
-                if lvl < len(costs):
+                if lvl < cfg["limits"][config.select_world]:
                     cost = costs[lvl]
 
                     if config.total_points >= cost:
@@ -698,11 +708,31 @@ class UIManager:
                         # 錢不夠，播放錯誤音效
                         asset_manager.buy_channel.play(asset_manager.sounds["buy_error"])
                 else:
-                    # 滿等還硬點，噴出滿等提示
-                    new_text = tool.FloatingText("MAX LEVEL!", 250, config.HEIGHT - 200, tool.Colors.RED, speed=0.7, size=24)
+                    # 滿等(或到達選擇世界的等級上限)還硬點，噴出滿等提示
+                    if lvl >= cfg["limits"][config.select_world] and config.select_world < len(config.all_worlds_unlocked):
+                        asset_manager.buy_channel.play(asset_manager.sounds["buy_error"])
+                    new_text = tool.FloatingText(
+                        (
+                            f"Locked: Reach World {config.select_world + 1}"
+                            if lvl >= cfg["limits"][config.select_world] and config.select_world < len(config.all_worlds_unlocked)
+                            else "MAX LEVEL!"
+                        ),
+                        250,
+                        config.HEIGHT - 200,
+                        tool.Colors.RED,
+                        speed=0.7,
+                        size=24,
+                    )
                     config.floating_texts.append(new_text)
             if obj.name == "back_upg":
                 config.game_state = "upgrade_hub"
+
+            if obj.name == "left":
+                config.current_p_num = tool.num_range(1, self.upgrade_total_pages, config.current_p_num - 1)
+                config.game_state = f"upgrade_p{config.current_p_num}"
+            if obj.name == "right":
+                config.current_p_num = tool.num_range(1, self.upgrade_total_pages, config.current_p_num + 1)
+                config.game_state = f"upgrade_p{config.current_p_num}"
 
         elif config.game_state == "level_select":
             if obj.name == "back":
@@ -732,6 +762,7 @@ class UIManager:
                     }
                     config.game_state = "countdown"
                     config.reset_game()
+                    config.print_coin_chance()
                     config.update_skill()
                 elif obj.is_next_level:
                     # 👉 狀況 B：是還可以挑戰的「下一關」，點擊觸發「商店解鎖邏輯」
@@ -846,17 +877,87 @@ class UIManager:
                 if config.game_state == "upgrade_hub":
                     if event.key == pygame.K_ESCAPE or event.key == pygame.K_BACKSPACE:
                         config.game_state = "menu"
+                    if event.key in [pygame.K_LEFT, pygame.K_a] and config.shop_page == "combat":
+                        config.shop_page = "survival"
+                        config.update_upgrade_hub_layout()
+                        self.handle_change_game_state()
+                        for obj in all_buttons.buttons["upgrade_hub"]:
+                            self._sync_ui_state(obj)
+                    if event.key in [pygame.K_RIGHT, pygame.K_d] and config.shop_page == "survival":
+                        config.shop_page = "combat"
+                        config.update_upgrade_hub_layout()
+                        self.handle_change_game_state()
+                        for obj in all_buttons.buttons["upgrade_hub"]:
+                            self._sync_ui_state(obj)
 
                 if config.game_state.startswith("upgrade_p"):
-                    total_pages = len({**config.UPGRADE_SURVIVAL, **config.UPGRADE_COMBAT})
                     if event.key == pygame.K_ESCAPE or event.key == pygame.K_BACKSPACE:
                         config.game_state = "upgrade_hub"
                     if event.key in [pygame.K_LEFT, pygame.K_a]:
-                        config.current_p_num = tool.num_range(1, total_pages, config.current_p_num - 1)
+                        config.current_p_num = tool.num_range(1, self.upgrade_total_pages, config.current_p_num - 1)
                         config.game_state = f"upgrade_p{config.current_p_num}"
                     if event.key in [pygame.K_RIGHT, pygame.K_d]:
-                        config.current_p_num = tool.num_range(1, total_pages, config.current_p_num + 1)
+                        config.current_p_num = tool.num_range(1, self.upgrade_total_pages, config.current_p_num + 1)
                         config.game_state = f"upgrade_p{config.current_p_num}"
+                    if event.key == pygame.K_SPACE:
+                        # 撈取對應的數據
+                        if config.game_state in config.UPGRADE_COMBAT:
+                            cfg = config.UPGRADE_COMBAT[config.game_state]
+                        else:
+                            cfg = config.UPGRADE_SURVIVAL[config.game_state]
+
+                        lvl = config.current_levels[config.game_state]
+                        costs = cfg["costs"]
+                        if lvl < cfg["limits"][config.select_world]:
+                            cost = costs[lvl]
+
+                            if config.total_points >= cost:
+                                # 扣錢、升級
+                                config.total_points -= cost
+                                config.current_levels[config.game_state] += 1
+                                config.lv_flash_timer = 20  # 啟動文字閃爍
+
+                                data_handler.save_data()  # 儲存
+
+                                # 生成扣錢噴字
+                                new_text = tool.FloatingText(
+                                    "-" + tool.num_to_KMBT(cost), config.WIDTH - 90, 20, tool.Colors.RED, speed=0.7, size=24
+                                )
+                                config.floating_texts.append(new_text)
+
+                                # 音效與金閃閃特效
+                                asset_manager.buy_channel.play(asset_manager.sounds["buy_success"])
+                                config.now_flash_color = tool.Colors.GOLD
+                                config.flash_timer = config.total_flash_time
+
+                                # 重新計算技能
+                                config.update_skill()
+
+                                # 💡 讓按鈕原地自我重新整理（把 Buy! 變回正常的 Cost 或 MAX）
+                                obj = next((b for b in all_buttons.buttons["upgrade_p"] if b.name == "upgrade"), None)
+                                if obj is not None:
+                                    self._sync_ui_state(obj)
+
+                            else:
+                                # 錢不夠，播放錯誤音效
+                                asset_manager.buy_channel.play(asset_manager.sounds["buy_error"])
+                        else:
+                            # 滿等(或到達選擇世界的等級上限)還硬點，噴出滿等提示
+                            if lvl >= cfg["limits"][config.select_world] and config.select_world < len(config.all_worlds_unlocked):
+                                asset_manager.buy_channel.play(asset_manager.sounds["buy_error"])
+                            new_text = tool.FloatingText(
+                                (
+                                    f"Locked: Reach World {config.select_world + 1}"
+                                    if lvl >= cfg["limits"][config.select_world] and config.select_world < len(config.all_worlds_unlocked)
+                                    else "MAX LEVEL!"
+                                ),
+                                250,
+                                config.HEIGHT - 200,
+                                tool.Colors.RED,
+                                speed=0.7,
+                                size=24,
+                            )
+                            config.floating_texts.append(new_text)
 
                 if config.game_state == "level_select":
                     if event.key in [pygame.K_LEFT, pygame.K_a]:
@@ -914,7 +1015,7 @@ class UIManager:
                 if config.game_state == "upgrade_hub":
                     config.target_y -= event.y * 30
                 if config.game_state.startswith("upgrade_p"):
-                    if event.y < 0 and config.current_p_num < config.total_pages:
+                    if event.y < 0 and config.current_p_num < self.upgrade_total_pages:
                         config.game_state = f"upgrade_p{config.current_p_num + 1}"
                     elif event.y > 0 and config.current_p_num > 1:
                         config.game_state = f"upgrade_p{config.current_p_num - 1}"
@@ -985,7 +1086,7 @@ class UIManager:
                 draw_y += 90 + (len(config.all_levels) * 60) - 25
         if config.game_state == "choose_file":
             all_buttons.buttons["choose_file"] = [obj for obj in all_buttons.buttons["choose_file"] if not obj.name.startswith("save_")]
-            for i, save in enumerate(config.save_files):
+            for i, save in enumerate(data_handler.save_files):
                 btn = all_objs.TextButton(
                     name=f"save_{save.stem}",
                     text=save.stem,
@@ -998,9 +1099,10 @@ class UIManager:
                 btn.save_path = save  # 把路徑存在按鈕物件裡，點擊時可以直接讀取
                 btn.base_y = 150 + i * 70
 
-                all_buttons.buttons["choose_file"].append(btn)
-            config.max_scroll_y = max(80, len(config.save_files) * 70 - 300)
+                all_buttons.buttons["choose_file"].insert(0, btn)
+            config.max_scroll_y = max(80, len(data_handler.save_files) * 70 - 300)
         if config.game_state == "upgrade_hub":
+            self.upgrade_total_pages = len({**config.UPGRADE_SURVIVAL, **config.UPGRADE_COMBAT})
             # 1. 為了防重複堆疊，先清空舊的 upg_ 開頭按鈕
             all_buttons.buttons["upgrade_hub"] = [obj for obj in all_buttons.buttons["upgrade_hub"] if not obj.name.startswith("upgrade_p")]
             # current_config = config.UPGRADE_SURVIVAL if config.shop_page == "survival" else config.UPGRADE_COMBAT
@@ -1066,7 +1168,6 @@ class UIManager:
                     normal_color=tool.Colors.WHITE,
                 )
                 all_buttons.buttons["level_select"].insert(0, btn)
-
 
 
 def coin_rect(player_rect=pygame.Rect(5000, 5000, 0, 0)):  # noqa: B008

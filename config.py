@@ -39,6 +39,11 @@ trigger_damage = False
 
 
 # 定義所有升級的詳細數據 (包含價格、技能數值、標題、說明)
+# SURVIVAL [20, 29, 27, 12, 15, 36, 10, 15, 9, 10, 14, 13, 9, 16]
+# SURVIVAL [20, 29, 27, 13, 15, 58, 12, 15, 9, 10, 14, 17, 9, 16]
+# COMBAT [1, 7, 8, 7, 9, 1]
+# COMBAT [1, 7, 8, 7, 9, 1]
+
 UPGRADE_SURVIVAL = {
     "upgrade_p1": {
         "title": "Player Speed",
@@ -63,13 +68,13 @@ UPGRADE_SURVIVAL = {
             43500,
             48800,
             56000,
-        ],
+        ],  # costs 長度為 20 元素
         "skills": [0, 1.5, 3, 4.5, 6, 7.5, 9, 10.5, 12, 13.5, 15, 16.5, 18, 19.5, 21, 22.5, 24, 25.5, 27, 28.5, 30],
-        "skill_desc": "Speed +{}",  # 顯示文字格式
+        "skill_desc": "Speed +{}",
         "limits": {
             1: 12,
-            2: 21,
-        },  # 每個世界的升級上限，超過後不再增加技能數值，之後把每一個升級都加上這個，並加上真正的功能。如果到達等級上限：[Locked: Reach World 2]
+            2: 20,  # 🌟 絕對滿等為 20，世界 2 的上限自動安全緊縮至 20
+        },
     },
     "upgrade_p2": {
         "title": "Coin Spawn Speed",
@@ -103,7 +108,7 @@ UPGRADE_SURVIVAL = {
             34580,
             40100,
             46700,
-        ],
+        ],  # costs 長度為 29 元素
         "skills": [
             0.6,
             1.2,
@@ -136,7 +141,11 @@ UPGRADE_SURVIVAL = {
             17.4,
             18.0,
         ],
-        "skill_desc": "Spawn time -{} sec",
+        "skill_desc": "Coin spawn time -{} sec",
+        "limits": {
+            1: 17,
+            2: 29,
+        },
     },
     "upgrade_p3": {
         "title": "Points Multiplier",
@@ -164,6 +173,10 @@ UPGRADE_SURVIVAL = {
             96000,
             102000,
             107000,
+            120000,
+            135000,
+            152400,
+            187000,
         ],
         "skills": [
             1,
@@ -190,20 +203,36 @@ UPGRADE_SURVIVAL = {
             6.17,
             6.73,
             7.34,
+            8.01,
+            8.73,
+            9.51,
+            10.36,
         ],
         "skill_desc": "Point x{}",
+        "limits": {
+            1: 12,
+            2: 23,
+        },
     },
     "upgrade_p4": {
         "title": "Size",
-        "costs": [200, 400, 700, 1200, 1800, 2400, 3700, 4500, 6000, 8050, 10500, 12500],
-        "skills": [35, 33, 31, 29, 27, 25, 23, 21, 19, 17, 15, 13, 11],
+        "costs": [200, 400, 700, 1200, 1800, 2400, 3700, 4500, 6000, 8050, 10500, 12500],  # costs 長度為 12 元素
+        "skills": [35, 33, 31, 29, 27, 25, 23, 21, 19, 17, 15, 13, 11, 8],
         "skill_desc": "Size: {}px",
+        "limits": {
+            1: 8,
+            2: 12,
+        },
     },
     "upgrade_p5": {
         "title": "Enemy Spawn",
-        "costs": [150, 380, 800, 1300, 2400, 3800, 5700, 7000, 10500],
-        "skills": [0.1, 0.3, 0.5, 0.8, 1.0, 1.3, 1.6, 2.0, 2.3, 2.5],
+        "costs": [150, 380, 800, 1300, 2400, 3800, 5700, 7000, 10500, 12400, 13800, 15000, 18000, 23100, 30000],
+        "skills": [0.1, 0.3, 0.5, 0.8, 1.0, 1.3, 1.6, 2.0, 2.3, 2.5, 2.8, 3.0, 3.2, 3.5, 3.7, 4.0],
         "skill_desc": "Spawn {}s",
+        "limits": {
+            1: 9,  # 🌟 這個技能天花板只有 9 等，世界 1 就可以直接點滿它
+            2: 15,
+        },
     },
     "upgrade_p6": {
         "title": "Max HP",
@@ -244,7 +273,7 @@ UPGRADE_SURVIVAL = {
             278400,
             310000,
             345700,
-        ],
+        ],  # costs 長度為 36 元素
         "skills": [
             10,
             12,
@@ -283,13 +312,38 @@ UPGRADE_SURVIVAL = {
             67,
             69,
             70,
+            71,
+            73,
+            74,
+            76,
+            77,
+            79,
+            80,
+            80,
+            81,
+            83,
+            84,
+            86,
+            87,
+            89,
+            90,
+            91,
+            93,
+            94,
+            96,
+            97,
+            99,
+            100,
         ],
         "skill_desc": "HP: {}",
+        "limits": {
+            1: 16,
+            2: 30,  # 🌟 血量上限很高，完美契合你的 1 世界 12 等、2 世界 21 等規範！
+        },
     },
     "upgrade_p7": {
         "title": "Regen",
-        "costs": [500, 800, 1200, 2000, 3500, 4700, 6500, 8300, 10500],
-        # 這裡原本是 dict，建議也簡化，如果太複雜可以保持
+        "costs": [500, 800, 1200, 2000, 3500, 4700, 6500, 8300, 10500, 12000],
         "skills": [
             {"time": 10, "hp": 0},
             {"time": 10, "hp": 1},
@@ -301,102 +355,163 @@ UPGRADE_SURVIVAL = {
             {"time": 5, "hp": 3},
             {"time": 5, "hp": 4},
             {"time": 4, "hp": 4},
+            {"time": 3, "hp": 4},
+            {"time": 3, "hp": 5},
+            {"time": 2, "hp": 5},
         ],
         "skill_desc": "{}",
+        "limits": {
+            1: 7,  # 🌟 總共只有 9 級，直接安全拉滿
+            2: 10,
+        },
     },
     "upgrade_p8": {
         "title": "Invincible",
-        "costs": [250, 700, 1000, 1200, 1400, 1700, 2300, 3700, 4500, 5700, 7600, 9800, 12000, 15800, 21400],
+        "costs": [250, 700, 1000, 1200, 1400, 1700, 2300, 3700, 4500, 5700, 7600, 9800, 12000, 15800, 21400],  # costs 長度為 15 元素
         "skills": [1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000],
         "skill_desc": "Time: {}ms",
+        "limits": {
+            1: 10,
+            2: 15,  # 🌟 總共 15 級，世界 2 自動防禦封頂在 15 等
+        },
     },
     "upgrade_p9": {
         "title": "Magnet",
-        "costs": [800, 1500, 2400, 4500, 6800, 8600, 11000, 17000, 23500],
-        "skills": [0, 30, 52, 74, 96, 118, 140, 162, 184, 200],  # 第一個為基礎值
+        "costs": [800, 1500, 2400, 4500, 6800, 8600, 11000, 17000, 23500],  # costs 長度為 9 元素
+        "skills": [0, 30, 52, 74, 96, 118, 140, 162, 184, 200],
         "skill_desc": "Range: {}px",
+        "limits": {
+            1: 9,
+            2: 9,
+        },
     },
     "upgrade_p10": {
         "title": "Magnet Strength",
-        "costs": [700, 1500, 2400, 4700, 7000, 8800, 11500, 17800, 24000, 38700],
+        "costs": [700, 1500, 2400, 4700, 7000, 8800, 11500, 17800, 24000, 38700],  # costs 長度為 10 元素
         "skills": [1, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0],
         "skill_desc": "Magnet Strength x{}",
+        "limits": {
+            1: 10,  # 🌟 總共 10 級，小於 12，因此兩世界皆定為 10
+            2: 10,
+        },
     },
     "upgrade_p11": {
         "title": "Luck",
-        "costs": [500, 1000, 1600, 2300, 3100, 4000, 5000, 6200, 7500, 9000, 11400, 12500, 13600, 14800],
+        "costs": [500, 1000, 1600, 2300, 3100, 4000, 5000, 6200, 7500, 9000, 11400, 12500, 13600, 14800],  # costs 長度為 14 元素
         "skills": [1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0],
         "skill_desc": "Luck x{}",
+        "limits": {
+            1: 12,
+            2: 14,  # 🌟 絕對上限 14 級
+        },
     },
     "upgrade_p12": {
         "title": "Coin Multiplier",
-        "costs": [500, 1240, 3870, 6800, 12450, 17500, 31200, 47800, 68000, 87000, 120300, 135100, 178000],
-        "skills": [1.0, 1.2, 1.5, 1.7, 1.9, 2.1, 2.3, 2.6, 2.8, 3.0, 3.3, 3.5, 3.7, 4.0],
+        "costs": [500, 1240, 3870, 6800, 12450, 17500, 31200, 47800, 68000, 87000, 120300, 135100, 178000],  # costs 長度為 13 元素
+        "skills": [1.0, 1.2, 1.5, 1.7, 1.9, 2.1, 2.3, 2.6, 2.8, 3.0, 3.3, 3.5, 3.7, 4.0, 4.3, 4.5, 4.7, 5.0],
         "skill_desc": "Coins x{}",
+        "limits": {
+            1: 10,
+            2: 13,  # 🌟 絕對上限 13 級
+        },
     },
     "upgrade_p13": {
         "title": "Dodge Chance",
-        "costs": [200, 600, 1200, 1900, 2500, 3800, 4500, 6400, 8700],
-        "skills": [0, 5, 10, 14, 18, 23, 26, 28, 30, 33],  # %(機率)
+        "costs": [200, 600, 1200, 1900, 2500, 3800, 4500, 6400, 8700],  # costs 長度為 9 元素
+        "skills": [0, 5, 10, 14, 18, 23, 26, 28, 30, 33],
         "skill_desc": "Chance: {}%",
+        "limits": {
+            1: 9,
+            2: 9,
+        },
     },
     "upgrade_p14": {
         "title": "Dodge Percent",
-        "costs": [150, 340, 570, 800, 1200, 1800, 2400, 3700, 4800, 6000, 8000, 12000, 15450, 20000, 27800, 31000],
-        "skills": [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80],  # %(檢傷趴數)
+        "costs": [150, 340, 570, 800, 1200, 1800, 2400, 3700, 4800, 6000, 8000, 12000, 15450, 20000, 27800, 31000],  # costs 長度為 16 元素
+        "skills": [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80],
         "skill_desc": "Damage - {}%",
+        "limits": {
+            1: 12,
+            2: 16,  # 🌟 絕對上限 16 級
+        },
     },
 }
 
 UPGRADE_COMBAT = {
     "upgrade_p15": {
         "title": "Can Shoot",
-        "costs": [5000],
+        "costs": [5000],  # costs 長度為 1 元素
         "skills": [0, 1],
         "skill_desc": "Can Shoot {}",
+        "limits": {
+            1: 1,  # 🌟 核心開關一級解鎖完畢
+            2: 1,
+        },
     },
     "upgrade_p16": {
         "title": "Shoot CD",
-        "costs": [800, 2300, 4500, 5100, 7500, 12000, 15000],
+        "costs": [800, 2300, 4500, 5100, 7500, 12000, 15000],  # costs 長度為 7 元素
         "skills": [500, 450, 400, 350, 300, 250, 200, 150],
         "skill_desc": "CD: {}s",
+        "limits": {
+            1: 7,  # 🌟 絕對上限 7 級
+            2: 7,
+        },
     },
     "upgrade_p17": {
         "title": "Bullet Speed",
-        "costs": [900, 1400, 2000, 3100, 4500, 5700, 7000, 9500],
+        "costs": [900, 1400, 2000, 3100, 4500, 5700, 7000, 9500],  # costs 長度為 8 元素
         "skills": [3, 5, 7, 9, 11, 13, 15, 17, 19],
         "skill_desc": "Speed: {}",
+        "limits": {
+            1: 8,  # 🌟 絕對上限 8 級
+            2: 8,
+        },
     },
     "upgrade_p18": {
         "title": "Bullet Size",
-        "costs": [500, 700, 1000, 1500, 2000, 3100, 5000],
+        "costs": [500, 700, 1000, 1500, 2000, 3100, 5000],  # costs 長度為 7 元素
         "skills": [5, 6, 7, 8, 9, 10, 11, 12],
         "skill_desc": "Size: {}",
+        "limits": {
+            1: 7,  # 🌟 絕對上限 7 級
+            2: 7,
+        },
     },
     "upgrade_p19": {
         "title": "Shoot Get Points",
-        "costs": [1000, 2000, 3000, 5000, 7000, 10200, 15000, 18500, 24000],
+        "costs": [1000, 2000, 3000, 5000, 7000, 10200, 15000, 18500, 24000],  # costs 長度為 9 元素
         "skills": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         "skill_desc": "Points: {}",
+        "limits": {
+            1: 9,  # 🌟 絕對上限 9 級
+            2: 9,
+        },
     },
     "upgrade_p20": {
         "title": "Alto Shoot",
-        "costs": [10000],
+        "costs": [10000],  # costs 長度為 1 元素
         "skills": [0, 1],
         "skill_desc": "Range: {}",
+        "limits": {
+            1: 1,  # 🌟 自動射擊一級即滿等
+            2: 1,
+        },
     },
 }
 
+
 # a = UPGRADE_COMBAT["upgrade_p20"]["costs"]
 # b = UPGRADE_COMBAT["upgrade_p20"]["skills"]
-# # c = 0
 
 # print(len(a) + 1)  # 測試用，懶著計算
-# print(len(b))  # 測試用，懶著計算
+# print(len(b))
 # print(len(a) + 1 <= len(b))
 
-
-# # print([c := round(c + 0.6, 1) for _ in range(1, 40)])
+print("SURVIVAL", [len(v["costs"]) for _, v in UPGRADE_SURVIVAL.items()])
+print("SURVIVAL", [len(v["skills"]) - 1 for _, v in UPGRADE_SURVIVAL.items()])
+print("COMBAT", [len(v["costs"]) for _, v in UPGRADE_COMBAT.items()])
+print("COMBAT", [len(v["skills"]) - 1 for _, v in UPGRADE_COMBAT.items()])
 
 player_skins = {
     # --- Common (一般) ---
@@ -664,6 +779,73 @@ now_player_skin = tool.Colors.RED
 current_player_color_name = "red"
 
 
+# 顯示專區
+next_spawn_range = random.randint(14, 20)
+
+# 遊戲模式
+g_m = ["easy", "normal", "hard", "super_hard", "crazy"]
+gm_i = 1
+game_mode = g_m[gm_i]
+
+# 解鎖關卡的價格，第一個是卡位用，第一關是０元
+level_costs = {
+    "world1": [0, 0, 500, 1000, 5000, 15000, 35000, 50000, 75000, 100000, 130000],
+    "world2": [0, 0, 250000, 340000],  # , 400000, 500000, 650000, 700000, 840000, 950000, 1000000
+}  # 目前還沒有關卡
+
+# 下個關卡需要秒數，第一個卡位用
+level_need_record = {
+    "world1": [0, 0, 50, 60, 60, 70, 80, 90, 90, 100, 100],
+    "world2": [0, 0, 110, 120],
+}
+
+MAX_WORLD = 2
+
+# 說明：第二關需要第一關(普通模式)有超過八十秒的生存時間，以此類推
+
+
+def update_current_world_data(select_world):
+    global all_levels, current_world_costs, current_world_need_record, lv_i, current_level, levels_unlocked
+    world_key = f"world{select_world}"
+    all_levels = ["level" + str(i + 1) for i in range(len(level_costs[world_key]) - 1)]
+    current_world_costs = level_costs[world_key]  # 確保第一個卡位是0元
+    current_world_need_record = level_need_record[world_key]  # 確保第一個卡位是0秒
+    levels_unlocked = all_worlds_unlocked.get(world_key, 1)  # 預設至少解鎖第一關
+    lv_i = 0
+    if all_levels:
+        current_level = all_levels[lv_i]
+
+
+levels_unlocked = 1  # 這是給遊戲邏輯用的數字
+all_worlds_unlocked = {"world1": 1, "world2": 1}  # 這是給存檔紀錄用的字典
+
+
+def update_world_data(select_world):
+    global current_world_costs, current_world_need_record
+    world_key = f"world{select_world}"
+    level_costs[world_key] = current_world_costs  # 確保第一個卡位是0元
+    level_need_record[world_key] = current_world_need_record  # 確保第一個卡位是0秒
+    all_worlds_unlocked[world_key] = levels_unlocked
+
+
+current_world_key = "world1"
+select_world = 1
+worlds_unlocked = 1
+update_current_world_data(select_world)
+lv_i = 0
+current_level = all_levels[lv_i]
+world_cost = {
+    "world1": 0,
+    "world2": 200000,
+    # "world3": 500000
+}
+world_bgc = {
+    "world1": [tool.Colors.BLACK2, tool.Colors.BLACK_3],
+    "world2": [tool.Colors.VIOLET, tool.Colors.PURPLE],
+    # "world3": [tool.Colors.DARK_GREEN, tool.Colors.PARIS_GREEN],
+}
+
+
 def get_skill_val(p_key):
     # 先從生存字典找，找不到再去戰鬥字典找
     cfg = UPGRADE_SURVIVAL.get(p_key) or UPGRADE_COMBAT.get(p_key)
@@ -673,7 +855,18 @@ def get_skill_val(p_key):
         return 0
 
     lvl = current_levels.get(p_key, 0)
-    return cfg["skills"][lvl]
+
+    # 🌟 核心防禦：從 limits 字典裡，安全抓出玩家「當前正在遊玩的世界」的等級天花板
+    # 提示：config.select_world 代表目前選單選中的世界（或者是你遊戲關卡內用的 config.current_playing_world）
+    limits_dict = cfg.get("limits", {})
+    world_max = limits_dict.get(select_world, len(cfg["costs"]))
+
+    # 🌟 一擊必殺的 Level Sync：取兩者之間較小的那一個！
+    # 如果買到 21 等，但世界 1 上限是 12 等 -> min(21, 12) 就會強制壓回 12！
+    effective_level = min(lvl, world_max)
+
+    # 🌟 最後，用這個被安全修正後的「有效等級」去查數值表！
+    return cfg["skills"][effective_level]
 
 
 def update_skill():
@@ -769,18 +962,6 @@ Invincible = False
 FPS_Speed = 1
 Timer_Speed = 1
 
-save_files = list(BASE_DIR.glob("save_game*.json"))
-selected_save_name = None
-
-# 遍歷這些檔案
-for file_path in save_files:
-    """
-    file_path 是一個 Path 物件
-    .name 會得到檔名(例如: save_game2.json)
-    .stem 會得到不含副檔名的名字(例如: save_game2)
-    """
-    print(f"找到存檔：{file_path.name}")
-
 
 class AFKError(Exception):
     def __init__(self):
@@ -809,77 +990,6 @@ for _ in range(20):
 def reset_scroll_ys():
     scroll_ys[:] = [0] * len(scroll_ys)
 
-
-# 顯示專區
-next_spawn_range = random.randint(14, 20)
-
-# 遊戲模式
-g_m = ["easy", "normal", "hard", "super_hard", "crazy"]
-gm_i = 1
-game_mode = g_m[gm_i]
-
-# 解鎖關卡的價格，第一個是卡位用，第一關是０元
-level_costs = {
-    "world1": [0, 0, 500, 1000, 5000, 15000, 35000, 50000, 75000, 100000, 130000],
-    "world2": [0, 0, 250000],  # , 340000, 400000, 500000, 650000, 700000, 840000, 950000, 1000000
-}  # 目前還沒有關卡
-
-# 下個關卡需要秒數，第一個卡位用
-level_need_record = {
-    "world1": [0, 0, 50, 60, 60, 70, 70, 80, 90, 90, 100],
-    "world2": [0, 0, 70],  # , 70, 80, 90, 100, 100, 110, 120, 120
-}
-
-MAX_WORLD = 2
-
-# 說明：第二關需要第一關(普通模式)有超過八十秒的生存時間，以此類推
-
-
-def update_current_world_data(select_world):
-    global all_levels, current_world_costs, current_world_need_record, lv_i, current_level, levels_unlocked
-    world_key = f"world{select_world}"
-    all_levels = ["level" + str(i + 1) for i in range(len(level_costs[world_key]) - 1)]
-    current_world_costs = level_costs[world_key]  # 確保第一個卡位是0元
-    current_world_need_record = level_need_record[world_key]  # 確保第一個卡位是0秒
-    levels_unlocked = all_worlds_unlocked.get(world_key, 1)  # 預設至少解鎖第一關
-    lv_i = 0
-    if all_levels:
-        current_level = all_levels[lv_i]
-
-
-levels_unlocked = 1  # 這是給遊戲邏輯用的數字
-all_worlds_unlocked = {"world1": 1, "world2": 1}  # 這是給存檔紀錄用的字典
-
-
-def update_world_data(select_world):
-    global current_world_costs, current_world_need_record
-    world_key = f"world{select_world}"
-    level_costs[world_key] = current_world_costs  # 確保第一個卡位是0元
-    level_need_record[world_key] = current_world_need_record  # 確保第一個卡位是0秒
-    all_worlds_unlocked[world_key] = levels_unlocked
-
-
-current_world_key = "world1"
-select_world = 1
-worlds_unlocked = 1
-update_current_world_data(select_world)
-lv_i = 0
-current_level = all_levels[lv_i]
-world_cost = {
-    "world1": 0,
-    "world2": 200000,
-    # "world3": 500000
-}
-world_bgc = {
-    "world1": [tool.Colors.BLACK2, tool.Colors.BLACK_3],
-    "world2": [tool.Colors.VIOLET, tool.Colors.PURPLE],
-}
-
-# 載入圖片
-IMG_PATH = Path(__file__).parent
-
-l_img_show, r_img_show = False, True
-
 points = 0
 total_points = 0
 shoot_points = 0
@@ -899,6 +1009,7 @@ level_button_color = tool.Colors.YELLOW
 
 last_cure_time = 0
 current_time_sec = 0
+current_time_ms = 0
 
 enemy_damage = 10
 enemy_damage_buff = 1
@@ -907,7 +1018,7 @@ random_time = 2000
 longest_survived_time = {}
 for i in range(1, 7):
     longest_survived_time.update({f"level{i}": dict.fromkeys(g_m, 0)})
-print(longest_survived_time)
+# print(longest_survived_time)
 
 has_buy_crazy = False
 crazy_btn_text = ""
@@ -921,7 +1032,6 @@ max_scroll_y = 1435
 # 假設你有一個變數控制分頁：shop_tab = "survival" (或是 "combat")
 
 current_p_num = 1
-total_pages = 0
 
 
 def update_upgrade_hub_layout():
@@ -946,15 +1056,18 @@ def update_upgrade_hub_layout():
     for i, (key, cfg) in enumerate(current_cfg.items()):
         lvl = current_levels.get(key, 0)
         costs = cfg["costs"]
-        is_max = lvl >= len(costs)
+        is_world_max = lvl >= cfg["limits"][select_world]
+        is_absolute_max = lvl >= len(costs)
+
+        is_max = is_world_max or is_absolute_max
 
         prefix = f"{cfg['title']}: Lv{lvl + 1} "
         if is_max:
             display_text = prefix + "Max Level"
             display_color = tool.Colors.GRAY
         else:
-            display_text = prefix + f"Cost: ${tool.num_to_KMBT(costs[lvl])}"
-            # 顏色根據當前分頁的順序跑循環
+            # 確保安全後，才大膽地讀取 costs[lvl]
+            display_text = f"{cfg['title']}: Lv{lvl + 1} " + f"Cost: ${tool.num_to_KMBT(costs[lvl])}"
             display_color = p_colors[i % len(p_colors)]
 
         upgrade_hub_layout[key] = {"title": display_text, "color": display_color}
@@ -1146,7 +1259,15 @@ def reset_game():
     for t in treasures:
         for _ in range(t["chance"]):
             coin_chance.append(t["rarity"])
+    bullet_list.clear()  # 確保子彈列表在重置時被清空
+    bullet_damage = 10
 
+
+reset_game()
+
+
+def print_coin_chance():
+    global coin_chance, treasures
     print("💰 金幣機率表:")
     total = len(coin_chance)
     for t in treasures:
@@ -1154,11 +1275,7 @@ def reset_game():
         count = coin_chance.count(name)
         percentage = (count / total) * 100 if total > 0 else 0
         print(f"{name:10} : {count:2} ({percentage:4.1f}%)")
-    bullet_list.clear()  # 確保子彈列表在重置時被清空
-    bullet_damage = 10
 
-
-reset_game()
 
 now_flash_color = tool.Colors.RED
 

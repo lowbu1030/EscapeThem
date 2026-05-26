@@ -1,7 +1,21 @@
 import json
+from pathlib import Path
 
 import config
 import tool
+
+BASE_DIR = Path(__file__).parent
+save_files = list(BASE_DIR.glob("save_game*.json"))
+selected_save_name = None
+
+# 遍歷這些檔案
+for file_path in save_files:
+    """
+    file_path 是一個 Path 物件
+    .name 會得到檔名(例如: save_game2.json)
+    .stem 會得到不含副檔名的名字(例如: save_game2)
+    """
+    print(f"找到存檔：{file_path.name}")
 
 
 def load_data(file_path=None):
@@ -26,7 +40,7 @@ def load_data(file_path=None):
         config.select_world = data.get("select_world", 1)
         config.all_worlds_unlocked = data.get("levels_unlocked", {"world1": 1, "world2": 1})
         config.worlds_unlocked = data.get("worlds_unlocked", 1)
-        print(f"DEBUG: 載入的字典內容是 {config.all_worlds_unlocked}")
+        # print(f"DEBUG: 載入的字典內容是 {config.all_worlds_unlocked}")
 
         # 2. 讀取升級數據 (修正變數路徑)
         saved_ups = data.get("upgrades", {})

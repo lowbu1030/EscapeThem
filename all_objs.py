@@ -705,11 +705,11 @@ class Cannon:
         angle,
         fire_rate,
         bullet_speed,
-        bullet_type,
-        bom_range,
-        speed_buff,
-        spawn_time_debuff,
-        buffer_duration,
+        bullet_type="normal",
+        bom_range=100,
+        speed_buff=1.0,
+        spawn_time_debuff=1.0,
+        buffer_duration=1,
         move_speed=0,
         damage=10,
         cannon_type="normal",
@@ -724,14 +724,18 @@ class Cannon:
         self.angle = angle
         self.damage = damage
         self.cannon_type = cannon_type
+        self.move_dir = 1
         self.mode = "waiting"
         self.last_fire_time = 0
         self.fire_rate = fire_rate
+        self.type = cannon_type
         self.move_speed = move_speed
         self.bullet_speed = bullet_speed
         self.bullet_type = bullet_type
         self.bom_range = bom_range
         self.speed_buff, self.spawn_time_debuff, self.buffer_duration = speed_buff, spawn_time_debuff, buffer_duration
+        self.player_vec = pygame.math.Vector2(0, 0)
+        self.cannon_vec = pygame.math.Vector2(0, 0)
 
     def update(self, current_time_sec, current_time_ms, player_rect):
         spawn_start_time = int(self.show_time * self.spawn_time_debuff)
@@ -748,16 +752,16 @@ class Cannon:
         if self.mode != "attack":
             return
 
-        self._update_behavior()
-        self.rect.topleft = (self.x, self.y)
+        self._update_behavior(player_rect)
+        (self.x, self.y) = self.rect.topleft
         new_bullet = self._try_fire(current_time_ms)
         return new_bullet
 
     def _try_fire(self, current_time_ms):
         if current_time_ms - self.last_fire_time > self.fire_rate / self.speed_buff:
             bullet = make_bullet(
-                self.rect.centerx,
-                self.rect.centery,
+                self.rect.centerx - 12,
+                self.rect.centery - 12,
                 self.angle,
                 self.bullet_speed,
                 self.bom_range,
@@ -766,23 +770,55 @@ class Cannon:
                 type=self.bullet_type,  # 🌟 補上子彈類型
             )
             self.last_fire_time = current_time_ms
+            asset_manager.shoot_channel.play(asset_manager.sounds["shoot"])
             return bullet
         else:
             return None
 
-    def _update_behavior(self):
-        if self.cannon_type == "track":
-            pass
-        elif self.cannon_type == "X_move":
-            pass
-        elif self.cannon_type == "Y_move":
-            pass
-        else:
-            pass
-        # elif self.cannon_type == "":
-        #     pass
+    def _update_behavior(self, player_rect):
+        if self.type == "X_move":
+            c_rect_dx = self.move_speed * self.speed_buff * self.move_dir
+            self.x += c_rect_dx
 
-    def draw(self, screen, offset_x, offset_y, current_time_ms):
+            self.rect.x = self.x
+            if self.rect.left <= 0:
+                self.move_dir *= -1
+                self.x = 2
+                self.rect.x = self.x
+            if self.rect.right >= config.WIDTH:
+                self.move_dir *= -1
+                self.x = config.WIDTH - self.width - 1
+                self.rect.x = self.x
+        elif self.type == "Y_move":
+            c_rect_dy = self.move_speed * self.speed_buff * self.move_dir
+            self.y += c_rect_dy
+
+            self.rect.y = self.y
+            if self.rect.top <= 0:
+                self.move_dir *= -1
+                self.y = 2
+                self.rect.y = self.y
+            if self.rect.bottom >= config.HEIGHT:
+                self.move_dir *= -1
+                self.y = config.HEIGHT - self.height
+                self.rect.y = self.y
+        elif self.type == "track":
+            # 修正：應該是「加」offset，且修正變數名 centery
+            player_vec = pygame.math.Vector2(player_rect.center)
+            cannon_vec = pygame.math.Vector2(self.rect.center)
+            v = player_vec - cannon_vec
+            _, angle = v.as_polar()
+            self.angle = angle
+        if self.rect.left < 0:
+            self.rect.left = 0
+        if self.rect.right > config.WIDTH:
+            self.rect.right = config.WIDTH
+        if self.rect.top < 0:
+            self.rect.top = 0
+        if self.rect.bottom > config.HEIGHT:
+            self.rect.bottom = config.HEIGHT
+
+    def draw(self, screen, offset_x, offset_y, current_time_ms, player_rect):
         draw_rect = self.rect.copy()
         draw_rect.x -= offset_x
         draw_rect.y -= offset_y
@@ -791,6 +827,24 @@ class Cannon:
                 pygame.draw.rect(screen, self.color, draw_rect)
         elif self.mode == "attack":
             pygame.draw.rect(screen, self.color, draw_rect)
+            if self.type == "track":
+                c_center = pygame.math.Vector2(self.rect.center)
+                p_center = pygame.math.Vector2(player_rect.center)  # 假設 config 看得到玩家，或者從 draw 傳入
+
+                time_passed = config.current_time_ms - self.last_fire_time
+                total_cooldown = self.fire_rate / config.mode_speed_buff
+
+                if time_passed > (total_cooldown / 2):
+                    flicker_speed = 100
+                    if time_passed > (total_cooldown * 0.8):
+                        flicker_speed = 50
+
+                    # 🌟 這裡可以用 config.runed_time 或 time_passed 測試
+                    if (config.runed_time // flicker_speed) % 2 == 0:
+                        # 🌟 記得扣掉 offset 即可！
+                        screen_cannon = (c_center.x - offset_x, c_center.y - offset_y)
+                        screen_player = (p_center.x - offset_x, p_center.y - offset_y)
+                        pygame.draw.line(screen, tool.Colors.RED, screen_cannon, screen_player, 3)
 
 
 class Bullet:
@@ -812,7 +866,7 @@ class Bullet:
         self.dx, self.dy = tool.get_direction(self.angle)
 
     def update(self, player_rect):
-        global player_hp, last_hit_time, shake_timer, shake_range, last_cure_time
+        # global player_hp, last_hit_time, shake_timer, shake_range, last_cure_time
 
         self.rect = pygame.Rect(self.x, self.y, 25, 25)
         out_of_bounds = self.x < 0 or self.x > WIDTH - 25 or self.y < 0 or self.y > HEIGHT - 25
@@ -887,13 +941,23 @@ class Obsticle:
 
     def draw(self, screen, offset_x, offset_y):
         draw_rect = self.rect.move(offset_x, offset_y)
-        if self.type == "lava":
-            pygame.draw.rect(screen, tool.Colors.RED, draw_rect)
-        elif self.type != "invisible":
+        self._handle_type()
+        if self.type != "invisible":
             pygame.draw.rect(screen, self.color, draw_rect)
 
     def _handle_type(self):
-        pass
+        """
+        1. 一般
+        2. 擋住人的岩漿
+        3. 不會擋住人的岩漿
+        現在只有處理顏色，之後會把其他的加進來(像是移動)
+        """
+        if self.type == "block_lava":
+            self.color = tool.Colors.RED
+        elif self.type == "lava":
+            self.color = tool.Colors.RED
+        # else:
+        #     pass
 
 
 # 製造敵人、砲台、障礙物的函式，從關卡資料來
@@ -924,59 +988,28 @@ def _make_enemy_list(level_data):
     return enemy_list
 
 
-def _make_cannon_list(level_data):
-
-    def make_cannon(
-        x,
-        y,
-        angle,
-        show_time,
-        fire_rate=2000,
-        bullet_speed=5,
-        bom_range=100,
-        color=tool.Colors.GRAY,
-        move_speed=0,
-        type="normal",
-        bullet_type="normal",
-        damage=10,
-    ):
-        return {
-            "x": tool.num_range(0, WIDTH - 30, x),
-            "y": tool.num_range(0, HEIGHT - 30, y),
-            "angle": angle,
-            "fire_rate": fire_rate,
-            "bullet_speed": bullet_speed,
-            "bom_range": bom_range,
-            "last_fire_time": 0,  # 初始開火冷卻
-            "color": color,
-            "show": False,
-            "show_time": show_time,
-            "mode": "waiting",
-            "width": 30,  # 砲台可以設大一點
-            "height": 30,
-            "move_speed": move_speed,  # 砲台移動速度，0 表示不移動
-            "move_dir": 1,  # 1 或 -1，控制移動方向  X、Y軸共用一個，因為不會同時有XY一起移動的大砲
-            "type": type,
-            "bullet_type": bullet_type,
-            "damage": damage,
-        }
-
+# 提示與調整方向
+def _make_cannon_list(level_data, current_speed_buff, current_spawn_debuff, current_buffer_duration):
     cannon_list = []
     for c in level_data:
-        cannon_data = make_cannon(
+        cannon_data = Cannon(
             x=c["x"],
             y=c["y"],
             angle=c["angle"],
             show_time=c["show_time"],
             fire_rate=c.get("fire_rate", 2000),
             bullet_speed=c.get("bullet_speed", 5),
-            color=tool.Colors.get_color(c["color"], tool.Colors.GRAY),  # 沒抓到就給灰色
-            move_speed=c.get("move_speed", 0),
-            type=c.get("type", "normal"),
-            bullet_type=c.get("bullet_type", "normal"),
+            color=tool.Colors.get_color(c["color"], tool.Colors.GRAY),
             damage=c.get("damage", 10),
+            cannon_type=c.get("type", "normal"),
+            # 🌟 這裡！直接從關卡 JSON 抓基礎設定，再配上外面傳進來的全域技能 Buff
+            bullet_type=c.get("bullet_type", "normal"),
+            bom_range=c.get("bom_range", 100),
+            # 🌟 把外部傳入的技能計算結果，精準指派給 Cannon 類別
+            speed_buff=current_speed_buff,
+            spawn_time_debuff=current_spawn_debuff,
+            buffer_duration=current_buffer_duration,
         )
-
         cannon_list.append(cannon_data)
     return cannon_list
 
@@ -1006,6 +1039,6 @@ def get_level_data(level, world):
         level_mutiply = data.get("level_multiplier", 1)
         level_name = data.get("level_name")
     enemy_list = _make_enemy_list(data["enemies"])
-    cannon_list = _make_cannon_list(data["cannons"])
+    cannon_list = _make_cannon_list(data["cannons"], config.mode_speed_buff, config.spawn_time_debuff, config.buffer_duration)
     obstacle_list = _make_obstacle_list(data.get("obstacles", []))  # 障礙物只有第二個世界有，如果沒有就給空列表
     return enemy_list, cannon_list, obstacle_list, level_mutiply, level_name

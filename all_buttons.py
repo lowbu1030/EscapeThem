@@ -51,11 +51,11 @@ buttons = {
         ),
         TextButton(
             name="help",
-            text="HELP",
+            text=["HELP:", "Next Update"],
             rect=pygame.Rect(0, 400, 300, 70),
             button_color=Colors.GRAY,
             text_color=Colors.WHITE,
-            font_size=32,
+            font_size=28,
         ),
         TextButton(
             name="quit",
@@ -212,6 +212,16 @@ buttons = {
         ),
     ],
     "choose_file": [
+        Button(
+            name="mask1",
+            rect=pygame.Rect(0, config.HEIGHT - 120, config.WIDTH, 120),
+            normal_color=Colors.BLUE3,
+            ),
+        Button(
+            name="mask2",
+            rect=pygame.Rect(0, 0, config.WIDTH, 110),
+            normal_color=Colors.BLUE3,
+            ),
         TextButton(
             name="back",
             text="BACK TO SETTINGS",
@@ -261,13 +271,13 @@ buttons = {
             name="left",
             image=asset_manager.left_img_surface,
             pos=asset_manager.left_rect.center,
-            visible=config.l_img_show and config.left_img_loaded,
+            visible=asset_manager.left_img_loaded,
         ),
         ImageButton(
             name="right",
             image=asset_manager.right_img_surface,
             pos=asset_manager.right_rect.center,
-            visible=config.r_img_show and asset_manager.right_img_loaded,
+            visible=asset_manager.right_img_loaded,
         ),
     ],
     "upgrade_p": [
@@ -292,6 +302,18 @@ buttons = {
             text_color=Colors.WHITE,
             font_size=24,
             hover_color=Colors.BROWN,
+        ),
+        ImageButton(
+            name="left",
+            image=asset_manager.left_img_surface,
+            pos=asset_manager.left_rect.center,
+            visible=asset_manager.left_img_loaded,
+        ),
+        ImageButton(
+            name="right",
+            image=asset_manager.right_img_surface,
+            pos=asset_manager.right_rect.center,
+            visible=asset_manager.right_img_loaded,
         ),
     ],
     "level_select": [

@@ -72,7 +72,6 @@ settings_button = upgrade_button = help_button = exit_button = player_rect = bac
 next_world_button = pygame.Rect(0, 0, 0, 0)
 level_button_color = tool.Colors.WHITE
 config.target_y = 0
-selected_save_name = ""
 saved, loaded = False, False
 loaded_data_success = False
 
@@ -80,13 +79,10 @@ loaded_data_success = False
 def get_current_mouse_state():
     return pygame.mouse.get_pos(False), pygame.mouse.get_pressed()
 
-
-config.current_time_sec = 0
-
 # 隱藏滑鼠
 pygame.mouse.set_visible(False)
 
-pygame.mixer.music.play(-1)  # 這裡決定要不要播放背景音樂
+# pygame.mixer.music.play(-1)  # 這裡決定要不要播放背景音樂
 
 while config.running:
     config.last_game_state = config.game_state
@@ -96,11 +92,13 @@ while config.running:
         continue  # 跳過這一次的移動和碰撞計算
     dt = clock.tick(60 * config.FPS_Speed) / 1000.0
 
-    runed_time = pygame.time.get_ticks()
+    config.runed_time = pygame.time.get_ticks()
     # print(f"DEBUG: Current State = {config.game_state}")
     screen_text = f"Escape Them! v1.6.7 - {config.game_state.replace('_', ' ')}"
     if config.game_state.startswith("setting_p"):
-        screen_text = f"Escape Them! v1.6.7 - setting p{config.game_state.replace('settings_p', '')} / 4"
+        screen_text = f"Escape Them! v1.6.7 - setting p{config.game_state.replace('settings_p', '')} / 3"
+    if config.game_state.startswith("upgrade_p"):
+        screen_text = f"Escape Them! v1.6.7 - upgrade p{config.game_state.replace('upgrade_p', '')} / {len({**config.UPGRADE_SURVIVAL, **config.UPGRADE_COMBAT})}"
     events = pygame.event.get()
     keys = pygame.key.get_pressed()
     mouse_pos, mouse_buttons = get_current_mouse_state()
@@ -284,10 +282,10 @@ while config.running:
     elif config.game_state == "choose_file":
         screen.fill(tool.Colors.BLUE3)
         ui_handler.coin_rect()
-        pygame.draw.rect(screen, tool.Colors.BLUE3, (0, config.HEIGHT - 110, config.WIDTH, 110))  # 擋住捲動後的檔案
-        pygame.draw.rect(screen, tool.Colors.BLUE3, (0, 0, config.WIDTH, 110))
-        all_objs.show_text(screen, "Choose Save File", tool.Colors.WHITE, 0, 40, size=50, screen_center=True)
+        # pygame.draw.rect(screen, tool.Colors.BLUE3, (0, config.HEIGHT - 110, config.WIDTH, 110))  # 擋住捲動後的檔案
+        # pygame.draw.rect(screen, tool.Colors.BLUE3, (0, 0, config.WIDTH, 110))
         ui_manager.handle_current_state(events, mouse_pos)
+        all_objs.show_text(screen, "Choose Save File", tool.Colors.WHITE, 0, 40, size=50, screen_center=True)
     # 玩家升級：
     # 升級列表
     elif config.game_state == "upgrade_hub":
@@ -470,8 +468,6 @@ while config.running:
                 size=18,
                 show=is_locked,
             )
-            level_name = ""  # 暫時用
-            # enemy_list, cannon_list, obstacle_list, level_multiplier, level_name = config.get_level_data(1, config.select_world)
         all_objs.show_text(screen, "Normal mode", tool.Colors.WHITE, 400, 160 - scroll_ys[3], size=20)
         ui_manager.handle_current_state(events, mouse_pos)
         ui_handler.coin_rect()
@@ -487,7 +483,7 @@ while config.running:
 
         config.player_move(keys)
 
-        all_objs.show_text(screen, level_name, tool.Colors.WHITE, 0, 80, screen_center=True, size=40)
+        all_objs.show_text(screen, config.current_setup.get("name", "error"), tool.Colors.WHITE, 0, 80, screen_center=True, size=40)
 
         if countdown >= 1:
             countdown_text = str(int(countdown))
@@ -523,13 +519,13 @@ while config.running:
                 if event.key == pygame.K_t and config.now_skills["p20"]:
                     config.alto_shoot = not config.alto_shoot
         should_update = config.freeze_timer <= 0
-        config.current_time_sec, current_time_ms = tool.sec_timer(update=should_update, dt=dt)
+        config.current_time_sec, config.current_time_ms = tool.sec_timer(update=should_update, dt=dt)
 
         keys = pygame.key.get_pressed()
         player_rect.x, player_rect.y = config.player_move(keys)
 
         if mouse_buttons[0] or (config.alto_shoot and config.now_skills["p20"]):  # 如果按住左鍵或有自動射擊
-            if runed_time - config.last_shot_time > config.now_skills["p16"] and config.can_shoot:
+            if config.runed_time - config.last_shot_time > config.now_skills["p16"] and config.can_shoot:
                 # 計算玩家中心到滑鼠的角度
                 dx = mouse_pos[0] - config.player_rect.centerx
                 dy = mouse_pos[1] - config.player_rect.centery
@@ -538,7 +534,7 @@ while config.running:
                 # 產生新子彈
                 new_bullet = all_objs.Player_Bullet(config.player_rect.centerx, config.player_rect.centery, angle)
                 config.player_bullets.append(new_bullet)
-                config.last_shot_time = runed_time
+                config.last_shot_time = config.runed_time
 
         for p_bullet in config.player_bullets[:]:  # 使用 [:] 副本以便在迴圈中刪除
             pb_rect = p_bullet.update()
@@ -620,7 +616,7 @@ while config.running:
             if enemy.is_dead:
                 config.current_setup["enemies"].remove(enemy)
                 continue
-            e_rect = enemy.update(current_time_ms, config.current_time_sec, config.player_rect, mouse_pos, config.now_treasure, screen)
+            e_rect = enemy.update(config.current_time_ms, config.current_time_sec, config.player_rect, mouse_pos, config.now_treasure, screen)
 
             if enemy.show and e_rect is not None:
                 if (
@@ -659,94 +655,10 @@ while config.running:
                 pygame.draw.rect(screen, enemy.color, e_rect)
         # 大砲邏輯
         for cannon in config.current_setup.get("cannons", []):
-            spawn_start_time = int(cannon["show_time"] * config.spawn_time_debuff)
-
-            attack_start_time = spawn_start_time + config.buffer_duration
-            if config.current_time_sec >= attack_start_time:
-                cannon["mode"] = "attack"
-                cannon["show"] = True
-            elif config.current_time_sec >= spawn_start_time:
-                cannon["mode"] = "spawning"
-                cannon["show"] = True
-            else:
-                cannon["mode"] = "waiting"
-                cannon["show"] = False
-            if not cannon["show"]:
-                continue
-
-            c_rect = pygame.Rect(cannon["x"] - config.offset_x, cannon["y"] - config.offset_y, cannon["width"], cannon["height"])
-
-            if cannon["mode"] == "spawning":
-                if current_time_ms % 500 < 250:
-                    pygame.draw.rect(screen, cannon["color"], c_rect)
-                continue
-            elif cannon["mode"] == "attack":
-                if cannon["type"] == "X_move":
-                    c_rect_dx = cannon["move_speed"] * config.mode_speed_buff * cannon["move_dir"]
-                    cannon["x"] += c_rect_dx
-
-                    c_rect.x = cannon["x"]
-                    if c_rect.left <= 0:
-                        cannon["move_dir"] *= -1
-                        cannon["x"] = 2
-                        c_rect.x = cannon["x"]
-                    if c_rect.right >= config.WIDTH:
-                        cannon["move_dir"] *= -1
-                        cannon["x"] = config.WIDTH - cannon["width"] - 1
-                        c_rect.x = cannon["x"]
-                elif cannon["type"] == "Y_move":
-                    c_rect_dy = cannon["move_speed"] * config.mode_speed_buff * cannon["move_dir"]
-                    cannon["y"] += c_rect_dy
-
-                    c_rect.y = cannon["y"]
-                    if c_rect.top <= 0:
-                        cannon["move_dir"] *= -1
-                        cannon["y"] = 2
-                        c_rect.y = cannon["y"]
-                    if c_rect.bottom >= config.HEIGHT:
-                        cannon["move_dir"] *= -1
-                        cannon["y"] = config.HEIGHT - cannon["height"]
-                        c_rect.y = cannon["y"]
-                elif cannon["type"] == "track":
-                    # 修正：應該是「加」offset，且修正變數名 centery
-                    player_vec = pygame.math.Vector2(player_rect.center)
-                    cannon_vec = pygame.math.Vector2(c_rect.center)
-                    v = player_vec - cannon_vec
-                    time_passed = current_time_ms - cannon["last_fire_time"]
-                    total_cooldown = cannon["fire_rate"] / config.mode_speed_buff
-                    if time_passed > (total_cooldown / 2):
-                        # 算出剩下的時間比例 (0.0 到 0.5 之間)
-                        # 越接近發射，閃爍頻率可以越快
-                        flicker_speed = 100
-                        if time_passed > (total_cooldown * 0.8):  # 最後 20% 時間閃超快
-                            flicker_speed = 50
-
-                        if (runed_time // flicker_speed) % 2 == 0:
-                            pygame.draw.line(screen, tool.Colors.RED, cannon_vec, player_vec, 3)
-                    dist, angle = v.as_polar()
-                    cannon["angle"] = angle
-                draw_c_rect = c_rect.copy()
-                draw_c_rect.x += config.offset_x
-                draw_c_rect.y += config.offset_y
-
-                pygame.draw.rect(screen, cannon["color"], draw_c_rect)
-                if (current_time_ms - cannon["last_fire_time"]) > cannon["fire_rate"] / config.mode_speed_buff:
-                    bullet_x = c_rect.centerx - 12
-                    bullet_y = c_rect.centery - 12
-                    config.bullet_list.append(
-                        all_objs.make_bullet(
-                            bullet_x,
-                            bullet_y,
-                            cannon["angle"],
-                            cannon["bullet_speed"],
-                            cannon["bom_range"],
-                            cannon["color"],  # 🌟 補上顏色
-                            cannon["damage"],  # 🌟 補上傷害值
-                            type=cannon["bullet_type"],  # 🌟 補上子彈類型
-                        )
-                    )
-                    asset_manager.shoot_channel.play(asset_manager.sounds["shoot"])
-                    cannon["last_fire_time"] = current_time_ms
+            bullet = cannon.update(config.current_time_sec, config.current_time_ms, player_rect)
+            if bullet is not None:
+                config.bullet_list.append(bullet)
+            cannon.draw(screen, config.offset_x, config.offset_y, config.current_time_ms, player_rect)
         # 子彈更新與繪製
         for bullet in config.bullet_list[:]:
             status, b_rect = bullet.update(player_rect)
@@ -992,14 +904,14 @@ while config.running:
         p_rect = pygame.Rect(player_rect.x - config.offset_x, player_rect.y - config.offset_y, player_rect.width, player_rect.height)
         # -- 繪製玩家 --
         if is_invincible:
-            if current_time_ms % 300 < 150:  # 閃爍效果
+            if config.current_time_ms % 300 < 150:  # 閃爍效果
                 pygame.draw.rect(screen, config.player_color, p_rect)
         else:
             # 正常時：顯示原本皮膚顏色
             pygame.draw.rect(screen, config.player_color, p_rect)
         # -------------
-        # 讓箭頭有一點點動態跳動效果 (current_time_ms 需從外部傳入或用 runed_time)
-        bounce = math.sin(runed_time * 0.01) * 3
+        # 讓箭頭有一點點動態跳動效果 (config.current_time_ms 需從外部傳入或用 config.runed_time)
+        bounce = math.sin(config.runed_time * 0.01) * 3
 
         if player_rect.y < 40:  # 稍微提高判定門檻，避免太貼邊界
             # y 座標計算：玩家底部 + 間距 + 跳動
@@ -1058,7 +970,7 @@ while config.running:
             data_handler.save_data()
 
             # 3. 處理其他死亡標記
-            tool.collision_time = runed_time
+            tool.collision_time = config.runed_time
 
             tool.sec_timer(update=False)
         # 在畫面上印出座標
@@ -1094,12 +1006,7 @@ while config.running:
             if enemy.show and not config.countdowning:
                 pygame.draw.rect(screen, enemy.color, (enemy.x, enemy.y, enemy.width, enemy.height))
         for cannon in config.current_setup.get("cannons", []):
-            if cannon["show"] and not config.countdowning:
-                pygame.draw.rect(
-                    screen,
-                    cannon["color"],
-                    (cannon["x"] - config.offset_x, cannon["y"] - config.offset_y, cannon["width"], cannon["height"]),
-                )
+            cannon.draw(screen, config.offset_x, config.offset_y, config.current_time_ms, player_rect)
         for bullet in config.bullet_list:
             bullet.draw(screen, config.offset_x, config.offset_y)
         if config.now_treasure["show"] and not config.countdowning:
@@ -1125,16 +1032,11 @@ while config.running:
             if enemy.show:
                 enemy_rect = pygame.draw.rect(screen, enemy.color, (enemy.x, enemy.y, enemy.width, enemy.height))
         for cannon in config.current_setup.get("cannons", []):
-            if cannon["show"] and not config.countdowning:
-                pygame.draw.rect(
-                    screen,
-                    cannon["color"],
-                    (cannon["x"] - config.offset_x, cannon["y"] - config.offset_y, cannon["width"], cannon["height"]),
-                )
+            cannon.draw(screen, config.offset_x, config.offset_y, config.current_time_ms, player_rect)
         for bullet in config.bullet_list:
             bullet.draw(screen, config.offset_x, config.offset_y)
         pygame.draw.rect(screen, config.player_color, config.player_rect)
-        passed_time = runed_time - tool.collision_time if tool.collision_time is not None else 0
+        passed_time = config.runed_time - tool.collision_time if tool.collision_time is not None else 0
         countdown = 10 - (passed_time // 1000)  # 倒數 10 秒
         all_objs.show_text(
             screen,
@@ -1210,7 +1112,7 @@ while config.running:
         pygame.draw.rect(screen, tool.Colors.RED, (config.WIDTH // 2 - 250, 100, 500, 400))
         pygame.draw.rect(screen, tool.Colors.BLACK2, (config.WIDTH // 2 - 245, 95, 500, 400))
         # 在顯示標題前，隨機切換顏色
-        flash_color = tool.Colors.RED if runed_time % 500 < 250 else tool.Colors.GRAY
+        flash_color = tool.Colors.RED if config.runed_time % 500 < 250 else tool.Colors.GRAY
         all_objs.show_text(
             screen,
             "CRITICAL ERROR",
