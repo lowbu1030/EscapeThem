@@ -1,0 +1,142 @@
+{
+    "level_name": "Level 3 - Obstacles!",
+    "level_mutiplier": 3.7,
+    "enemies": [
+        {
+            "show_time": -10,
+            "speed": 3,
+            "slow_speed": 1,
+            "color": "RED",
+            "damage": 20,
+            "type": "normal"
+        },
+        {
+            "show_time": -10,
+            "speed": 5,
+            "slow_speed": 3,
+            "color": "OLIVE",
+            "damage": 20,
+            "type": "random"
+        },
+        {
+            "show_time": 15,
+            "speed": 12,
+            "slow_speed": 7,
+            "color": "GREEN",
+            "damage": 20,
+            "type": [
+                "random",
+                "split"
+            ],
+            "split_enemies": 5
+        },
+        {
+            "show_time": 32,
+            "speed": 2,
+            "slow_speed": 1,
+            "color": "BLUE",
+            "damage": 20,
+            "type": [
+                "split",
+                "eat_coin"
+            ],
+            "split_enemies": 10
+        },
+        {
+            "show_time": 45,
+            "speed": 10,
+            "slow_speed": 7,
+            "color": "LIGHT_RED",
+            "damage": 20,
+            "type": "sprint"
+        },
+        {
+            "show_time": 67,
+            "speed": 3,
+            "slow_speed": 2,
+            "color": "ORANGE",
+            "damage": 20,
+            "type": [
+                "split",
+                "chaser",
+                "sprint"
+            ],
+            "split_enemies": 8
+        },
+        {
+            "show_time": 70,
+            "speed": 7,
+            "slow_speed": 4,
+            "color": "BLACK",
+            "damage": 20,
+            "type": [
+                "split",
+                "random"
+            ],
+            "split_enemies": 10
+        },
+        {
+            "show_time": 80,
+            "speed": 3,
+            "slow_speed": 2,
+            "color": "GRAY",
+            "damage": 30,
+            "type": "split",
+            "split_enemies": 12,
+            "size": 25
+        },
+        {
+            "show_time": 92,
+            "speed": 5,
+            "slow_speed": 3,
+            "color": "PURPLE",
+            "damage": 18,
+            "type": "split",
+            "split_enemies": 7
+        },
+        {
+            "show_time": 120,
+            "speed": 8,
+            "slow_speed": 5,
+            "color": "CHARTREUSE",
+            "damage": 20,
+            "type": "split",
+            "split_enemies": 7
+        },
+        {
+            "show_time": 134,
+            "speed": 8,
+            "slow_speed": 5,
+            "color": "DARK_GREEN",
+            "damage": 20,
+            "type": "split",
+            "split_enemies": 7
+        },
+        {
+            "show_time": 140,
+            "speed": 8,
+            "slow_speed": 5,
+            "color": "BROWN",
+            "damage": 20,
+            "type": "split",
+            "split_enemies": 7
+        }
+    ],
+    "cannons": [],
+    "obstacles": [
+        {
+            "x": 400,
+            "y": 300,
+            "width": 200,
+            "height": 10,
+            "color": "BLACK"
+        },
+        {
+            "x": 400,
+            "y": 300,
+            "width": 10,
+            "height": 250,
+            "color": "BLACK"
+        }
+    ]
+}

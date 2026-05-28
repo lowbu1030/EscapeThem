@@ -82,7 +82,7 @@ def get_current_mouse_state():
 # 隱藏滑鼠
 pygame.mouse.set_visible(False)
 
-# pygame.mixer.music.play(-1)  # 這裡決定要不要播放背景音樂
+pygame.mixer.music.play(-1)  # 這裡決定要不要播放背景音樂
 
 while config.running:
     config.last_game_state = config.game_state
@@ -616,7 +616,7 @@ while config.running:
             if enemy.is_dead:
                 config.current_setup["enemies"].remove(enemy)
                 continue
-            e_rect = enemy.update(config.current_time_ms, config.current_time_sec, config.player_rect, mouse_pos, config.now_treasure, screen)
+            e_rect = enemy.update(config.current_time_ms, config.current_time_sec, config.player_rect, mouse_pos, config.now_treasure, screen, config.current_setup.get("obstacles", []))
 
             if enemy.show and e_rect is not None:
                 if (
@@ -809,6 +809,10 @@ while config.running:
                         asset_manager.sounds["steal"].play()
                     enemy.x = tool.num_range(0, config.WIDTH - enemy.width, enemy.x)
                     enemy.y = tool.num_range(0, config.HEIGHT - enemy.height, enemy.y)
+
+        for obstacal in config.current_setup.get("obstacles", []):
+            obstacal.update(config.current_time_sec, config.current_time_ms, player_rect)
+            obstacal.draw(screen, config.offset_x, config.offset_y, config.current_time_ms)
 
         # --- 玩家血量回復 ---
         # 1. 確保只有在血量未滿且玩家還活著時才計算

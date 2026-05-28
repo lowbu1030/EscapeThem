@@ -510,6 +510,7 @@ class Enemy:
         self.show_time = show_time
         self.color = color
         self.types = [types] if isinstance(types, str) else types
+        self.current_movement = "normal"
         self.damage = damage
         self.is_dead = False
         self.is_split_enemy = is_split_enemy  # 用於標記是否為分裂後的小怪
@@ -520,6 +521,8 @@ class Enemy:
         self.y = random.randint(20, HEIGHT - 20)
         self.width = int(size * 3)
         self.height = int(size * 1.5)
+        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.bound_rect = self.rect.copy()
 
         # 速度相關
         self.normal_speed = speed
@@ -542,7 +545,7 @@ class Enemy:
         self.time_lasting = 1000  # 要持續的時間
         self.random_time_limit = random.randint(800, 2300)  # 給 random_angle 用的
 
-    def update(self, current_time_ms, current_time_sec, player_rect, mouse_pos, now_treasure, screen):
+    def update(self, current_time_ms, current_time_sec, player_rect, mouse_pos, now_treasure, screen, obstacles):
         # 1. 模式切換邏輯
         spawn_start_time = int(self.show_time * config.spawn_time_debuff)
         attack_start_time = spawn_start_time + config.buffer_duration
@@ -564,37 +567,84 @@ class Enemy:
         if not self.show:
             return
 
-        # 2. 建立碰撞盒
-        e_rect = pygame.Rect(self.x, self.y, self.width, self.height)
-
         # 3. 處理「生成中」模式
         if self.mode == "spawning":
             if current_time_ms % 500 < 250:
-                pygame.draw.rect(screen, self.color, e_rect)
+                pygame.draw.rect(screen, self.color, self.rect)
             return
 
         # 4. 處理「攻擊中」模式
         if self.mode == "attack":
-            if e_rect.collidepoint(mouse_pos):
+            if self.rect.collidepoint(mouse_pos):
                 target_speed = self.slow_speed
             else:
                 target_speed = self.normal_speed
             # --- 移動邏輯區 ---
-            self._handle_movement(current_time_ms, target_speed, config.mode_speed_buff, player_rect, now_treasure)
+            self._handle_movement(current_time_ms, target_speed, player_rect, now_treasure, obstacles)
 
             # --- 邊界反彈 ---
-            self._check_bounds()
+            self._check_bounds(obstacles, now_treasure)
 
             # --- 繪製與碰撞 ---
-            e_rect.topleft = (self.x - config.offset_x, self.y - config.offset_y)
+            self.rect.topleft = (self.x - config.offset_x, self.y - config.offset_y)
             if not self.is_dead:
-                pygame.draw.rect(screen, self.color, e_rect)
+                pygame.draw.rect(screen, self.color, self.rect)
 
-            # 碰撞檢測 (受傷邏輯建議放在這裡，或回傳 e_rect 讓主程式判斷)
-        return e_rect
+            # 碰撞檢測 (受傷邏輯建議放在這裡，或回傳 self.rect 讓主程式判斷)
+        return self.rect
 
-    def _handle_movement(self, current_time_ms, target_speed, mode_speed_buff, player_rect, now_treasure):
-        global collide_player
+    def _handle_wall_move(self, direction, final_speed, obstacles):
+        # 🌟 1. 先把丟進來的方向向量進行正規化，算出這影格的 X 與 Y 位移速度
+        if direction.length() > 0:
+            dir_norm = direction.normalize()
+            move_x = dir_norm.x * final_speed
+            move_y = dir_norm.y * final_speed
+        else:
+            return  # 沒距離就不需要動
+
+        # ==========================================
+        # 【第一階段：試探性走 X 軸，並檢查方塊碰撞】
+        # ==========================================
+        self.x += move_x
+        self.bound_rect.x = self.x  # 同步給碰撞盒的 X
+
+        for ob in obstacles:
+            if ob.mode == "attack" and ob.type != "invisible":
+                ob_rect = ob.get_rect()
+
+                # 如果水平方向戳到方塊
+                if self.bound_rect.colliderect(ob_rect):
+                    # 沒收這一步的 X 軸移動，並精準貼齊在方塊側面
+                    if move_x > 0:  # 本來正要往右衝
+                        self.x = ob_rect.left - self.width
+                    elif move_x < 0:  # 本來正要往左衝
+                        self.x = ob_rect.right
+
+                    self.bound_rect.x = self.x  # 更新碰撞盒
+                    break  # 撞到一個就夠了，跳出迴圈
+
+        # ==========================================
+        # 【第二階段：試探性走 Y 軸，並檢查方塊碰撞】
+        # ==========================================
+        self.y += move_y
+        self.bound_rect.y = self.y  # 同步給碰撞盒的 Y
+
+        for ob in obstacles:
+            if ob.mode == "attack" and ob.type != "invisible":
+                ob_rect = ob.get_rect()
+
+                # 如果垂直方向戳到方塊
+                if self.bound_rect.colliderect(ob_rect):
+                    # 沒收這一步的 Y 軸移動，並精準貼齊在方塊表面
+                    if move_y > 0:  # 本來正要往下衝
+                        self.y = ob_rect.top - self.height
+                    elif move_y < 0:  # 本來正要往上衝
+                        self.y = ob_rect.bottom
+
+                    self.bound_rect.y = self.y  # 更新碰撞盒
+                    break  # 跳出迴圈
+
+    def _handle_movement(self, current_time_ms, target_speed, player_rect, now_treasure, obstacles):
         self_vec = pygame.math.Vector2(self.x + self.width / 2, self.y + self.height / 2)
         e_rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
@@ -602,92 +652,182 @@ class Enemy:
         self.current_speed += (target_speed - self.current_speed) * 0.1
         final_speed = self.current_speed * config.mode_speed_buff
 
+        is_moved = False
+
+        if "sprint" in self.types:
+            self.current_movement = "sprint"
+            time_passed = current_time_ms - self.last_change_time
+            if 4000 < time_passed <= (4000 + self.time_lasting):
+                self.x += self.current_dx * final_speed * self.x_dir * 2.0
+                self.y += self.current_dy * final_speed * self.y_dir * 2.0
+                is_moved = True
+            elif time_passed > 4000 + self.time_lasting:
+                self.last_change_time = current_time_ms
+
+        if not is_moved:
+            if "eat_coin" in self.types and now_treasure.get("show", False):
+                self.current_movement = "eat_coin"
+                coin_vec = pygame.math.Vector2(now_treasure["x"] + 15, now_treasure["y"] + 15)
+                direction = coin_vec - self_vec
+                if direction.length() > 5:
+                    self._handle_wall_move(direction, final_speed, obstacles)
+                    pygame.draw.line(config.screen, self.color, self_vec, coin_vec, 1)
+                is_moved = True
+
+            elif "chaser" in self.types:
+                self.current_movement = "chaser"
+                player_vec = pygame.math.Vector2(player_rect.center)
+                direction = player_vec - self_vec
+                if direction.length() > 5 and not e_rect.colliderect(player_rect):
+                    self._handle_wall_move(direction, final_speed, obstacles)
+                is_moved = True
+
+            elif "zigzag" in self.types:
+                self.current_movement = "normal"
+                self.x += 2 * self.x_dir * final_speed
+                wave = math.sin(current_time_ms * 0.005) * 3
+                self.y += wave * final_speed
+                is_moved = True
+
+            elif "random" in self.types:
+                self.current_movement = "normal"
+                if current_time_ms - self.last_change_time > 2000:
+                    self.x_dir = random.choice([-1, 0, 1])
+                    self.y_dir = random.choice([-1, 0, 1])
+                    self.last_change_time = current_time_ms
+                self.x += self.x_dir * final_speed
+                self.y += self.y_dir * final_speed
+                is_moved = True
+
+            elif "random_angle" in self.types:
+                self.current_movement = "normal"
+                if current_time_ms - self.last_change_time > self.random_time_limit:
+                    self.random_time_limit = random.randint(800, 2300)
+                    self.angle = random.randint(0, 360)
+                    self.current_dx, self.current_dy = tool.get_direction(self.angle)
+                    self.last_change_time = current_time_ms
+                self.x += self.current_dx * final_speed * self.x_dir
+                self.y += self.current_dy * final_speed * self.y_dir
+                is_moved = True
+
+            else:
+                self.current_movement = "normal"
+                # 預設普通移動
+                self.x += self.current_dx * final_speed * self.x_dir
+                self.y += self.current_dy * final_speed * self.y_dir
+                is_moved = True
+
+        # ==========================================
+        # 2. 【核心終點防線】當所有位移都算完了，最後才統一進行碰撞安檢！
+        # ==========================================
         if "split" in self.types:
-            hit_wall = self._check_bounds()
+            hit_wall, hit_ob = self._check_bounds(obstacles, now_treasure)
 
             if hit_wall:
-                if self.is_split_enemy:
-                    self.is_dead = True  # 已經是小怪了，再撞就死掉
-                    return  # 撞到了就不用再算移動了
+                if self.is_split_enemy and not hit_ob:
+                    self.is_dead = True
+                    return
                 else:
-                    self.should_split = True  # 讓主迴圈知道要生出小怪
+                    self.should_split = True
                     if self.x <= 0 or self.x >= WIDTH - self.width:
                         self.x_dir *= -1
                     if self.y <= 0 or self.y >= HEIGHT - self.height:
                         self.y_dir *= -1
 
-        if "sprint" in self.types:
-            time_passed = current_time_ms - self.last_change_time
-            if 4000 < time_passed <= (4000 + self.time_lasting):
-                # 執行衝刺位移後直接 return，不執行後面的 eat_coin 或 chaser
-                self.x += self.current_dx * final_speed * self.x_dir * 2.0
-                self.y += self.current_dy * final_speed * self.y_dir * 2.0
-                return
-            elif time_passed > 4000 + self.time_lasting:
-                self.last_change_time = current_time_ms
+    def _check_bounds(self, obstacles, now_treasure):
+        hit_anything = False
+        hit_ob = False
 
-        # --- 2. 優先權中等：搶錢模式 (Eat Coin) ---
-        if "eat_coin" in self.types and now_treasure.get("show", False):
-            coin_vec = pygame.math.Vector2(now_treasure["x"] + 15, now_treasure["y"] + 15)
-            direction = coin_vec - self_vec
-            if direction.length() > 5:
-                dir_norm = direction.normalize()
-                self.x += dir_norm.x * final_speed
-                self.y += dir_norm.y * final_speed
-                collide_player = False
-                pygame.draw.line(config.screen, self.color, self_vec, coin_vec, 1)
-            return  # 鎖定錢幣時，不執行後續追蹤
-
-        # --- 3. 優先權低：追蹤模式 (Chaser) ---
-        elif "chaser" in self.types:
-            player_vec = pygame.math.Vector2(player_rect.center)
-            direction = player_vec - self_vec
-            if direction.length() > 5 and not e_rect.colliderect(player_rect):
-                dir_norm = direction.normalize()
-                # 🌟 修正：這裡不要再乘 normal_speed * current_speed，統一用 final_speed
-                self.x += dir_norm.x * final_speed
-                self.y += dir_norm.y * final_speed
-            return
-
-        # --- 4. 其他基礎移動模式 (Zigzag, Random, etc.) ---
-        elif "zigzag" in self.types:
-            self.x += 2 * self.x_dir * final_speed
-            wave = math.sin(current_time_ms * 0.005) * 3
-            self.y += wave * final_speed
-
-        elif "random" in self.types:
-            if current_time_ms - self.last_change_time > 2000:
-                self.x_dir = random.choice([-1, 0, 1])
-                self.y_dir = random.choice([-1, 0, 1])
-                self.last_change_time = current_time_ms
-            self.x += self.x_dir * final_speed
-            self.y += self.y_dir * final_speed
-
-        elif "random_angle" in self.types:
-            if current_time_ms - self.last_change_time > self.random_time_limit:
-                self.random_time_limit = random.randint(800, 2300)
-                self.angle = random.randint(0, 360)
-                self.current_dx, self.current_dy = tool.get_direction(self.angle)
-                self.last_change_time = current_time_ms
-            self.x += self.current_dx * final_speed * self.x_dir
-            self.y += self.current_dy * final_speed * self.y_dir
-
-        else:
-            # 預設普通移動
-            self.x += self.current_dx * final_speed * self.x_dir
-            self.y += self.current_dy * final_speed * self.y_dir
-
-    def _check_bounds(self):
-        # 處理 X 軸邊界
+        # ==========================================
+        # 【第一階段：處理 X 軸的碰撞（外牆 + 障礙物）】
+        # ==========================================
         if self.x <= 0 or self.x >= WIDTH - self.width:
-            self.x_dir *= -1  # 撞到左右牆壁，水平方向反轉
+            if not (
+                (self.current_movement == "chaser" and "chaser" in self.types)
+                or (self.current_movement == "eat_coin" and "eat_coin" in self.types and now_treasure.get("show", False))
+            ):
+                self.x_dir *= -1
             self.x = tool.num_range(0, WIDTH - self.width, self.x)
+            hit_anything = True
 
-        # 處理 Y 軸邊界
+        self.bound_rect.x = self.x
+        for ob in obstacles:
+            if ob.mode == "attack" and ob.can_collide:
+                ob_rect = ob.get_rect()
+
+                if self.bound_rect.colliderect(ob_rect):
+                    hit_anything = True
+                    hit_ob = True
+
+                    if (self.current_movement == "chaser" and "chaser" in self.types) or (
+                        self.current_movement == "eat_coin" and "eat_coin" in self.types and now_treasure.get("show", False)
+                    ):
+                        self.x = ob_rect.right if self.x_dir > 0 else ob_rect.left - self.width
+                    else:
+                        # ==========================================================
+                        # 🌟 核心修正：X 軸也改用中心點相對位置判定！
+                        # ==========================================================
+                        ob_center_x = ob_rect.centerx
+                        self_center_x = self.bound_rect.centerx
+
+                        if self_center_x < ob_center_x:  # 💡 怪物中心點偏左（人在方塊左邊）
+                            self.x = ob_rect.left - self.width  # 永遠只能被穩穩擋在左側表面
+                            if self.x_dir > 0:
+                                self.x_dir *= -1  # 只有當它還想往右衝時，才反轉方向
+                        else:  # 💡 怪物中心點偏右（人在方塊右邊）
+                            self.x = ob_rect.right  # 永遠只能被穩穩擋在右側表面
+                            if self.x_dir < 0:
+                                self.x_dir *= -1  # 只有當它還想往左衝時，才反轉方向
+
+                    self.bound_rect.x = self.x
+                    break
+
+        # ==========================================
+        # 【第二階段：處理 Y 軸的碰撞（外牆 + 障礙物）】
+        # ==========================================
         if self.y <= 0 or self.y >= HEIGHT - self.height:
-            self.y_dir *= -1  # 撞到上下牆壁，垂直方向反轉
+            if not (
+                (self.current_movement == "chaser" and "chaser" in self.types)
+                or (self.current_movement == "eat_coin" and "eat_coin" in self.types and now_treasure.get("show", False))
+            ):
+                self.y_dir *= -1
             self.y = tool.num_range(0, HEIGHT - self.height, self.y)
-        return self.x <= 0 or self.x >= WIDTH - self.width or self.y <= 0 or self.y >= HEIGHT - self.height
+            hit_anything = True
+
+        self.bound_rect.y = self.y
+        for ob in obstacles:
+            if ob.mode == "attack" and ob.can_collide:
+                ob_rect = ob.get_rect()
+
+                if self.bound_rect.colliderect(ob_rect):
+                    hit_anything = True
+                    hit_ob = True
+
+                    # 🌟 修正：Y 軸也比照 X 軸辦理，區分追蹤怪與普通怪，並修正推位顛倒問題
+                    if (self.current_movement == "chaser" and "chaser" in self.types) or (
+                        self.current_movement == "eat_coin" and "eat_coin" in self.types and now_treasure.get("show", False)
+                    ):
+                        self.y = ob_rect.bottom if self.y_dir > 0 else ob_rect.top - self.height
+                    else:
+                        # ==========================================================
+                        # 🌟 核心修正：看怪物中心點與方塊中心點的「相對位置」來推位！
+                        # ==========================================================
+                        ob_center_y = ob_rect.centery
+                        self_center_y = self.bound_rect.centery
+
+                        if self_center_y < ob_center_y:  # 💡 代表怪物人在方塊的「上半部/上方」
+                            self.y = ob_rect.top - self.height  # 永遠只能穩穩貼在頂部表面
+                            if self.y_dir > 0:
+                                self.y_dir *= -1  # 只有當它還想往下衝時，才反轉方向
+                        else:  # 💡 代表怪物人在方塊的「下半部/下方」
+                            self.y = ob_rect.bottom  # 永遠只能穩穩貼在底部表面
+                            if self.y_dir < 0:
+                                self.y_dir *= -1  # 只有當它還想往上衝時，才反轉方向
+
+                    self.bound_rect.y = self.y
+                    break
+
+        return hit_anything, hit_ob
 
 
 # 砲台的子彈生成函式，放在外面讓子彈生成時也能呼叫
@@ -720,7 +860,16 @@ class Cannon:
         self.color = color
         self.x, self.y = x, y
         self.width, self.height = width, height
-        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        if self.x < 0:
+            self.x = 0
+        elif self.x > config.WIDTH - self.width:
+            self.x = config.WIDTH - self.width
+
+        if self.y < 0:
+            self.y = 0
+        elif self.y > config.HEIGHT - self.height:
+            self.y = config.HEIGHT - self.height
+        self.rect = pygame.Rect(int(self.x), int(self.y), self.width, self.height)
         self.angle = angle
         self.damage = damage
         self.cannon_type = cannon_type
@@ -753,7 +902,7 @@ class Cannon:
             return
 
         self._update_behavior(player_rect)
-        (self.x, self.y) = self.rect.topleft
+        self.rect.topleft = (int(self.x), int(self.y))
         new_bullet = self._try_fire(current_time_ms)
         return new_bullet
 
@@ -778,17 +927,32 @@ class Cannon:
     def _update_behavior(self, player_rect):
         if self.type == "X_move":
             c_rect_dx = self.move_speed * self.speed_buff * self.move_dir
-            self.x += c_rect_dx
+            self.x += c_rect_dx  # 🌟 讓精密小數點無限制累積！
 
-            self.rect.x = self.x
+            # 為了讓底下的邊界判定準確，先暫時同步給 rect 檢查
+            self.rect.x = int(self.x)
+
+            # 🌟 撞牆邊界反彈：直接校正精密的 self.x 數值
             if self.rect.left <= 0:
-                self.move_dir *= -1
-                self.x = 2
-                self.rect.x = self.x
-            if self.rect.right >= config.WIDTH:
-                self.move_dir *= -1
-                self.x = config.WIDTH - self.width - 1
-                self.rect.x = self.x
+                self.move_dir = 1
+                self.x = 0
+            elif self.rect.right >= config.WIDTH:
+                self.move_dir = -1
+                self.x = config.WIDTH - self.width
+        elif self.type == "Y_move":
+            c_rect_dy = self.move_speed * self.speed_buff * self.move_dir
+            self.y += c_rect_dy  # 🌟 讓精密小數點無限制累積！
+
+            # 為了讓底下的邊界判定準確，先暫時同步給 rect 檢查
+            self.rect.y = int(self.y)
+
+            # 🌟 撞牆邊界反彈：直接校正精密的 self.y 數值
+            if self.rect.top <= 0:
+                self.move_dir = 1
+                self.y = 0
+            elif self.rect.bottom >= config.HEIGHT:
+                self.move_dir = -1
+                self.y = config.HEIGHT - self.height
         elif self.type == "Y_move":
             c_rect_dy = self.move_speed * self.speed_buff * self.move_dir
             self.y += c_rect_dy
@@ -809,14 +973,6 @@ class Cannon:
             v = player_vec - cannon_vec
             _, angle = v.as_polar()
             self.angle = angle
-        if self.rect.left < 0:
-            self.rect.left = 0
-        if self.rect.right > config.WIDTH:
-            self.rect.right = config.WIDTH
-        if self.rect.top < 0:
-            self.rect.top = 0
-        if self.rect.bottom > config.HEIGHT:
-            self.rect.bottom = config.HEIGHT
 
     def draw(self, screen, offset_x, offset_y, current_time_ms, player_rect):
         draw_rect = self.rect.copy()
@@ -933,31 +1089,68 @@ class Player_Bullet:
         pygame.draw.circle(screen, tool.Colors.YELLOW, (int(self.x), int(self.y)), self.radius)
 
 
-class Obsticle:
-    def __init__(self, x, y, width, height, color=tool.Colors.GRAY, type="normal"):
+class Obstacle:
+    def __init__(self, x, y, width, height, show_time=-10, color=tool.Colors.GRAY, type="normal", can_collide=True):
+        self.show_time = show_time
         self.rect = pygame.Rect(x, y, width, height)
-        self.color = color
         self.type = type
+        self.can_collide = can_collide
+        self.color = color
 
-    def draw(self, screen, offset_x, offset_y):
-        draw_rect = self.rect.move(offset_x, offset_y)
-        self._handle_type()
-        if self.type != "invisible":
+        # 🌟 調整 1：把顏色的初始化直接放在出生時搞定，不用每幀都判斷
+        if self.type in ["block_lava", "lava"]:
+            self.color = tool.Colors.RED
+
+        self.mode = "waiting"
+
+    def get_rect(self):
+        return pygame.Rect(self.rect)
+
+    def update(self, current_time_sec, current_time_ms, player_rect):
+        spawn_start_time = int(self.show_time * config.spawn_time_debuff)
+        attack_start_time = spawn_start_time + config.buffer_duration
+
+        if current_time_sec >= attack_start_time:
+            self.mode = "attack"
+        elif current_time_sec >= spawn_start_time:
+            self.mode = "spawning"
+        else:
+            self.mode = "waiting"
+            return
+
+        if self.mode != "attack":
+            return
+
+        # 🌟 調整 2：未來的移動邏輯（如：左右移動的方塊），就要寫在這裡！
+        # self._handle_movement()
+
+    def draw(self, screen, offset_x, offset_y, current_time_ms):
+        if self.mode == "waiting":
+            return
+
+        # 🌟 調整 3：扣除鏡頭偏移量，確保震動方向正確
+        draw_rect = self.rect.move(-offset_x, -offset_y)
+
+        if self.mode == "spawning":
+            # 這裡可以加上你之前寫的 500ms 閃爍效果
+            if current_time_ms % 500 < 250:
+                pygame.draw.rect(screen, self.color, draw_rect)
+        elif self.mode == "attack" and self.type != "invisible":
             pygame.draw.rect(screen, self.color, draw_rect)
 
-    def _handle_type(self):
-        """
-        1. 一般
-        2. 擋住人的岩漿
-        3. 不會擋住人的岩漿
-        現在只有處理顏色，之後會把其他的加進來(像是移動)
-        """
-        if self.type == "block_lava":
-            self.color = tool.Colors.RED
-        elif self.type == "lava":
-            self.color = tool.Colors.RED
-        # else:
-        #     pass
+    # def _handle_type(self):
+    #     """
+    #     1. 一般
+    #     2. 擋住人的岩漿
+    #     3. 不會擋住人的岩漿
+    #     現在只有處理顏色，之後會把其他的加進來(像是移動)
+    #     """
+    #     if self.type == "block_lava":
+    #         self.color = tool.Colors.RED
+    #     elif self.type == "lava":
+    #         self.color = tool.Colors.RED
+    #     # else:
+    #     #     pass
 
 
 # 製造敵人、砲台、障礙物的函式，從關卡資料來
@@ -992,6 +1185,7 @@ def _make_enemy_list(level_data):
 def _make_cannon_list(level_data, current_speed_buff, current_spawn_debuff, current_buffer_duration):
     cannon_list = []
     for c in level_data:
+        print()
         cannon_data = Cannon(
             x=c["x"],
             y=c["y"],
@@ -1001,6 +1195,7 @@ def _make_cannon_list(level_data, current_speed_buff, current_spawn_debuff, curr
             bullet_speed=c.get("bullet_speed", 5),
             color=tool.Colors.get_color(c["color"], tool.Colors.GRAY),
             damage=c.get("damage", 10),
+            move_speed=c.get("move_speed", 0),
             cannon_type=c.get("type", "normal"),
             # 🌟 這裡！直接從關卡 JSON 抓基礎設定，再配上外面傳進來的全域技能 Buff
             bullet_type=c.get("bullet_type", "normal"),
@@ -1018,7 +1213,8 @@ def _make_obstacle_list(level_data):
 
     obstacle_list = []
     for o in level_data:
-        obstacle_data = Obsticle(
+        obstacle_data = Obstacle(
+            show_time=o.get("show_time", -10),
             x=o["x"],
             y=o["y"],
             width=o["width"],

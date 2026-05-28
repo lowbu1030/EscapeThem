@@ -857,7 +857,7 @@ def get_skill_val(p_key):
     lvl = current_levels.get(p_key, 0)
 
     # 🌟 核心防禦：從 limits 字典裡，安全抓出玩家「當前正在遊玩的世界」的等級天花板
-    # 提示：config.select_world 代表目前選單選中的世界（或者是你遊戲關卡內用的 config.current_playing_world）
+    # 提示：config.select_world 代表目前選單選中的世界（或者是你遊戲關卡內用的 current_playing_world）
     limits_dict = cfg.get("limits", {})
     world_max = limits_dict.get(select_world, len(cfg["costs"]))
 
@@ -989,6 +989,7 @@ for _ in range(20):
 
 def reset_scroll_ys():
     scroll_ys[:] = [0] * len(scroll_ys)
+
 
 points = 0
 total_points = 0
@@ -1350,14 +1351,73 @@ def player_move(keys):
 
     # 如果有移動
     if dx != 0 or dy != 0:
-        # 如果是斜走 (dx, dy 都不為 0)，這裡除以 1.414 來修正速度
         if dx != 0 and dy != 0:
-            dx *= 0.7071  # 1 / sqrt(2)
+            dx *= 0.7071
             dy *= 0.7071
 
-        # 更新位置 (包含邊界檢查)
-        player_rect.x += dx * player_speed * key_speed
-        player_rect.y += dy * player_speed * key_speed
+        # 計算這一幀在 X 軸和 Y 軸總共「預計要走多少像素」
+        total_move_x = dx * player_speed * key_speed
+        total_move_y = dy * player_speed * key_speed
+
+        # 🌟 設定每一步最多只走 4 像素（確保小於任何方塊與玩家尺寸）
+        step_size = 4
+
+        # ==========================================
+        # 🌟 1. X 軸拆步移動與防護
+        # ==========================================
+        rem_x = abs(total_move_x)  # 還剩下多少 X 距離要走
+        sign_x = 1 if total_move_x > 0 else -1
+
+        while rem_x > 0:
+            # 這一小步要走的距離（如果不夠一整步，就走剩下的）
+            current_step = min(step_size, rem_x)
+            player_rect.x += current_step * sign_x
+            rem_x -= current_step
+
+            # 每走一小步，立刻做一次全體方塊安檢
+            hit_x = False
+            for ob in current_setup.get("obstacles", []):
+                if ob.mode == "attack" and ob.can_collide:
+                    ob_rect = ob.get_rect()
+                    if player_rect.colliderect(ob_rect):
+                        # 撞到了！用中心點推出牆外
+                        if player_rect.centerx < ob_rect.centerx:
+                            player_rect.x = ob_rect.left - player_size
+                        else:
+                            player_rect.x = ob_rect.right
+                        hit_x = True
+                        break
+
+            # 💡 只要這一小步撞到了，剩下的 X 距離就不用走了，直接收工
+            if hit_x:
+                break
+
+        # ==========================================
+        # 🌟 2. Y 軸拆步移動與防護
+        # ==========================================
+        rem_y = abs(total_move_y)  # 還剩下多少 Y 距離要走
+        sign_y = 1 if total_move_y > 0 else -1
+
+        while rem_y > 0:
+            current_step = min(step_size, rem_y)
+            player_rect.y += current_step * sign_y
+            rem_y -= current_step
+
+            hit_y = False
+            for ob in current_setup.get("obstacles", []):
+                if ob.mode == "attack" and ob.can_collide:
+                    ob_rect = ob.get_rect()
+                    if player_rect.colliderect(ob_rect):
+                        # 撞到了！用中心點推出牆外
+                        if player_rect.centery < ob_rect.centery:
+                            player_rect.y = ob_rect.top - player_size
+                        else:
+                            player_rect.y = ob_rect.bottom
+                        hit_y = True
+                        break
+
+            if hit_y:
+                break
     # ------------------------------------------
 
     # -----------------邊界判斷------------------

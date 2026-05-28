@@ -830,6 +830,7 @@ class UIManager:
 
         elif config.game_state == "game_over":
             if obj.name == "back":
+                config.from_pause = False
                 config.game_state = "menu"
                 tool.collision_time = None
                 tool.reset_timer()
