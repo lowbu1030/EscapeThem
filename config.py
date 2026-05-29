@@ -1281,8 +1281,7 @@ def print_coin_chance():
 now_flash_color = tool.Colors.RED
 
 
-# py 內部
-
+flash_width = 20
 
 def draw_screen_flash(color, total_time, max_alpha, flash_width):
     """

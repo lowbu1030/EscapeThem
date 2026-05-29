@@ -125,6 +125,7 @@
     "cannons": [],
     "obstacles": [
         {
+            "show_time": 10,
             "x": 400,
             "y": 300,
             "width": 200,
@@ -132,6 +133,7 @@
             "color": "BLACK"
         },
         {
+            "show_time": 50,
             "x": 400,
             "y": 300,
             "width": 10,

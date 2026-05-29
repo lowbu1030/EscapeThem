@@ -79,6 +79,7 @@ loaded_data_success = False
 def get_current_mouse_state():
     return pygame.mouse.get_pos(False), pygame.mouse.get_pressed()
 
+
 # 隱藏滑鼠
 pygame.mouse.set_visible(False)
 
@@ -454,21 +455,40 @@ while config.running:
                     config.game_state = "menu"
                 reset_pressing()
         config.update_current_world_data(config.select_world)
+        # 🌟 搬移到 main.py 繪製層的關卡限制文字渲染
         for i in range(1, len(config.current_world_costs)):
-            is_locked = i > config.levels_unlocked  # 這裡使用剛剛取出的數字
-            is_next_level = i == config.levels_unlocked + 1
-            prev_level_record = config.longest_survived_time[config.current_world_key].get(f"level{i - 1}", {}).get("normal", 0)
-            required_time = config.current_world_need_record[i]
+            is_locked = i > config.levels_unlocked
+
+            # 💡 核心修正：既然 i 就是關卡編號（1, 2, 3...），那它的限制門檻應該直接拿 [i]
+            # （對應你卡好位的陣列：world1 的 index 2 就是第 2 關需要 50 秒）
+            target_record = config.current_world_need_record[i]
+
+            # 💡 核心修正：而需要去檢查的「前置關卡紀錄」，才是前一關 [f"level{i - 1}"]
+            # 這樣當畫第 2 關 (i=2) 的提示時，才會精準去翻第 1 關 (level1) 的生存時間！
+            prev_level_key = f"level{i - 1}"
+
+            # 安全地撈出前一關所有模式的個人紀錄
+            current_level_record = [
+                config.longest_survived_time[config.current_world_key].get(prev_level_key, {}).get(m, 0)
+                for m in ["easy", "normal", "hard", "super_hard", "crazy"]
+            ]
+
+            # 💡 核心修正：改成 >= ，確保剛好壓線過關時顏色也會正確變綠
+            achieved_record = max(current_level_record) >= target_record
+
+            # 呼叫你的文字顯示工具進行渲染
+            # 提示：請確保在 main 中 all_objs, screen, tool, config 這些物件都看得到
             all_objs.show_text(
                 screen,
-                f"Need time: {tool.show_time_min(required_time)}",
-                tool.Colors.two_color_change(tool.Colors.GREEN, tool.Colors.RED, prev_level_record >= required_time),
+                f"Need time: {tool.show_time_min(target_record)}",
+                # 達標變綠色，未達標變紅色
+                tool.Colors.two_color_change(tool.Colors.GREEN, tool.Colors.RED, achieved_record),
                 380,
-                80 + i * 80 - config.scroll_ys[3],
+                80 + i * 80 - config.scroll_ys[3],  # 隨著滾動條上下位移
                 size=18,
-                show=is_locked,
+                show=is_locked,  # 只有還沒解鎖的關卡才顯示這個提示
             )
-        all_objs.show_text(screen, "Normal mode", tool.Colors.WHITE, 400, 160 - scroll_ys[3], size=20)
+        all_objs.show_text(screen, "Need Record", tool.Colors.WHITE, 400, 160 - scroll_ys[3], size=20)
         ui_manager.handle_current_state(events, mouse_pos)
         ui_handler.coin_rect()
     # 倒數前五秒
@@ -616,7 +636,15 @@ while config.running:
             if enemy.is_dead:
                 config.current_setup["enemies"].remove(enemy)
                 continue
-            e_rect = enemy.update(config.current_time_ms, config.current_time_sec, config.player_rect, mouse_pos, config.now_treasure, screen, config.current_setup.get("obstacles", []))
+            e_rect = enemy.update(
+                config.current_time_ms,
+                config.current_time_sec,
+                config.player_rect,
+                mouse_pos,
+                config.now_treasure,
+                screen,
+                config.current_setup.get("obstacles", []),
+            )
 
             if enemy.show and e_rect is not None:
                 if (
@@ -634,6 +662,7 @@ while config.running:
                         config.max_alpha = min(255, 100 + damage_taken)
 
                     config.flash_timer = config.total_flash_time
+                    config.flash_width = 20
                     config.freeze_timer = max(2, damage_taken // 1.5)
                     config.now_flash_color = tool.Colors.RED if not dodged else tool.Colors.YELLOW
 
@@ -694,6 +723,7 @@ while config.running:
                         config.max_alpha = min(255, 100 + max(1, int(damage_taken * damage_multiplier)))
 
                     config.flash_timer = config.total_flash_time
+                    config.flash_width = 20
                     config.freeze_timer = max(2, damage_taken // 1.5)
                     config.now_flash_color = tool.Colors.RED if not dodged else tool.Colors.YELLOW
 
@@ -777,6 +807,7 @@ while config.running:
                     config.total_shake_time = 20
                     config.now_flash_color = tool.Colors.BLUE
                     config.flash_timer = config.total_flash_time
+                    config.flash_width = 20
                 else:
                     asset_manager.sounds["coin"].play()
                 # 1. 計算分數
@@ -816,7 +847,7 @@ while config.running:
 
         # --- 玩家血量回復 ---
         # 1. 確保只有在血量未滿且玩家還活著時才計算
-        if config.player_hp < config.player_max_hp and config.player_hp > 0:
+        if config.player_hp < config.player_max_hp and config.player_hp > 0 and config.now_skills['p7']['hp']:
             # 2. 改用 >= 判斷，確保每隔指定秒數觸發一次
             if config.current_time_sec - config.last_cure_time >= config.now_skills["p7"]["time"]:
                 config.player_hp += config.now_skills["p7"]["hp"]
@@ -838,6 +869,7 @@ while config.running:
                 config.floating_texts.append(new_text)
                 config.now_flash_color = tool.Colors.GREEN
                 config.flash_timer = config.total_flash_time
+                config.flash_width = 20
                 # 4. 確保不溢出
                 if config.player_hp > config.player_max_hp:
                     config.player_hp = config.player_max_hp
@@ -1190,7 +1222,7 @@ while config.running:
             config.running = False
 
     # 畫面閃爍
-    config.draw_screen_flash(config.now_flash_color, config.total_flash_time, config.max_alpha, 20)
+    config.draw_screen_flash(config.now_flash_color, config.total_flash_time, config.max_alpha, config.flash_width)
     # 畫滑鼠
     if asset_manager.mouse_img_loaded:
         blit_mouse_pos = (mouse_pos[0] - 1, mouse_pos[1])

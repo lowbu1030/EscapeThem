@@ -324,13 +324,34 @@ class UIManager:
                     # 判斷錢夠不夠
                     cost = config.current_world_costs[idx]  # 注意原本是 i，新架構可以用 idx
                     money_enough = config.total_points >= cost
+                    target_record = config.current_world_need_record[idx]
+                    current_level_record = [
+                        config.longest_survived_time[f"world{config.select_world}"][f"level{idx - 1}"][m] for m in self.MODES
+                    ]
+                    achieved_record = max(current_level_record) >= target_record
 
                     # 動態改寫按鈕內的文字與邊框顏色
-                    obj.change_base_text(f"Unlock for ${tool.num_to_KMBT(cost)}")
+                    if achieved_record and not money_enough:
+                        display_text = f"Unlock for ${tool.num_to_KMBT(cost)}"
+                    elif money_enough and not achieved_record:
+                        display_text = f"Need {target_record}s record!"
+                    elif not money_enough and not achieved_record:
+                        display_text = [f"Unlock for ${tool.num_to_KMBT(cost)}, ", f"Need {target_record}s record"]
+                    else:
+                        display_text = f"Unlock for ${tool.num_to_KMBT(cost)}!"
+                    obj.change_base_text(display_text)
                     obj.font_size = 18
                     obj.change_base_color(tool.Colors.GRAY)  # 填滿灰色背景
-                    obj.hover_border_color = (tool.Colors.GREEN if config.select_world == 1 else tool.Colors.DARK_GREEN) if money_enough else tool.Colors.RED
-                    obj.hover_text_color = (tool.Colors.GREEN if config.select_world == 1 else tool.Colors.DARK_GREEN) if money_enough else tool.Colors.RED
+                    obj.hover_border_color = (
+                        (tool.Colors.GREEN if config.select_world == 1 else tool.Colors.DARK_GREEN)
+                        if money_enough and achieved_record
+                        else tool.Colors.RED
+                    )
+                    obj.hover_text_color = (
+                        (tool.Colors.GREEN if config.select_world == 1 else tool.Colors.DARK_GREEN)
+                        if money_enough and achieved_record
+                        else tool.Colors.RED
+                    )
                 # elif obj.is_next_level:
                 #     obj.border_width = 0
                 else:
@@ -497,6 +518,7 @@ class UIManager:
                     # 1. 處理 Info 點擊 (這部分你寫得很棒，有 return)
                     if obj.name == f"{mode}_info":
                         config.game_state = "more_survived_time"
+                        config.one_mode_height = 90 + (len(config.all_levels) * 60 - 25)
                         config.target_y = i * (config.one_mode_height) + 25
                         self.update_max_scroll_height()
                         return
@@ -552,12 +574,15 @@ class UIManager:
                                     f"You got a {picked_name} skin!",
                                     0,
                                     config.HEIGHT - 50,
-                                    tool.Colors.GREEN,
+                                    tool.Colors.get_color(picked_name, tool.Colors.GREEN),
                                     center=True,
                                     time=300,
                                     size=50,
                                 )
                             )
+                            config.flash_timer = config.total_flash_time
+                            config.flash_width = 20
+                            config.now_flash_color = tool.Colors.get_color(picked_name, tool.Colors.GREEN)
                         else:
                             # 重複抽到，增加經驗值
                             skin["exp"] += 50
@@ -578,6 +603,9 @@ class UIManager:
                                         size=50,
                                     )
                                 )
+                                config.flash_timer = config.total_flash_time
+                                config.flash_width = 20
+                                config.now_flash_color = tool.Colors.BLUE
                             config.last_draw_color = picked_name
                         data_handler.save_data()
                         asset_manager.buy_channel.play(asset_manager.sounds["buy_success"])
@@ -697,6 +725,7 @@ class UIManager:
                         asset_manager.buy_channel.play(asset_manager.sounds["buy_success"])
                         config.now_flash_color = tool.Colors.GOLD
                         config.flash_timer = config.total_flash_time
+                        config.flash_width = 150
 
                         # 重新計算技能
                         config.update_skill()
@@ -767,8 +796,14 @@ class UIManager:
                 elif obj.is_next_level:
                     # 👉 狀況 B：是還可以挑戰的「下一關」，點擊觸發「商店解鎖邏輯」
                     cost = config.current_world_costs[idx]
+                    money_enough = config.total_points >= cost
+                    target_record = config.current_world_need_record[idx]
+                    current_level_record = [
+                        config.longest_survived_time[f"world{config.select_world}"][f"level{idx - 1}"][m] for m in self.MODES
+                    ]
+                    achieved_record = max(current_level_record) > target_record
 
-                    if config.total_points >= cost:
+                    if money_enough and achieved_record:
                         # 錢夠，扣錢並正式宣告解鎖！
                         config.total_points -= cost
                         config.levels_unlocked = idx  # 關卡解鎖進度正式推進
@@ -787,6 +822,28 @@ class UIManager:
                     else:
                         # 錢不夠，無情噴出錯誤音效
                         asset_manager.sounds["buy_error"].play()
+                        if achieved_record and not money_enough:
+                            error_msg = f"Unlock for ${tool.num_to_KMBT(cost)}"
+                        elif money_enough and not achieved_record:
+                            error_msg = f"Need {target_record}s record!"
+                        elif not money_enough and not achieved_record:
+                            error_msg = [f"Unlock for ${tool.num_to_KMBT(cost)}, ", f"Need {target_record}s record"]
+                        else:
+                            error_msg = f"Unlock for ${tool.num_to_KMBT(cost)}!"
+                        err_list = [error_msg] if isinstance(error_msg, str) else error_msg
+                        for index, err in enumerate(err_list):
+                            # 每多一行，Y 軸就往下多移 45 像素（根據你 size=40 調整行距）
+                            dynamic_y = config.HEIGHT // 2 + (index * 45)
+
+                            error_text = tool.FloatingText(
+                                err,
+                                config.WIDTH // 2 - 140,  # 💡 提示：字體 40 很大，X 軸可以減多一點往左拉，才不會右邊穿幫
+                                dynamic_y,  # 🌟 使用動態計算的 Y 軸
+                                tool.Colors.RED,
+                                speed=0.5,
+                                size=40,
+                            )
+                            config.floating_texts.append(error_text)
             if obj.name == "next_world":
                 unlock_world_key = f"world{config.select_world + 1}"
                 cost = config.world_cost[unlock_world_key]
@@ -930,6 +987,7 @@ class UIManager:
                                 asset_manager.buy_channel.play(asset_manager.sounds["buy_success"])
                                 config.now_flash_color = tool.Colors.GOLD
                                 config.flash_timer = config.total_flash_time
+                                config.flash_width = 150
 
                                 # 重新計算技能
                                 config.update_skill()
@@ -1048,7 +1106,8 @@ class UIManager:
                 config.target_y += 8
 
     def handle_change_game_state(self):
-        config.target_y = 0
+        if config.game_state != "more_survived_time":
+            config.target_y = 0
         # 這段處理每次「狀態切換」時動態更新
         for s in range(len(config.scroll_ys)):
             config.scroll_ys[s] = 0  # 切換頁面時重置捲動位置
